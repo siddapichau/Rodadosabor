@@ -1,228 +1,505 @@
-/* Reset Básico */
+/* ============================================================
+           VARIÁVEIS DE TEMA DINÂMICAS E RESET GRADIENTE
+   ============================================================ */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Fundo Geral do App em Gradiente */
+:root {
+    --bg-body: linear-gradient(135deg, #f3e7da 0%, #dbe7df 100%);
+    --bg-card: rgba(255, 255, 255, 0.88);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --text-primary: #1e2a3a;
+    --text-secondary: #2c3e50;
+    --text-muted: #5a6a7a;
+    --border-color: rgba(0, 0, 0, 0.08);
+    --shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.12);
+    --gold: #f5b342;
+    --gold-dark: #d4ac0d;
+    
+    --wheel-border: #f5b342;
+    --wheel-center: #f5d742;
+}
+
+[data-dark-mode="true"] {
+    --bg-body: linear-gradient(135deg, #11111d 0%, #18182c 100%);
+    --bg-card: rgba(26, 26, 43, 0.88);
+    --bg-card-hover: rgba(34, 34, 56, 0.95);
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
 body {
-    background: linear-gradient(135deg, #1e1b4b, #311042);
-    color: #fff;
+    background: var(--bg-body);
+    color: var(--text-primary);
     min-height: 100vh;
+    padding: 1.5rem;
+    line-height: 1.5;
+    transition: background 0.4s ease, color 0.4s ease;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* CARD STYLE */
+.card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 2rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease, background 0.3s ease;
+}
+
+/* HEADER E IMAGEM LOGO */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.app-logo-img {
+    height: 60px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+}
+
+.logo-box {
+    width: 60px;
+    height: 60px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #f5b342, #7b9e5a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.logo-title h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #d4ac0d, #7b9e5a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.logo-title p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* INDICADORES DO TOPO */
+.top-stats {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-badge {
+    background: var(--bg-card);
+    padding: 0.5rem 1.2rem;
+    border-radius: 50px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+}
+
+.stat-badge i.fa-coins { color: var(--gold); }
+
+.btn-toggle-mode {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    box-shadow: var(--shadow);
+    transition: all 0.2s;
+}
+
+/* ÁREA DA ROLETA CENTRAL */
+.roulette-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 1.5rem 0;
 }
 
-/* Header com Logo e Moedas */
-.header-container {
+.canvas-container {
+    position: relative;
+    width: 440px;
+    height: 440px;
+}
+
+canvas {
+    display: block;
     width: 100%;
-    max-width: 600px;
+    height: 100%;
+}
+
+.roulette-arrow {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 30px solid #e94b3c;
+    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2));
+    z-index: 10;
+}
+
+.center-spin-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #f5d742 0%, #f5b342 100%);
+    border: 6px solid #ffffff;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.6);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 15;
+    transition: transform 0.1s ease, box-shadow 0.2s;
+}
+
+.center-spin-button:hover {
+    transform: translate(-50%, -50%) scale(1.04);
+}
+
+.center-spin-button:active {
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+.center-spin-button span {
+    color: #7d1212;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.1;
+}
+.center-spin-button .txt-top { font-size: 0.95rem; font-weight: 900; }
+.center-spin-button .txt-bottom { font-size: 0.65rem; font-weight: 700; margin-top: -2px; }
+
+/* SEÇÕES DO APP */
+h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.4rem;
+}
+h2 i { color: #f5b342; }
+
+/* LINHA DE BOTÕES DE AÇÃO INTERATIVOS EM GRADIENTE */
+.action-row-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media(max-width: 550px) {
+    .action-row-buttons { flex-direction: column; }
+    .canvas-container { width: 320px; height: 320px; }
+}
+
+.btn-gradient-action {
+    flex: 1;
+    border: none;
+    padding: 1rem;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.btn-gradient-action:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+
+.btn-gradient-action.dynamic-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.btn-gradient-action.dynamic-green {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.food-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.food-tag {
+    background: var(--border-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+}
+
+.food-tag i {
+    cursor: pointer;
+    color: #e94b3c;
+}
+
+/* GRIDS LOJA */
+.store-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+@media(max-width: 550px) {
+    .store-grid { grid-template-columns: 1fr; }
+}
+
+.item-card {
+    background: rgba(128,128,128,0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.item-card.active {
+    border-color: #7b9e5a;
+    background: rgba(123, 158, 90, 0.1);
+}
+
+.item-info h4 { font-size: 0.95rem; font-weight: 600; }
+.item-info p { font-size: 0.75rem; color: var(--text-muted); }
+
+.btn-action {
+    padding: 0.4rem 0.8rem;
+    border-radius: 30px;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-buy { background: var(--gold); color: #1e2a3a; }
+.btn-use { background: #7b9e5a; color: white; }
+.btn-active { background: var(--border-color); color: var(--text-muted); cursor: default; }
+
+/* RECEITAS */
+.recipes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.8rem;
+}
+
+.recipe-link {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1rem;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* POPUPS E OVERLAYS COM EM GRADIENTE */
+.result-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content-box {
+    background: var(--bg-card);
+    border-radius: 2rem;
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    margin-bottom: 1rem;
 }
 
-.app-logo {
-    max-height: 50px;
-    object-fit: contain;
-}
-
-.moedas-container {
-    background: linear-gradient(45deg, #fbbf24, #f59e0b);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 1.1rem;
-    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-}
-
-/* Conteúdo Principal */
-.main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 30px;
-    width: 100%;
-    max-width: 500px;
-    padding: 20px;
-}
-
-/* Roleta */
-.roleta-wrapper {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#canvas-roleta {
-    background: transparent;
-    border-radius: 50%;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-}
-
-#btn-girar {
-    position: absolute;
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    border: 4px solid #fff;
-    background: linear-gradient(135deg, #ef4444, #b91c1c);
-    color: white;
-    font-weight: bold;
+.close-modal-x {
+    font-size: 1.8rem;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    transition: transform 0.1s;
+    color: var(--text-muted);
 }
 
-#btn-girar:active {
-    transform: scale(0.95);
-}
-
-/* Botões */
-.controles-botoes {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.search-box-modal input {
     width: 100%;
-}
-
-button.btn-primary {
-    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-    color: white;
-    border: none;
-    padding: 14px;
+    padding: 0.75rem 1rem;
     border-radius: 12px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+    border: 1px solid var(--border-color);
+    background: rgba(128,128,128,0.05);
+    color: var(--text-primary);
+    margin-bottom: 1rem;
 }
 
-button.btn-ad {
-    background: linear-gradient(90deg, #10b981, #047857);
-    color: white;
-    border: none;
-    padding: 14px;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-}
-
-/* Modal / Pop-up */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(5px);
-    z-index: 100;
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-content {
-    background: linear-gradient(135deg, #1f2937, #111827);
-    width: 90%;
-    max-width: 500px;
-    height: 80vh;
-    border-radius: 20px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-.fechar-modal {
-    align-self: flex-end;
-    font-size: 2rem;
-    cursor: pointer;
-}
-
-.busca-container input {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #4b5563;
-    background: #374151;
-    color: white;
-}
-
-.grid-comidas {
-    flex: 1;
-    overflow-y: auto;
+.grid-food-options {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    padding-right: 5px;
+    gap: 0.6rem;
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 0.2rem;
 }
 
-.item-comida-opcao {
-    background: rgba(255,255,255,0.05);
+.food-option-card {
+    background: rgba(128,128,128,0.05);
     border: 2px solid transparent;
-    padding: 10px;
-    border-radius: 10px;
+    padding: 0.8rem 0.4rem;
+    border-radius: 14px;
     text-align: center;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    transition: all 0.2s;
 }
 
-.item-comida-opcao.selecionado {
+.food-option-card.selected {
     border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.15);
+    font-weight: 600;
 }
 
-.item-comida-opcao span {
+.food-option-card span {
     display: block;
-    font-size: 2rem;
-    margin-bottom: 5px;
+    font-size: 1.8rem;
+    margin-bottom: 0.2rem;
 }
 
-/* Overlay do Iframe do Anúncio */
+/* OVERLAY DO IFRAME DO ANÚNCIO DO JOGO */
 .iframe-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.85);
     z-index: 200;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
 }
 
 .iframe-box {
     width: 95%;
-    max-width: 600px;
-    height: 85vh;
+    max-width: 650px;
+    height: 80vh;
     background: #000;
-    border-radius: 15px;
+    border-radius: 20px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
 
 .iframe-header {
-    background: #222;
+    background: linear-gradient(90deg, #1f2937, #111827);
     color: #fff;
-    padding: 15px;
+    padding: 1rem;
     text-align: center;
-    font-weight: bold;
+    font-weight: 700;
+    font-size: 1.05rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-#anuncio-frame {
+#adFrame {
     width: 100%;
     flex: 1;
     border: none;
+}
+
+/* MODAL DE RESULTADO */
+.result-modal {
+    background: var(--bg-card);
+    border-radius: 2rem;
+    padding: 2.5rem;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.result-modal h3 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+.result-modal .food-emoji { font-size: 4.5rem; margin: 1rem 0; display: block; }
+.result-modal .food-name { font-size: 1.3rem; font-weight: 700; color: #7b9e5a; margin-bottom: 1.5rem; }
+
+.btn-close-modal {
+    background: linear-gradient(135deg, #f5b342, #d4ac0d);
+    color: #1e2a3a;
+    border: none;
+    padding: 0.75rem 2.5rem;
+    border-radius: 50px;
+    font-weight: 700;
+    cursor: pointer;
 }
