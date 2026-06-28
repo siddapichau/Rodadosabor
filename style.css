@@ -1,0 +1,228 @@
+/* Reset Básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Fundo Geral do App em Gradiente */
+body {
+    background: linear-gradient(135deg, #1e1b4b, #311042);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Header com Logo e Moedas */
+.header-container {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.app-logo {
+    max-height: 50px;
+    object-fit: contain;
+}
+
+.moedas-container {
+    background: linear-gradient(45deg, #fbbf24, #f59e0b);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Conteúdo Principal */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+}
+
+/* Roleta */
+.roleta-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#canvas-roleta {
+    background: transparent;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+#btn-girar {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    transition: transform 0.1s;
+}
+
+#btn-girar:active {
+    transform: scale(0.95);
+}
+
+/* Botões */
+.controles-botoes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+button.btn-primary {
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+button.btn-ad {
+    background: linear-gradient(90deg, #10b981, #047857);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Modal / Pop-up */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    width: 90%;
+    max-width: 500px;
+    height: 80vh;
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.fechar-modal {
+    align-self: flex-end;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.busca-container input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #4b5563;
+    background: #374151;
+    color: white;
+}
+
+.grid-comidas {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding-right: 5px;
+}
+
+.item-comida-opcao {
+    background: rgba(255,255,255,0.05);
+    border: 2px solid transparent;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.item-comida-opcao.selecionado {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.item-comida-opcao span {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+
+/* Overlay do Iframe do Anúncio */
+.iframe-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+}
+
+.iframe-box {
+    width: 95%;
+    max-width: 600px;
+    height: 85vh;
+    background: #000;
+    border-radius: 15px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.iframe-header {
+    background: #222;
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+}
+
+#anuncio-frame {
+    width: 100%;
+    flex: 1;
+    border: none;
+}
