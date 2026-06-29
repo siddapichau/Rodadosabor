@@ -78,7 +78,18 @@ document.addEventListener('DOMContentLoaded', function() {
         { nome: 'Mie Goreng', icone: '🍝' }
     ];
 
-    // ========================== RECEITAS (com preço em moedas) ==========================
+    // ========================== RECEITAS (com link) ==========================
+    // Função auxiliar para gerar slug a partir do nome
+    function slugify(text) {
+        return text
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w-]+/g, '');
+    }
+
     const RECEITAS = [
         {
             id: 'rec-1',
@@ -86,7 +97,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🍕',
             ingredientes: ['Farinha', 'Água', 'Fermento', 'Molho', 'Queijo'],
             preparo: 'Asse a 200°C por 20 min.',
-            preco: 0          // grátis
+            preco: 0,
+            link: 'pizza.html' // link personalizado (opcional, pode ser gerado automaticamente)
         },
         {
             id: 'rec-2',
@@ -94,7 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🍔',
             ingredientes: ['Carne', 'Pão', 'Queijo', 'Alface', 'Tomate'],
             preparo: 'Grelhe a carne, monte com os acompanhamentos.',
-            preco: 0          // grátis
+            preco: 0,
+            link: 'hamburguer.html'
         },
         {
             id: 'rec-3',
@@ -102,7 +115,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🍣',
             ingredientes: ['Arroz', 'Alga Nori', 'Salmão', 'Cream Cheese', 'Gergelim'],
             preparo: 'Enrole no bambu, corte em fatias e sirva com shoyu.',
-            preco: 5
+            preco: 5,
+            link: 'sushi.html'
         },
         {
             id: 'rec-4',
@@ -110,7 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🥗',
             ingredientes: ['Alface', 'Frango', 'Croutons', 'Parmesão', 'Molho Caesar'],
             preparo: 'Misture todos os ingredientes e sirva frio.',
-            preco: 2
+            preco: 2,
+            link: 'salada-caesar.html'
         },
         {
             id: 'rec-5',
@@ -118,7 +133,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🥩',
             ingredientes: ['Picanha', 'Sal Grosso', 'Carvão', 'Farofa', 'Vinagrete'],
             preparo: 'Asse a carne na brasa por cerca de 40 min, sirva com farofa.',
-            preco: 10
+            preco: 10,
+            link: 'churrasco.html'
         },
         {
             id: 'rec-6',
@@ -126,7 +142,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🍲',
             ingredientes: ['Feijão Preto', 'Carne Seca', 'Linguiça', 'Costela', 'Couve', 'Laranja'],
             preparo: 'Cozinhe as carnes com o feijão por 3h, sirva com couve e laranja.',
-            preco: 8
+            preco: 8,
+            link: 'feijoada.html'
         },
         {
             id: 'rec-7',
@@ -134,7 +151,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🍜',
             ingredientes: ['Caldo de Porco', 'Lamen', 'Ovo Cozido', 'Nori', 'Cebolinha'],
             preparo: 'Ferva o caldo, cozinhe o lamen, finalize com os acompanhamentos.',
-            preco: 6
+            preco: 6,
+            link: 'ramen.html'
         },
         {
             id: 'rec-8',
@@ -142,7 +160,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🌮',
             ingredientes: ['Tortilha', 'Carne Moída', 'Alface', 'Tomate', 'Queijo', 'Molho Picante'],
             preparo: 'Aqueça as tortilhas, recheie com a carne e os vegetais.',
-            preco: 4
+            preco: 4,
+            link: 'tacos.html'
         },
         {
             id: 'rec-9',
@@ -150,7 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🍛',
             ingredientes: ['Massa de Lasanha', 'Molho Bolonhesa', 'Bechamel', 'Queijo Mussarela', 'Parmesão'],
             preparo: 'Monte camadas e asse a 180°C por 40 min.',
-            preco: 7
+            preco: 7,
+            link: 'lasanha.html'
         },
         {
             id: 'rec-10',
@@ -158,7 +178,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🐟',
             ingredientes: ['Peixe Branco', 'Limão', 'Cebola Roxa', 'Coentro', 'Batata Doce'],
             preparo: 'Corte o peixe em cubos, tempere com limão e sal, adicione os acompanhamentos.',
-            preco: 5
+            preco: 5,
+            link: 'ceviche.html'
         },
         {
             id: 'rec-11',
@@ -166,7 +187,8 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🧀',
             ingredientes: ['Polvilho', 'Queijo', 'Leite', 'Óleo', 'Ovos'],
             preparo: 'Misture todos os ingredientes, modele bolinhas e asse a 180°C por 25 min.',
-            preco: 2
+            preco: 2,
+            link: 'pao-de-queijo.html'
         },
         {
             id: 'rec-12',
@@ -174,9 +196,17 @@ document.addEventListener('DOMContentLoaded', function() {
             icone: '🍦',
             ingredientes: ['Leite Condensado', 'Creme de Leite', 'Chocolate em Pó', 'Essência de Baunilha'],
             preparo: 'Bata todos os ingredientes no liquidificador e leve ao congelador por 4h.',
-            preco: 3
+            preco: 3,
+            link: 'sorvete.html'
         }
     ];
+
+    // Se algum link não foi definido manualmente, geramos automaticamente
+    RECEITAS.forEach(rec => {
+        if (!rec.link) {
+            rec.link = slugify(rec.nome) + '.html';
+        }
+    });
 
     // ========================== REFERÊNCIAS DO DOM ==========================
     const btnOpenFoodModal = document.getElementById('btnOpenFoodModal');
@@ -193,6 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultOverlay = document.getElementById('resultOverlay');
     const btnModeToggle = document.getElementById('btnModeToggle');
     const recipesGrid = document.getElementById('recipesGrid');
+    // Os modais de receita não são mais usados, mas mantidos para compatibilidade
     const recipeModal = document.getElementById('recipeModal');
     const btnCloseRecipeModal = document.getElementById('btnCloseRecipeModal');
     const recipeModalTitle = document.getElementById('recipeModalTitle');
@@ -202,7 +233,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let comidasSelecionadasTemporarias = [];
 
     // ========================== INICIALIZAÇÃO DO STATE ==========================
-    // Garante que state exista e tenha as propriedades necessárias
     if (typeof state === 'undefined') {
         window.state = {
             foods: [],
@@ -219,7 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
             unlockedRecipes: []
         };
     }
-    // Se já existir, mas faltar unlockedRecipes, adiciona
     if (!state.unlockedRecipes) {
         state.unlockedRecipes = [];
     }
@@ -231,8 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ========================== FUNÇÕES AUXILIARES ==========================
-    // (as funções saveToStorage, loadFromStorage, applyThemes, drawRoulette, spin, playSynthesizedSound devem existir globalmente)
-    // Se não existirem, crie stubs para evitar erros (mas o ideal é que estejam em outros arquivos)
     if (typeof saveToStorage !== 'function') {
         window.saveToStorage = function() {
             try {
@@ -253,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (typeof applyThemes !== 'function') {
         window.applyThemes = function() {
-            // stub – deve ser implementada em outro arquivo
+            // stub
         };
     }
     if (typeof drawRoulette !== 'function') {
@@ -272,7 +299,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Carrega estado salvo
     loadFromStorage();
 
     // ========================== EVENTOS ==========================
@@ -340,6 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Fechar modal de receita (se ainda existir)
     if (btnCloseRecipeModal) {
         btnCloseRecipeModal.addEventListener('click', () => {
             if (recipeModal) recipeModal.style.display = 'none';
@@ -353,7 +380,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ========================== FUNÇÕES DE RENDERIZAÇÃO ==========================
 
-    // ---- Renderizar lista de comidas selecionadas (tags) ----
     function renderFoodList() {
         const container = document.getElementById('foodListContainer');
         if (!container) return;
@@ -372,7 +398,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderFoodList();
     };
 
-    // ---- Modal de seleção de comidas ----
     function renderModalFoodOptions(filterText = '') {
         if (!modalFoodOptionsGrid) return;
         modalFoodOptionsGrid.innerHTML = '';
@@ -401,26 +426,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- Temas (página e roleta) ----
+    // ---- Temas (mantido igual) ----
     function renderThemes() {
         const pageGrid = document.getElementById('pageThemesGrid');
         const rouletteGrid = document.getElementById('rouletteThemesGrid');
         if (!pageGrid || !rouletteGrid) return;
-
         pageGrid.innerHTML = '';
         rouletteGrid.innerHTML = '';
-
-        if (typeof listTemas === 'undefined') {
-            // Se listTemas não existir, cria um array vazio para não quebrar
-            window.listTemas = [];
-        }
-
+        if (typeof listTemas === 'undefined') window.listTemas = [];
         listTemas.forEach(tema => {
             const coresPreview = tema.light.colors.slice(0, 4)
                 .map(c => `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`)
                 .join('');
-
-            // Tema da página
             const isPageUnlocked = state.unlockedPageThemes.includes(tema.id);
             const isPageActive = state.currentPageTheme === tema.id;
             const pageCard = document.createElement('div');
@@ -440,7 +457,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             pageGrid.appendChild(pageCard);
 
-            // Tema da roleta
             const isRouletteUnlocked = state.unlockedRouletteThemes.includes(tema.id);
             const isRouletteActive = state.currentRouletteTheme === tema.id;
             const rouletteCard = document.createElement('div');
@@ -478,7 +494,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderThemes();
         saveToStorage();
     };
-
     window.buyRouletteTheme = function(id, price) {
         if (state.coins >= price) {
             state.coins -= price;
@@ -496,12 +511,11 @@ document.addEventListener('DOMContentLoaded', function() {
         saveToStorage();
     };
 
-    // ---- Sons ----
+    // ---- Sons (mantido igual) ----
     function renderSounds() {
         const spinGrid = document.getElementById('spinSoundsGrid');
         const winGrid = document.getElementById('winSoundsGrid');
         if (!spinGrid || !winGrid) return;
-
         spinGrid.innerHTML = '';
         if (typeof listSpinSounds === 'undefined') window.listSpinSounds = [];
         listSpinSounds.forEach(sound => {
@@ -523,7 +537,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             spinGrid.appendChild(card);
         });
-
         winGrid.innerHTML = '';
         if (typeof listWinSounds === 'undefined') window.listWinSounds = [];
         listWinSounds.forEach(sound => {
@@ -582,7 +595,8 @@ document.addEventListener('DOMContentLoaded', function() {
         renderSounds();
     };
 
-    // ---- RECEITAS (com desbloqueio por moedas) ----
+    // ========================== RECEITAS (com redirecionamento para link) ==========================
+
     function renderRecipes() {
         if (!recipesGrid) return;
         recipesGrid.innerHTML = '';
@@ -592,12 +606,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = document.createElement('div');
             card.className = 'recipe-card';
 
-            // Ícone e nome
             const info = document.createElement('div');
             info.className = 'recipe-info';
             info.innerHTML = `<span class="recipe-icon">${rec.icone}</span><span class="recipe-name">${rec.nome}</span>`;
 
-            // Botão ou indicador
             let action;
             if (isUnlocked) {
                 const openBtn = document.createElement('button');
@@ -605,7 +617,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 openBtn.textContent = 'Ver';
                 openBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    openRecipeModal(rec.id);
+                    // Redireciona para o link da receita
+                    window.location.href = rec.link;
                 });
                 action = openBtn;
             } else {
@@ -639,23 +652,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // ---- Abrir modal da receita (só se desbloqueada) ----
-    function openRecipeModal(id) {
-        const rec = RECEITAS.find(r => r.id === id);
-        if (!rec) return;
-        if (!state.unlockedRecipes.includes(id)) {
-            alert("Esta receita está bloqueada. Compre-a na loja de receitas!");
-            return;
-        }
-        if (recipeModalTitle) recipeModalTitle.textContent = `${rec.icone} ${rec.nome}`;
-        if (recipeIngredients) {
-            recipeIngredients.innerHTML = rec.ingredientes.map(ing => `<li>${ing}</li>`).join('');
-        }
-        if (recipeInstructions) recipeInstructions.textContent = rec.preparo;
-        if (recipeModal) recipeModal.style.display = 'flex';
-    }
-
-    // ---- Atualizar exibição de moedas (se houver elemento) ----
+    // ---- Atualizar exibição de moedas ----
     function updateCoinsDisplay() {
         const display = document.getElementById('coinDisplay');
         if (display) {
@@ -671,8 +668,17 @@ document.addEventListener('DOMContentLoaded', function() {
     applyThemes();
     updateCoinsDisplay();
 
-    // Para garantir que as funções de receita fiquem acessíveis globalmente
-    window.openRecipeModal = openRecipeModal;
+    // Expor funções globalmente
+    window.openRecipeModal = function(id) {
+        // Não usamos mais modal, redirecionamos diretamente
+        const rec = RECEITAS.find(r => r.id === id);
+        if (!rec) return;
+        if (!state.unlockedRecipes.includes(id)) {
+            alert("Esta receita está bloqueada. Compre-a na loja de receitas!");
+            return;
+        }
+        window.location.href = rec.link;
+    };
     window.buyRecipe = buyRecipe;
 
     console.log('App inicializado com sucesso!');
