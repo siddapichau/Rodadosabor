@@ -1,5 +1,5 @@
 // ============================================================
-// BANCO DE COMIDAS (50+ opções com ícones)
+// BANCO DE COMIDAS (70+ opções)
 // ============================================================
 const BANCO_DE_COMIDAS = [
     { nome: 'Pizza', icone: '🍕' }, { nome: 'Hambúrguer', icone: '🍔' },
@@ -26,21 +26,29 @@ const BANCO_DE_COMIDAS = [
     { nome: 'Milkshake', icone: '🥛' }, { nome: 'Refrigerante', icone: '🥤' },
     { nome: 'Água de Coco', icone: '🥥' }, { nome: 'Chá Gelado', icone: '🍵' },
     { nome: 'Pudim', icone: '🍮' }, { nome: 'Mousse', icone: '🍮' },
-    { nome: 'Torta de Limão', icone: '🥧' }, { nome: 'Pavê', icone: '🍰' }
+    { nome: 'Torta de Limão', icone: '🥧' }, { nome: 'Pavê', icone: '🍰' },
+    { nome: 'Feijoada', icone: '🍲' }, { nome: 'Baião de Dois', icone: '🍚' },
+    { nome: 'Acarajé', icone: '🫓' }, { nome: 'Vatapá', icone: '🍛' },
+    { nome: 'Moqueca', icone: '🐟' }, { nome: 'Bobó de Camarão', icone: '🍤' },
+    { nome: 'Carne de Sol', icone: '🥩' }, { nome: 'Buchada', icone: '🍖' },
+    { nome: 'Sarapatel', icone: '🥘' }, { nome: 'Tapioca', icone: '🫓' },
+    { nome: 'Beiju', icone: '🥞' }, { nome: 'Cuscuz', icone: '🌾' },
+    { nome: 'Canjica', icone: '🌽' }, { nome: 'Pamonha', icone: '🌽' },
+    { nome: 'Quentão', icone: '🍷' }, { nome: 'Caldo de Cana', icone: '🥤' }
 ];
 
 let comidasSelecionadasTemporarias = [];
 
 // ============================================================
-// RECEITAS (10 receitas completas)
+// RECEITAS (10 completas)
 // ============================================================
 const RECEITAS = [
     {
         id: 'rec-1',
         nome: 'Pizza Caseira',
         icone: '🍕',
-        ingredientes: ['Farinha de trigo (500g)', 'Água morna (300ml)', 'Fermento biológico (10g)', 'Sal (1 colher)', 'Azeite (2 colheres)', 'Molho de tomate', 'Queijo mussarela', 'Presunto', 'Orégano'],
-        preparo: '1. Misture a farinha, o sal, o fermento e a água. Sove até ficar homogêneo. Deixe descansar por 1h.\n2. Abra a massa, coloque em uma forma, espalhe o molho, adicione os ingredientes e leve ao forno a 200°C por 20 min.'
+        ingredientes: ['Farinha (500g)', 'Água morna (300ml)', 'Fermento (10g)', 'Sal (1 colher)', 'Azeite (2 colheres)', 'Molho de tomate', 'Queijo mussarela', 'Presunto', 'Orégano'],
+        preparo: '1. Misture a farinha, sal, fermento e água. Sove até homogeneizar. Deixe descansar 1h.\n2. Abra a massa, coloque em uma forma, espalhe o molho, adicione os ingredientes e leve ao forno a 200°C por 20 min.'
     },
     {
         id: 'rec-2',
@@ -140,7 +148,7 @@ const recipeInstructions = document.getElementById('recipeInstructions');
 btnWatchAd.addEventListener('click', () => {
     let secondsLeft = 20;
     adCountdown.textContent = secondsLeft;
-    adFrame.src = "https://example.com"; // substitua pelo link do seu anúncio
+    adFrame.src = "https://example.com"; // substitua pelo link do anúncio
     adOverlay.style.display = 'flex';
 
     const adInterval = setInterval(() => {
@@ -235,7 +243,7 @@ window.removeFood = function(idx) {
 };
 
 // ============================================================
-// RENDERIZAÇÃO DOS TEMAS
+// RENDERIZAÇÃO DOS TEMAS (com claro/escuro integrado)
 // ============================================================
 function renderThemes() {
     const grid = document.getElementById('themesGrid');
@@ -255,13 +263,16 @@ function renderThemes() {
             btnHTML = `<button class="btn-action btn-buy" onclick="buyTheme('${tema.id}', ${tema.price})"><i class="fas fa-coins"></i> ${tema.price}</button>`;
         }
 
+        // Mostra amostra das cores (modo claro)
+        const coresPreview = tema.light.colors.slice(0, 4).map(c =>
+            `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`
+        ).join('');
+
         card.innerHTML = `
             <div class="item-info">
                 <h4>${tema.name}</h4>
                 <p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p>
-                <div style="display:flex; gap:3px; margin-top:4px;">
-                    ${tema.colors.slice(0, 4).map(c => `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`).join('')}
-                </div>
+                <div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div>
             </div>
             ${btnHTML}
         `;
@@ -273,7 +284,7 @@ window.buyTheme = function(id, price) {
     if (state.coins >= price) {
         state.coins -= price;
         state.unlockedThemes.push(id);
-        applyThemeStyle(id);
+        applyTheme(id, state.darkMode);
         saveToStorage();
         renderThemes();
         drawRoulette();
@@ -283,7 +294,7 @@ window.buyTheme = function(id, price) {
 };
 
 window.useTheme = function(id) {
-    applyThemeStyle(id);
+    applyTheme(id, state.darkMode);
     saveToStorage();
     renderThemes();
     drawRoulette();
@@ -419,18 +430,20 @@ document.querySelectorAll('.result-overlay').forEach(overlay => {
 });
 
 // ============================================================
-// MODO CLARO/ESCURO
+// MODO CLARO/ESCURO (alterna dentro do tema atual)
 // ============================================================
-function applyMode() {
-    document.documentElement.setAttribute('data-dark-mode', state.darkMode);
+function toggleDarkMode() {
+    state.darkMode = !state.darkMode;
+    applyTheme(state.currentTheme, state.darkMode);
+    saveToStorage();
+    updateModeButton();
+}
+
+function updateModeButton() {
     btnModeToggle.innerHTML = state.darkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
 }
 
-btnModeToggle.addEventListener('click', () => {
-    state.darkMode = !state.darkMode;
-    applyMode();
-    saveToStorage();
-});
+btnModeToggle.addEventListener('click', toggleDarkMode);
 
 // ============================================================
 // EVENTOS DA ROLETA E RESULTADO
@@ -444,8 +457,8 @@ btnCloseModal.addEventListener('click', () => {
 // INICIALIZAÇÃO
 // ============================================================
 document.getElementById('coin-balance').textContent = state.coins;
-applyMode();
-applyThemeStyle(state.currentTheme);
+updateModeButton();
+applyTheme(state.currentTheme, state.darkMode);
 renderFoodList();
 renderThemes();
 renderSounds();
