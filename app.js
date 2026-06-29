@@ -314,9 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnWatchAd) {
         btnWatchAd.addEventListener('click', function() {
-            let secondsLeft = 20;
+            let secondsLeft = 30;
             adCountdown.textContent = secondsLeft;
-            adFrame.src = "https://example.com";
+            adFrame.src = "anuncio.html";
             adOverlay.style.display = 'flex';
             const adInterval = setInterval(() => {
                 secondsLeft--;
