@@ -1,15 +1,20 @@
 // ============================================================
-// ESTADO INICIAL (salvo no localStorage)
+// core.js – Lógica principal (tema, roleta, sons, confetes)
 // ============================================================
+'use strict';
+
+console.log('core.js carregado');
+
+// --- ESTADO INICIAL ---
 let state = {
     coins: 20,
-    darkMode: false,         // true = modo escuro ativo
+    darkMode: false,
     foods: [
         "Lasanha 🍝", "Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣",
         "Taco 🌮", "Salada 🥗", "Bolo 🍰", "Lámen 🍜",
         "Frango Assado 🍗", "Espaguete 🍝", "Sorvete 🍦", "Burrito 🌯"
     ],
-    unlockedThemes: ["theme-1", "theme-2", "theme-3"], // IDs dos temas desbloqueados
+    unlockedThemes: ["theme-1", "theme-2", "theme-3"],
     currentTheme: "theme-1",
     unlockedSpinSounds: ["spin-1"],
     currentSpinSound: "spin-1",
@@ -17,15 +22,19 @@ let state = {
     currentWinSound: "win-1"
 };
 
-if (localStorage.getItem('rodaDoSaborState')) {
-    try {
-        state = { ...state, ...JSON.parse(localStorage.getItem('rodaDoSaborState')) };
-    } catch (e) { console.error(e); }
+// Carregar dados salvos
+try {
+    const saved = localStorage.getItem('rodaDoSaborState');
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        state = { ...state, ...parsed };
+        console.log('Estado carregado do localStorage');
+    }
+} catch (e) {
+    console.warn('Erro ao carregar estado:', e);
 }
 
-// ============================================================
-// 10 TEMAS (cada um com versões LIGHT e DARK)
-// ============================================================
+// --- 10 TEMAS (cada um com versões LIGHT e DARK) ---
 const listTemas = [
     {
         id: "theme-1", name: "Amarelo + Verde", price: 0,
@@ -139,9 +148,7 @@ const listTemas = [
     }
 ];
 
-// ============================================================
-// SONS (5 de giro + 5 de vitória)
-// ============================================================
+// --- SONS ---
 const listSpinSounds = [
     { id: "spin-1", name: "Clássico", price: 0, type: "click" },
     { id: "spin-2", name: "Swoosh", price: 15, type: "swoosh" },
@@ -158,126 +165,131 @@ const listWinSounds = [
     { id: "win-5", name: "Glória", price: 35, type: "glory" }
 ];
 
-// ============================================================
-// ÁUDIO (Web Audio API)
-// ============================================================
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// --- ÁUDIO (Web Audio API) ---
+let audioCtx = null;
+
+function getAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+}
 
 function playSynthesizedSound(soundType) {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
+    try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
 
-    switch (soundType) {
-        case 'click':
-            osc(now, 400, 80, 0.04, 'sine', 0.3);
-            break;
-        case 'swoosh':
-            osc(now, 80, 250, 0.08, 'triangle', 0.2);
-            break;
-        case 'arcade':
-            oscSquare(now, 600, 900, 0.06, 0.15);
-            break;
-        case 'whoosh':
-            osc(now, 60, 350, 0.15, 'sawtooth', 0.15);
-            break;
-        case 'digital':
-            oscSquare(now, 500, 1200, 0.05, 0.1);
-            break;
-        case 'tada':
-            [523.25, 659.25, 783.99].forEach((f, i) => {
-                osc(now + i * 0.05, f, f, 0.4, 'sine', 0.2);
-            });
-            break;
-        case 'bell':
-            osc(now, 987.77, 987.77, 0.6, 'triangle', 0.4);
-            break;
-        case 'levelup':
-            [261.63, 329.63, 392.00, 523.25].forEach((f, i) => {
-                oscSquare(now + i * 0.08, f, f, 0.15, 0.15);
-            });
-            break;
-        case 'fanfare':
-            [392, 523, 659, 784, 880].forEach((f, i) => {
-                osc(now + i * 0.1, f, f, 0.2, 'sine', 0.15);
-            });
-            break;
-        case 'glory':
-            [440, 554, 659, 880, 1108].forEach((f, i) => {
-                osc(now + i * 0.06, f, f * 1.2, 0.3, 'sine', 0.12);
-            });
-            break;
-        default:
-            break;
+        switch (soundType) {
+            case 'click':
+                osc(ctx, now, 400, 80, 0.04, 'sine', 0.3);
+                break;
+            case 'swoosh':
+                osc(ctx, now, 80, 250, 0.08, 'triangle', 0.2);
+                break;
+            case 'arcade':
+                oscSquare(ctx, now, 600, 900, 0.06, 0.15);
+                break;
+            case 'whoosh':
+                osc(ctx, now, 60, 350, 0.15, 'sawtooth', 0.15);
+                break;
+            case 'digital':
+                oscSquare(ctx, now, 500, 1200, 0.05, 0.1);
+                break;
+            case 'tada':
+                [523.25, 659.25, 783.99].forEach((f, i) => {
+                    osc(ctx, now + i * 0.05, f, f, 0.4, 'sine', 0.2);
+                });
+                break;
+            case 'bell':
+                osc(ctx, now, 987.77, 987.77, 0.6, 'triangle', 0.4);
+                break;
+            case 'levelup':
+                [261.63, 329.63, 392.00, 523.25].forEach((f, i) => {
+                    oscSquare(ctx, now + i * 0.08, f, f, 0.15, 0.15);
+                });
+                break;
+            case 'fanfare':
+                [392, 523, 659, 784, 880].forEach((f, i) => {
+                    osc(ctx, now + i * 0.1, f, f, 0.2, 'sine', 0.15);
+                });
+                break;
+            case 'glory':
+                [440, 554, 659, 880, 1108].forEach((f, i) => {
+                    osc(ctx, now + i * 0.06, f, f * 1.2, 0.3, 'sine', 0.12);
+                });
+                break;
+            default:
+                break;
+        }
+    } catch (e) {
+        console.warn('Erro ao tocar som:', e);
     }
 }
 
-function osc(start, freqStart, freqEnd, duration, type, gain) {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+function osc(ctx, start, freqStart, freqEnd, duration, type, gain) {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
     o.type = type;
     o.frequency.setValueAtTime(freqStart, start);
     o.frequency.exponentialRampToValueAtTime(freqEnd, start + duration);
     g.gain.setValueAtTime(gain, start);
     g.gain.exponentialRampToValueAtTime(0.001, start + duration);
     o.connect(g);
-    g.connect(audioCtx.destination);
+    g.connect(ctx.destination);
     o.start(start);
     o.stop(start + duration);
 }
 
-function oscSquare(start, freqStart, freqEnd, duration, gain) {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
+function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
     o.type = 'square';
     o.frequency.setValueAtTime(freqStart, start);
     o.frequency.exponentialRampToValueAtTime(freqEnd, start + duration);
     g.gain.setValueAtTime(gain, start);
     g.gain.exponentialRampToValueAtTime(0.001, start + duration);
     o.connect(g);
-    g.connect(audioCtx.destination);
+    g.connect(ctx.destination);
     o.start(start);
     o.stop(start + duration);
 }
 
-// ============================================================
-// PERSISTÊNCIA
-// ============================================================
+// --- PERSISTÊNCIA ---
 function saveToStorage() {
-    localStorage.setItem('rodaDoSaborState', JSON.stringify(state));
-    document.getElementById('coin-balance').textContent = state.coins;
+    try {
+        localStorage.setItem('rodaDoSaborState', JSON.stringify(state));
+        const coinEl = document.getElementById('coin-balance');
+        if (coinEl) coinEl.textContent = state.coins;
+    } catch (e) {
+        console.warn('Erro ao salvar:', e);
+    }
 }
 
-// ============================================================
-// APLICAÇÃO DO TEMA (roleta + estilo do site)
-// ============================================================
+// --- APLICAÇÃO DO TEMA ---
 function applyTheme(themeId, darkMode) {
     const theme = listTemas.find(t => t.id === themeId) || listTemas[0];
     const mode = darkMode ? 'dark' : 'light';
     const themeData = theme[mode];
     if (!themeData) return;
 
-    // Atualiza variáveis CSS do site
     const root = document.documentElement;
     root.style.setProperty('--bg-body', themeData.style.bg);
     root.style.setProperty('--bg-card', themeData.style.card);
     root.style.setProperty('--text-primary', themeData.style.text);
     root.style.setProperty('--accent', themeData.style.accent);
-    // Gradiente do título
     root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${themeData.colors[0]}, ${themeData.colors[1]})`);
-    // Borda e centro da roleta
     root.style.setProperty('--wheel-border', themeData.colors[0]);
     root.style.setProperty('--wheel-center', themeData.colors[2] || '#f5d742');
 
-    // Salva no estado
     state.currentTheme = themeId;
     state.darkMode = darkMode;
     saveToStorage();
     drawRoulette();
+    console.log(`Tema aplicado: ${themeId} (${mode})`);
 }
 
-// ============================================================
-// ROLETA (CANVAS)
-// ============================================================
+// --- ROLETA ---
 const canvas = document.getElementById('rouletteCanvas');
 const ctx = canvas.getContext('2d');
 const center = canvas.width / 2;
@@ -285,7 +297,12 @@ let startAngle = 0;
 let isSpinning = false;
 
 function drawRoulette() {
+    if (!canvas) {
+        console.warn('Canvas não encontrado');
+        return;
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     const theme = listTemas.find(t => t.id === state.currentTheme) || listTemas[0];
     const mode = state.darkMode ? 'dark' : 'light';
     const themeData = theme[mode];
@@ -340,7 +357,6 @@ function drawRoulette() {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Texto do alimento
         ctx.save();
         ctx.translate(center, center);
         ctx.rotate(currentArc + arcSize / 2);
@@ -365,24 +381,24 @@ function drawRoulette() {
     ctx.stroke();
 }
 
-// ============================================================
-// GIRO E CONFETES
-// ============================================================
+// --- GIRO ---
 let spinSpeed = 0;
 let spinTimeTotal = 0;
 let spinTimeCount = 0;
 let lastSoundAngle = 0;
 
 function spin() {
-    if (isSpinning || state.foods.length === 0) return;
+    if (isSpinning || state.foods.length === 0) {
+        console.log('Giro bloqueado');
+        return;
+    }
     isSpinning = true;
-
     spinTimeCount = 0;
     spinTimeTotal = Math.random() * 1000 + 4000;
     spinSpeed = Math.random() * 0.3 + 0.4;
-
     lastSoundAngle = startAngle;
     animateSpin();
+    console.log('Giro iniciado');
 }
 
 function animateSpin() {
@@ -395,7 +411,6 @@ function animateSpin() {
 
     let progress = spinTimeCount / spinTimeTotal;
     let currentVelocity = spinSpeed * Math.pow(1 - progress, 2);
-
     startAngle += currentVelocity;
     drawRoulette();
 
@@ -419,28 +434,32 @@ function finalizeSpin() {
     const activeWinSound = listWinSounds.find(s => s.id === state.currentWinSound) || listWinSounds[0];
     playSynthesizedSound(activeWinSound.type);
 
-    // Dispara confetes com mais formas e cores
     launchConfetti();
 
     setTimeout(() => {
-        document.getElementById('modalFoodName').textContent = winningFood;
-        const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u);
-        document.getElementById('modalEmoji').textContent = emojiMatch ? emojiMatch[0] : "🍽️";
-        document.getElementById('resultOverlay').style.display = 'flex';
+        const nameEl = document.getElementById('modalFoodName');
+        const emojiEl = document.getElementById('modalEmoji');
+        const overlay = document.getElementById('resultOverlay');
+        if (nameEl && emojiEl && overlay) {
+            nameEl.textContent = winningFood;
+            const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u);
+            emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️";
+            overlay.style.display = 'flex';
+        }
     }, 300);
 }
 
-// ============================================================
-// CONFETES (7 formas diferentes)
-// ============================================================
+// --- CONFETES ---
 const confettiCanvas = document.getElementById('confettiCanvas');
 const confCtx = confettiCanvas.getContext('2d');
 let confettiPieces = [];
 let confettiRunning = false;
 
 function resizeConfetti() {
-    confettiCanvas.width = window.innerWidth;
-    confettiCanvas.height = window.innerHeight;
+    if (confettiCanvas) {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+    }
 }
 window.addEventListener('resize', resizeConfetti);
 resizeConfetti();
@@ -463,8 +482,7 @@ function launchConfetti() {
             vx: (Math.random() - 0.5) * 7,
             vy: Math.random() * 5 + 3,
             rot: Math.random() * 360,
-            rotSpeed: (Math.random() - 0.5) * 12,
-            life: 1
+            rotSpeed: (Math.random() - 0.5) * 12
         });
     }
     animateConfetti();
@@ -527,4 +545,8 @@ function animateConfetti() {
                 confCtx.lineTo(p.w / 2, p.h / 2);
                 confCtx.lineTo(-p.w / 2, p.h / 2);
                 confCtx.closePath();
-                          
+                confCtx.fill();
+                break;
+            case 'star6':
+                drawStar6(confCtx, 0, 0, p.w / 2);
+                bre
