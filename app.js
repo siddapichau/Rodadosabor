@@ -1,4 +1,6 @@
-// BANCO DE DADOS GLOBAL DE COMIDAS COM ÍCONES E EMOJIS (MILHARES DE OPÇÕES SIMULADAS)
+// ============================================================
+// BANCO DE COMIDAS (50+ opções com ícones)
+// ============================================================
 const BANCO_DE_COMIDAS = [
     { nome: 'Pizza', icone: '🍕' }, { nome: 'Hambúrguer', icone: '🍔' },
     { nome: 'Sushi', icone: '🍣' }, { nome: 'Sorvete', icone: '🍦' },
@@ -9,12 +11,105 @@ const BANCO_DE_COMIDAS = [
     { nome: 'Batata Frita', icone: '🍟' }, { nome: 'Cachorro Quente', icone: '🌭' },
     { nome: 'Lasanha', icone: '🍛' }, { nome: 'Sopa Quente', icone: '🍜' },
     { nome: 'Arroz e Feijão', icone: '🍲' }, { nome: 'Churrasco', icone: '🥩' },
-    { nome: 'Camarão', icone: '🍤' }, { nome: 'Pancqueca', icone: '🥞' }
+    { nome: 'Camarão', icone: '🍤' }, { nome: 'Panqueca', icone: '🥞' },
+    { nome: 'Sanduíche', icone: '🥪' }, { nome: 'Omelete', icone: '🍳' },
+    { nome: 'Peixe Grelhado', icone: '🐟' }, { nome: 'Costela', icone: '🍖' },
+    { nome: 'Risoto', icone: '🍚' }, { nome: 'Polenta', icone: '🌽' },
+    { nome: 'Quiche', icone: '🥧' }, { nome: 'Nhoque', icone: '🥟' },
+    { nome: 'Empada', icone: '🥮' }, { nome: 'Pão de Queijo', icone: '🧀' },
+    { nome: 'Coxinha', icone: '🍗' }, { nome: 'Pastel', icone: '🥟' },
+    { nome: 'Açaí', icone: '🫐' }, { nome: 'Frutas', icone: '🍇' },
+    { nome: 'Smoothie', icone: '🥤' }, { nome: 'Café da Manhã', icone: '🥓' },
+    { nome: 'Wrap', icone: '🌯' }, { nome: 'Ceviche', icone: '🐠' },
+    { nome: 'Tiramisù', icone: '🍰' }, { nome: 'Cheesecake', icone: '🍰' },
+    { nome: 'Brownie', icone: '🍫' }, { nome: 'Cookie', icone: '🍪' },
+    { nome: 'Milkshake', icone: '🥛' }, { nome: 'Refrigerante', icone: '🥤' },
+    { nome: 'Água de Coco', icone: '🥥' }, { nome: 'Chá Gelado', icone: '🍵' },
+    { nome: 'Pudim', icone: '🍮' }, { nome: 'Mousse', icone: '🍮' },
+    { nome: 'Torta de Limão', icone: '🥧' }, { nome: 'Pavê', icone: '🍰' }
 ];
 
 let comidasSelecionadasTemporarias = [];
 
-// ELEMENTOS DA INTERFACE INTERATIVA
+// ============================================================
+// RECEITAS (10 receitas completas)
+// ============================================================
+const RECEITAS = [
+    {
+        id: 'rec-1',
+        nome: 'Pizza Caseira',
+        icone: '🍕',
+        ingredientes: ['Farinha de trigo (500g)', 'Água morna (300ml)', 'Fermento biológico (10g)', 'Sal (1 colher)', 'Azeite (2 colheres)', 'Molho de tomate', 'Queijo mussarela', 'Presunto', 'Orégano'],
+        preparo: '1. Misture a farinha, o sal, o fermento e a água. Sove até ficar homogêneo. Deixe descansar por 1h.\n2. Abra a massa, coloque em uma forma, espalhe o molho, adicione os ingredientes e leve ao forno a 200°C por 20 min.'
+    },
+    {
+        id: 'rec-2',
+        nome: 'Hambúrguer Artesanal',
+        icone: '🍔',
+        ingredientes: ['Carne moída (500g)', 'Cebola picada', 'Alho', 'Pão de hambúrguer', 'Alface', 'Tomate', 'Queijo cheddar', 'Maionese', 'Ketchup'],
+        preparo: '1. Tempere a carne com cebola, alho e sal. Modele os hambúrgueres.\n2. Grelhe em fogo alto até o ponto desejado.\n3. Monte com pão, alface, tomate, queijo e molhos.'
+    },
+    {
+        id: 'rec-3',
+        nome: 'Tacos Mexicanos',
+        icone: '🌮',
+        ingredientes: ['Tortilhas de milho', 'Carne moída', 'Pimenta', 'Cebola', 'Coentro', 'Limão', 'Queijo', 'Guacamole'],
+        preparo: '1. Refogue a carne com cebola e pimenta.\n2. Aqueça as tortilhas.\n3. Recheie com a carne, queijo, guacamole e finalize com coentro e limão.'
+    },
+    {
+        id: 'rec-4',
+        nome: 'Sushi Especial',
+        icone: '🍣',
+        ingredientes: ['Arroz próprio', 'Alga nori', 'Salmão', 'Atum', 'Pepino', 'Cream cheese', 'Shoyu', 'Gengibre'],
+        preparo: '1. Cozinhe o arroz e tempere com vinagre, açúcar e sal.\n2. Coloque a alga na esteira, espalhe o arroz, adicione os recheios e enrole.\n3. Corte em fatias e sirva com shoyu e gengibre.'
+    },
+    {
+        id: 'rec-5',
+        nome: 'Bolo de Morango',
+        icone: '🍰',
+        ingredientes: ['Farinha (2 xícaras)', 'Açúcar (2 xícaras)', 'Ovos (3)', 'Leite (1 xícara)', 'Manteiga (1 colher)', 'Fermento (1 colher)', 'Morangos', 'Creme de leite'],
+        preparo: '1. Bata a manteiga com o açúcar, adicione os ovos, a farinha e o leite. Por fim, o fermento.\n2. Asse em forno 180°C por 35 min.\n3. Recheie e cubra com morangos e creme.'
+    },
+    {
+        id: 'rec-6',
+        nome: 'Lasanha à Bolonhesa',
+        icone: '🍝',
+        ingredientes: ['Massa para lasanha', 'Carne moída (500g)', 'Molho de tomate', 'Cebola', 'Alho', 'Queijo parmesão', 'Queijo mussarela', 'Leite', 'Manteiga'],
+        preparo: '1. Refogue a carne com cebola e alho, acrescente o molho e cozinhe.\n2. Em uma forma, alterne camadas de massa, molho e queijos.\n3. Leve ao forno a 200°C por 30 min.'
+    },
+    {
+        id: 'rec-7',
+        nome: 'Salada Caesar',
+        icone: '🥗',
+        ingredientes: ['Alface americana', 'Frango desfiado', 'Croutons', 'Queijo parmesão', 'Molho Caesar', 'Limão'],
+        preparo: '1. Lave e seque a alface.\n2. Misture com o frango, croutons e queijo.\n3. Regue com o molho Caesar e sirva.'
+    },
+    {
+        id: 'rec-8',
+        nome: 'Churrasco de Picanha',
+        icone: '🥩',
+        ingredientes: ['Picanha (1kg)', 'Sal grosso', 'Carvão', 'Alho', 'Limonada'],
+        preparo: '1. Tempere a picanha com sal grosso e alho.\n2. Asse na churrasqueira até o ponto desejado (selar a gordura).\n3. Sirva com arroz, farofa e vinagrete.'
+    },
+    {
+        id: 'rec-9',
+        nome: 'Risoto de Camarão',
+        icone: '🍛',
+        ingredientes: ['Arroz arbóreo (2 xícaras)', 'Camarão (300g)', 'Cebola', 'Alho', 'Vinho branco', 'Caldo de legumes', 'Parmesão', 'Salsinha'],
+        preparo: '1. Refogue cebola e alho, adicione o arroz e refogue.\n2. Adicione o vinho e, aos poucos, o caldo, mexendo sempre.\n3. Quando estiver al dente, acrescente o camarão e o parmesão.'
+    },
+    {
+        id: 'rec-10',
+        nome: 'Sopa de Legumes',
+        icone: '🍜',
+        ingredientes: ['Cenoura', 'Batata', 'Abobrinha', 'Cebola', 'Alho', 'Caldo de carne', 'Creme de leite', 'Salsinha'],
+        preparo: '1. Cozinhe os legumes com caldo de carne até ficarem macios.\n2. Bata no liquidificador até ficar cremoso.\n3. Volte ao fogo, adicione creme de leite e finalize com salsinha.'
+    }
+];
+
+// ============================================================
+// ELEMENTOS DA INTERFACE
+// ============================================================
 const btnOpenFoodModal = document.getElementById('btnOpenFoodModal');
 const btnCloseFoodModal = document.getElementById('btnCloseFoodModal');
 const foodSelectionModal = document.getElementById('foodSelectionModal');
@@ -27,98 +122,45 @@ const adOverlay = document.getElementById('adOverlay');
 const adCountdown = document.getElementById('adCountdown');
 const adFrame = document.getElementById('adFrame');
 
-// --- SISTEMA DE ANÚNCIO (20 SEGUNDOS EM IFRAME) ---
+const btnCloseModal = document.getElementById('btnCloseModal');
+const resultOverlay = document.getElementById('resultOverlay');
+
+const btnModeToggle = document.getElementById('btnModeToggle');
+
+const recipesGrid = document.getElementById('recipesGrid');
+const recipeModal = document.getElementById('recipeModal');
+const btnCloseRecipeModal = document.getElementById('btnCloseRecipeModal');
+const recipeModalTitle = document.getElementById('recipeModalTitle');
+const recipeIngredients = document.getElementById('recipeIngredients');
+const recipeInstructions = document.getElementById('recipeInstructions');
+
+// ============================================================
+// ANÚNCIO RECOMPENSADO
+// ============================================================
 btnWatchAd.addEventListener('click', () => {
     let secondsLeft = 20;
     adCountdown.textContent = secondsLeft;
-    
-    // Altere para a URL real do anúncio se preferir
-    adFrame.src = "https://example.com"; 
+    adFrame.src = "https://example.com"; // substitua pelo link do seu anúncio
     adOverlay.style.display = 'flex';
-    
+
     const adInterval = setInterval(() => {
         secondsLeft--;
         adCountdown.textContent = secondsLeft;
-        
         if (secondsLeft <= 0) {
             clearInterval(adInterval);
             adOverlay.style.display = 'none';
             adFrame.src = 'about:blank';
-            
-            // Recompensa com exatamente +3 Moedas por Anúncio assistido
             state.coins += 3;
             saveToStorage();
-            alert("Parabéns! Você assistiu ao anúncio completo e ganhou 3 moedas! 🪙");
+            alert("🎉 Você ganhou 3 moedas! Use na loja de temas e sons.");
         }
     }, 1000);
 });
 
-// --- LÓGICA DE GIRO DA ROLETA (SEM RECOMPENSA DE MOEDA) ---
-let spinSpeed = 0;
-let spinTimeTotal = 0;
-let spinTimeCount = 0;
-let lastSoundAngle = 0;
-
-function spin() {
-    if (isSpinning || state.foods.length === 0) return;
-    isSpinning = true;
-
-    spinTimeCount = 0;
-    spinTimeTotal = Math.random() * 1000 + 4000; 
-    spinSpeed = Math.random() * 0.3 + 0.4; 
-
-    lastSoundAngle = startAngle;
-    animateSpin();
-}
-
-function animateSpin() {
-    spinTimeCount += 20;
-    if (spinTimeCount >= spinTimeTotal) {
-        isSpinning = false;
-        finalizeSpin();
-        return;
-    }
-
-    let progress = spinTimeCount / spinTimeTotal;
-    let currentVelocity = spinSpeed * Math.pow(1 - progress, 2);
-
-    startAngle += currentVelocity;
-    drawRoulette();
-
-    const arcSize = (2 * Math.PI) / state.foods.length;
-    if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = listSpinSounds.find(s => s.id === state.currentSpinSound) || listSpinSounds[0];
-        playSynthesizedSound(activeSpinSound.type);
-        lastSoundAngle = startAngle;
-    }
-
-    requestAnimationFrame(animateSpin);
-}
-
-function finalizeSpin() {
-    const numSegments = state.foods.length;
-    let degrees = (startAngle * 180 / Math.PI) % 360;
-    let index = Math.floor((360 - (degrees - 90)) % 360 / (360 / numSegments));
-    if (index < 0) index = numSegments + index;
-    
-    const winningFood = state.foods[index];
-
-    const activeWinSound = listWinSounds.find(s => s.id === state.currentWinSound) || listWinSounds[0];
-    playSynthesizedSound(activeWinSound.type);
-
-    // IMPORTANTE: NÃO HÁ MAIS GANHO DE MOEDAS AQUI!
-
-    setTimeout(() => {
-        document.getElementById('modalFoodName').textContent = winningFood;
-        const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u);
-        document.getElementById('modalEmoji').textContent = emojiMatch ? emojiMatch[0] : "🍽️";
-        document.getElementById('resultOverlay').style.display = 'flex';
-    }, 300);
-}
-
-// --- POP-UP MODAL SELEÇÃO DE COMIDAS (MENU COMPLETO) ---
+// ============================================================
+// SELEÇÃO DE COMIDAS (MODAL)
+// ============================================================
 btnOpenFoodModal.addEventListener('click', () => {
-    // Clona o array original para manipulação temporária
     comidasSelecionadasTemporarias = [...state.foods];
     foodSelectionModal.style.display = 'flex';
     renderModalFoodOptions();
@@ -130,8 +172,7 @@ btnCloseFoodModal.addEventListener('click', () => {
 
 function renderModalFoodOptions(filterText = '') {
     modalFoodOptionsGrid.innerHTML = '';
-    
-    const filtradas = BANCO_DE_COMIDAS.filter(item => 
+    const filtradas = BANCO_DE_COMIDAS.filter(item =>
         item.nome.toLowerCase().includes(filterText.toLowerCase())
     );
 
@@ -139,23 +180,20 @@ function renderModalFoodOptions(filterText = '') {
         const itemString = `${item.nome} ${item.icone}`;
         const card = document.createElement('div');
         card.className = 'food-option-card';
-        
         const isSelected = comidasSelecionadasTemporarias.includes(itemString);
         if (isSelected) card.classList.add('selected');
 
         card.innerHTML = `<span>${item.icone}</span> ${item.nome}`;
-        
         card.addEventListener('click', () => {
-            const index = comidasSelecionadasTemporarias.indexOf(itemString);
-            if (index > -1) {
-                comidasSelecionadasTemporarias.splice(index, 1);
+            const idx = comidasSelecionadasTemporarias.indexOf(itemString);
+            if (idx > -1) {
+                comidasSelecionadasTemporarias.splice(idx, 1);
                 card.classList.remove('selected');
             } else {
                 comidasSelecionadasTemporarias.push(itemString);
                 card.classList.add('selected');
             }
         });
-
         modalFoodOptionsGrid.appendChild(card);
     });
 }
@@ -166,7 +204,7 @@ searchFoodInput.addEventListener('input', (e) => {
 
 btnSaveFoodSelection.addEventListener('click', () => {
     if (comidasSelecionadasTemporarias.length < 2) {
-        alert("Por favor, selecione ao menos 2 comidas para que a roleta possa girar!");
+        alert("Selecione pelo menos 2 comidas para girar a roleta!");
         return;
     }
     state.foods = [...comidasSelecionadasTemporarias];
@@ -175,7 +213,9 @@ btnSaveFoodSelection.addEventListener('click', () => {
     foodSelectionModal.style.display = 'none';
 });
 
-// --- RENDERIZADORES DE LAYOUT ORIGINAIS ---
+// ============================================================
+// RENDERIZAÇÃO DA LISTA DE COMIDAS
+// ============================================================
 function renderFoodList() {
     const container = document.getElementById('foodListContainer');
     container.innerHTML = '';
@@ -192,8 +232,11 @@ window.removeFood = function(idx) {
     state.foods.splice(idx, 1);
     saveToStorage();
     renderFoodList();
-}
+};
 
+// ============================================================
+// RENDERIZAÇÃO DOS TEMAS
+// ============================================================
 function renderThemes() {
     const grid = document.getElementById('themesGrid');
     grid.innerHTML = '';
@@ -202,7 +245,7 @@ function renderThemes() {
         const isActive = state.currentTheme === tema.id;
         const card = document.createElement('div');
         card.className = `item-card ${isActive ? 'active' : ''}`;
-        
+
         let btnHTML = '';
         if (isActive) {
             btnHTML = `<button class="btn-action btn-active">Ativo</button>`;
@@ -212,30 +255,45 @@ function renderThemes() {
             btnHTML = `<button class="btn-action btn-buy" onclick="buyTheme('${tema.id}', ${tema.price})"><i class="fas fa-coins"></i> ${tema.price}</button>`;
         }
 
-        card.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : 'Desbloqueável'}</p></div>${btnHTML}`;
+        card.innerHTML = `
+            <div class="item-info">
+                <h4>${tema.name}</h4>
+                <p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p>
+                <div style="display:flex; gap:3px; margin-top:4px;">
+                    ${tema.colors.slice(0, 4).map(c => `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`).join('')}
+                </div>
+            </div>
+            ${btnHTML}
+        `;
         grid.appendChild(card);
     });
 }
 
 window.buyTheme = function(id, price) {
-    if(state.coins >= price) {
+    if (state.coins >= price) {
         state.coins -= price;
         state.unlockedThemes.push(id);
-        state.currentTheme = id;
+        applyThemeStyle(id);
         saveToStorage();
         renderThemes();
         drawRoulette();
-    } else { alert("Moedas insuficientes! Assista a anúncios para ganhar mais."); }
-}
+    } else {
+        alert("Moedas insuficientes! Assista a anúncios para ganhar mais.");
+    }
+};
 
 window.useTheme = function(id) {
-    state.currentTheme = id;
+    applyThemeStyle(id);
     saveToStorage();
     renderThemes();
     drawRoulette();
-}
+};
 
+// ============================================================
+// RENDERIZAÇÃO DOS SONS
+// ============================================================
 function renderSounds() {
+    // Sons de giro
     const spinGrid = document.getElementById('spinSoundsGrid');
     spinGrid.innerHTML = '';
     listSpinSounds.forEach(sound => {
@@ -243,7 +301,7 @@ function renderSounds() {
         const isActive = state.currentSpinSound === sound.id;
         const card = document.createElement('div');
         card.className = `item-card ${isActive ? 'active' : ''}`;
-        
+
         let btnHTML = '';
         if (isActive) {
             btnHTML = `<button class="btn-action btn-active">Ativo</button>`;
@@ -252,10 +310,17 @@ function renderSounds() {
         } else {
             btnHTML = `<button class="btn-action btn-buy" onclick="buySpinSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
         }
-        card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:#7b9e5a;" onclick="playSynthesizedSound('${sound.type}')"></i></h4><p>Giro</p></div>${btnHTML}`;
+        card.innerHTML = `
+            <div class="item-info">
+                <h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4>
+                <p>Giro</p>
+            </div>
+            ${btnHTML}
+        `;
         spinGrid.appendChild(card);
     });
 
+    // Sons de vitória
     const winGrid = document.getElementById('winSoundsGrid');
     winGrid.innerHTML = '';
     listWinSounds.forEach(sound => {
@@ -263,7 +328,7 @@ function renderSounds() {
         const isActive = state.currentWinSound === sound.id;
         const card = document.createElement('div');
         card.className = `item-card ${isActive ? 'active' : ''}`;
-        
+
         let btnHTML = '';
         if (isActive) {
             btnHTML = `<button class="btn-action btn-active">Ativo</button>`;
@@ -272,46 +337,116 @@ function renderSounds() {
         } else {
             btnHTML = `<button class="btn-action btn-buy" onclick="buyWinSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
         }
-        card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:#7b9e5a;" onclick="playSynthesizedSound('${sound.type}')"></i></h4><p>Vitória</p></div>${btnHTML}`;
+        card.innerHTML = `
+            <div class="item-info">
+                <h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4>
+                <p>Vitória</p>
+            </div>
+            ${btnHTML}
+        `;
         winGrid.appendChild(card);
     });
 }
 
 window.buySpinSound = function(id, price) {
-    if(state.coins >= price) {
+    if (state.coins >= price) {
         state.coins -= price;
         state.unlockedSpinSounds.push(id);
         state.currentSpinSound = id;
         saveToStorage();
         renderSounds();
-    } else { alert("Moedas insuficientes!"); }
-}
-window.useSpinSound = function(id) { state.currentSpinSound = id; saveToStorage(); renderSounds(); }
+    } else {
+        alert("Moedas insuficientes!");
+    }
+};
+
+window.useSpinSound = function(id) {
+    state.currentSpinSound = id;
+    saveToStorage();
+    renderSounds();
+};
 
 window.buyWinSound = function(id, price) {
-    if(state.coins >= price) {
+    if (state.coins >= price) {
         state.coins -= price;
         state.unlockedWinSounds.push(id);
         state.currentWinSound = id;
         saveToStorage();
         renderSounds();
-    } else { alert("Moedas insuficientes!"); }
-}
-window.useWinSound = function(id) { state.currentWinSound = id; saveToStorage(); renderSounds(); }
+    } else {
+        alert("Moedas insuficientes!");
+    }
+};
 
-const modeBtn = document.getElementById('btnModeToggle');
+window.useWinSound = function(id) {
+    state.currentWinSound = id;
+    saveToStorage();
+    renderSounds();
+};
+
+// ============================================================
+// RENDERIZAÇÃO DAS RECEITAS
+// ============================================================
+function renderRecipes() {
+    recipesGrid.innerHTML = '';
+    RECEITAS.forEach(rec => {
+        const div = document.createElement('div');
+        div.className = 'recipe-link';
+        div.innerHTML = `<span class="icon">${rec.icone}</span><span class="name">${rec.nome}</span>`;
+        div.addEventListener('click', () => openRecipeModal(rec.id));
+        recipesGrid.appendChild(div);
+    });
+}
+
+function openRecipeModal(id) {
+    const rec = RECEITAS.find(r => r.id === id);
+    if (!rec) return;
+    recipeModalTitle.textContent = `${rec.icone} ${rec.nome}`;
+    recipeIngredients.innerHTML = rec.ingredientes.map(ing => `<li>${ing}</li>`).join('');
+    recipeInstructions.textContent = rec.preparo;
+    recipeModal.style.display = 'flex';
+}
+
+btnCloseRecipeModal.addEventListener('click', () => {
+    recipeModal.style.display = 'none';
+});
+
+// Fecha modais clicando fora
+document.querySelectorAll('.result-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.style.display = 'none';
+    });
+});
+
+// ============================================================
+// MODO CLARO/ESCURO
+// ============================================================
 function applyMode() {
     document.documentElement.setAttribute('data-dark-mode', state.darkMode);
-    modeBtn.innerHTML = state.darkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    btnModeToggle.innerHTML = state.darkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
 }
-modeBtn.addEventListener('click', () => { state.darkMode = !state.darkMode; applyMode(); saveToStorage(); });
 
+btnModeToggle.addEventListener('click', () => {
+    state.darkMode = !state.darkMode;
+    applyMode();
+    saveToStorage();
+});
+
+// ============================================================
+// EVENTOS DA ROLETA E RESULTADO
+// ============================================================
 document.getElementById('btnSpin').addEventListener('click', spin);
-document.getElementById('btnCloseModal').addEventListener('click', () => { document.getElementById('resultOverlay').style.display = 'none'; });
+btnCloseModal.addEventListener('click', () => {
+    resultOverlay.style.display = 'none';
+});
 
-// INICIALIZAÇÃO COMPLETA
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
 document.getElementById('coin-balance').textContent = state.coins;
 applyMode();
+applyThemeStyle(state.currentTheme);
 renderFoodList();
 renderThemes();
 renderSounds();
+renderRecipes();
