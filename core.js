@@ -9,18 +9,14 @@ let state = {
         "Taco 🌮", "Salada 🥗", "Bolo 🍰", "Lámen 🍜",
         "Frango Assado 🍗", "Espaguete 🍝", "Sorvete 🍦", "Burrito 🌯"
     ],
-    // Temas separados
     unlockedPageThemes: ["theme-1", "theme-2", "theme-3"],
     currentPageTheme: "theme-1",
     unlockedRouletteThemes: ["theme-1", "theme-2", "theme-3"],
     currentRouletteTheme: "theme-1",
-    
     unlockedSpinSounds: ["spin-1"],
     currentSpinSound: "spin-1",
     unlockedWinSounds: ["win-1"],
     currentWinSound: "win-1",
-
-    // Comidas personalizadas adicionadas pelo usuário
     customFoods: []
 };
 
@@ -94,7 +90,6 @@ function saveToStorage() {
     } catch (e) {}
 }
 
-// NOVA FUNÇÃO: Aplica Tema da Página e Tema da Roleta
 function applyThemes() {
     const pageTheme = listTemas.find(t => t.id === state.currentPageTheme) || listTemas[0];
     const rouletteTheme = listTemas.find(t => t.id === state.currentRouletteTheme) || listTemas[0];
@@ -126,7 +121,6 @@ function drawRoulette() {
     if (!canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Roleta puxa cor EXCLUSIVA dela
     const theme = listTemas.find(t => t.id === state.currentRouletteTheme) || listTemas[0];
     const mode = state.darkMode ? 'dark' : 'light';
     const themeData = theme[mode];
@@ -164,7 +158,19 @@ let spinSpeed = 0; let spinTimeTotal = 0; let spinTimeCount = 0; let lastSoundAn
 
 function spin() {
     if (isSpinning || state.foods.length === 0) return;
-    isSpinning = true; spinTimeCount = 0; spinTimeTotal = Math.random() * 1000 + 4000; spinSpeed = Math.random() * 0.3 + 0.4; lastSoundAngle = startAngle; animateSpin();
+    
+    // CORREÇÃO DO ÁUDIO: Desbloqueia o som no momento do clique do usuário
+    const audioContext = getAudioContext();
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    
+    isSpinning = true; 
+    spinTimeCount = 0; 
+    spinTimeTotal = Math.random() * 1000 + 4000; 
+    spinSpeed = Math.random() * 0.3 + 0.4; 
+    lastSoundAngle = startAngle; 
+    animateSpin();
 }
 
 function animateSpin() {
@@ -186,8 +192,8 @@ function finalizeSpin() {
     if (index < 0) index = numSegments + index;
     const winningFood = state.foods[index];
     const activeWinSound = listWinSounds.find(s => s.id === state.currentWinSound) || listWinSounds[0];
-    playSynthesizedSound(activeWinSound.type); // Toca som de vitória
-    launchConfetti(); // Lança confetes imediatamente após o som
+    playSynthesizedSound(activeWinSound.type); 
+    launchConfetti(); 
     setTimeout(() => {
         const nameEl = document.getElementById('modalFoodName'); const emojiEl = document.getElementById('modalEmoji'); const overlay = document.getElementById('resultOverlay');
         if (nameEl && emojiEl && overlay) { nameEl.textContent = winningFood; const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u); emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; overlay.style.display = 'flex'; }
