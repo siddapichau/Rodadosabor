@@ -129,8 +129,8 @@ body {
 
 .canvas-container {
     position: relative;
-    width: 700px;
-    height: 700px;
+    width: 600px;
+    height: 600px;
     max-width: 100%;
 }
 
@@ -470,4 +470,21 @@ h2 i { color: var(--gold); }
     height: 100%;
     pointer-events: none;
     z-index: 150;
+}
+
+/* VARIÁVEIS PADRÃO (serão sobrescritas pelo JS) */
+:root {
+    --bg-body: #f3e7da;
+    --bg-card: rgba(255,255,255,0.88);
+    --bg-card-hover: rgba(255,255,255,0.95);
+    --text-primary: #1e2a3a;
+    --text-secondary: #2c3e50;
+    --text-muted: #5a6a7a;
+    --border-color: rgba(0,0,0,0.08);
+    --shadow: 0 12px 32px -8px rgba(0,0,0,0.12);
+    --gold: #f5b342;
+    --accent: #7b9e5a;
+    --accent-gradient: linear-gradient(135deg, #f5d742, #7b9e5a);
+    --wheel-border: #f5b342;
+    --wheel-center: #f5d742;
 }
