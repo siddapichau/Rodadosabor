@@ -46,55 +46,75 @@ document.addEventListener('DOMContentLoaded', function() {
         { nome: 'Quentão', icone: '🍷' }, { nome: 'Caldo de Cana', icone: '🥤' }
     ];
 
-    // --- RECEITAS (10) ---
+    // --- RECEITAS (10 completas) ---
     const RECEITAS = [
         {
-            id: 'rec-1', nome: 'Pizza Caseira', icone: '🍕',
+            id: 'rec-1',
+            nome: 'Pizza Caseira',
+            icone: '🍕',
             ingredientes: ['Farinha (500g)', 'Água morna (300ml)', 'Fermento (10g)', 'Sal (1 colher)', 'Azeite (2 colheres)', 'Molho de tomate', 'Queijo mussarela', 'Presunto', 'Orégano'],
             preparo: '1. Misture a farinha, sal, fermento e água. Sove até homogeneizar. Deixe descansar 1h.\n2. Abra a massa, coloque em uma forma, espalhe o molho, adicione os ingredientes e leve ao forno a 200°C por 20 min.'
         },
         {
-            id: 'rec-2', nome: 'Hambúrguer Artesanal', icone: '🍔',
+            id: 'rec-2',
+            nome: 'Hambúrguer Artesanal',
+            icone: '🍔',
             ingredientes: ['Carne moída (500g)', 'Cebola picada', 'Alho', 'Pão de hambúrguer', 'Alface', 'Tomate', 'Queijo cheddar', 'Maionese', 'Ketchup'],
             preparo: '1. Tempere a carne com cebola, alho e sal. Modele os hambúrgueres.\n2. Grelhe em fogo alto até o ponto desejado.\n3. Monte com pão, alface, tomate, queijo e molhos.'
         },
         {
-            id: 'rec-3', nome: 'Tacos Mexicanos', icone: '🌮',
+            id: 'rec-3',
+            nome: 'Tacos Mexicanos',
+            icone: '🌮',
             ingredientes: ['Tortilhas de milho', 'Carne moída', 'Pimenta', 'Cebola', 'Coentro', 'Limão', 'Queijo', 'Guacamole'],
             preparo: '1. Refogue a carne com cebola e pimenta.\n2. Aqueça as tortilhas.\n3. Recheie com a carne, queijo, guacamole e finalize com coentro e limão.'
         },
         {
-            id: 'rec-4', nome: 'Sushi Especial', icone: '🍣',
+            id: 'rec-4',
+            nome: 'Sushi Especial',
+            icone: '🍣',
             ingredientes: ['Arroz próprio', 'Alga nori', 'Salmão', 'Atum', 'Pepino', 'Cream cheese', 'Shoyu', 'Gengibre'],
             preparo: '1. Cozinhe o arroz e tempere com vinagre, açúcar e sal.\n2. Coloque a alga na esteira, espalhe o arroz, adicione os recheios e enrole.\n3. Corte em fatias e sirva com shoyu e gengibre.'
         },
         {
-            id: 'rec-5', nome: 'Bolo de Morango', icone: '🍰',
+            id: 'rec-5',
+            nome: 'Bolo de Morango',
+            icone: '🍰',
             ingredientes: ['Farinha (2 xícaras)', 'Açúcar (2 xícaras)', 'Ovos (3)', 'Leite (1 xícara)', 'Manteiga (1 colher)', 'Fermento (1 colher)', 'Morangos', 'Creme de leite'],
             preparo: '1. Bata a manteiga com o açúcar, adicione os ovos, a farinha e o leite. Por fim, o fermento.\n2. Asse em forno 180°C por 35 min.\n3. Recheie e cubra com morangos e creme.'
         },
         {
-            id: 'rec-6', nome: 'Lasanha à Bolonhesa', icone: '🍝',
+            id: 'rec-6',
+            nome: 'Lasanha à Bolonhesa',
+            icone: '🍝',
             ingredientes: ['Massa para lasanha', 'Carne moída (500g)', 'Molho de tomate', 'Cebola', 'Alho', 'Queijo parmesão', 'Queijo mussarela', 'Leite', 'Manteiga'],
             preparo: '1. Refogue a carne com cebola e alho, acrescente o molho e cozinhe.\n2. Em uma forma, alterne camadas de massa, molho e queijos.\n3. Leve ao forno a 200°C por 30 min.'
         },
         {
-            id: 'rec-7', nome: 'Salada Caesar', icone: '🥗',
+            id: 'rec-7',
+            nome: 'Salada Caesar',
+            icone: '🥗',
             ingredientes: ['Alface americana', 'Frango desfiado', 'Croutons', 'Queijo parmesão', 'Molho Caesar', 'Limão'],
             preparo: '1. Lave e seque a alface.\n2. Misture com o frango, croutons e queijo.\n3. Regue com o molho Caesar e sirva.'
         },
         {
-            id: 'rec-8', nome: 'Churrasco de Picanha', icone: '🥩',
+            id: 'rec-8',
+            nome: 'Churrasco de Picanha',
+            icone: '🥩',
             ingredientes: ['Picanha (1kg)', 'Sal grosso', 'Carvão', 'Alho', 'Limonada'],
             preparo: '1. Tempere a picanha com sal grosso e alho.\n2. Asse na churrasqueira até o ponto desejado (selar a gordura).\n3. Sirva com arroz, farofa e vinagrete.'
         },
         {
-            id: 'rec-9', nome: 'Risoto de Camarão', icone: '🍛',
+            id: 'rec-9',
+            nome: 'Risoto de Camarão',
+            icone: '🍛',
             ingredientes: ['Arroz arbóreo (2 xícaras)', 'Camarão (300g)', 'Cebola', 'Alho', 'Vinho branco', 'Caldo de legumes', 'Parmesão', 'Salsinha'],
             preparo: '1. Refogue cebola e alho, adicione o arroz e refogue.\n2. Adicione o vinho e, aos poucos, o caldo, mexendo sempre.\n3. Quando estiver al dente, acrescente o camarão e o parmesão.'
         },
         {
-            id: 'rec-10', nome: 'Sopa de Legumes', icone: '🍜',
+            id: 'rec-10',
+            nome: 'Sopa de Legumes',
+            icone: '🍜',
             ingredientes: ['Cenoura', 'Batata', 'Abobrinha', 'Cebola', 'Alho', 'Caldo de carne', 'Creme de leite', 'Salsinha'],
             preparo: '1. Cozinhe os legumes com caldo de carne até ficarem macios.\n2. Bata no liquidificador até ficar cremoso.\n3. Volte ao fogo, adicione creme de leite e finalize com salsinha.'
         }
@@ -132,7 +152,9 @@ document.addEventListener('DOMContentLoaded', function() {
         btnOpenFoodModal: !!btnOpenFoodModal,
         btnWatchAd: !!btnWatchAd,
         btnSpin: !!document.getElementById('btnSpin'),
-        canvas: !!document.getElementById('rouletteCanvas')
+        canvas: !!document.getElementById('rouletteCanvas'),
+        foodList: !!document.getElementById('foodListContainer'),
+        themesGrid: !!document.getElementById('themesGrid')
     });
 
     // --- ANÚNCIO RECOMPENSADO ---
@@ -140,7 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnWatchAd.addEventListener('click', function() {
             let secondsLeft = 20;
             adCountdown.textContent = secondsLeft;
-            adFrame.src = "https://example.com"; // substitua
+            adFrame.src = "https://example.com"; // substitua pelo link do anúncio
             adOverlay.style.display = 'flex';
 
             const adInterval = setInterval(() => {
@@ -158,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- SELEÇÃO DE COMIDAS ---
+    // --- SELEÇÃO DE COMIDAS (MODAL) ---
     if (btnOpenFoodModal) {
         btnOpenFoodModal.addEventListener('click', function() {
             comidasSelecionadasTemporarias = [...state.foods];
@@ -408,17 +430,4 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!rec) return;
         if (recipeModalTitle) recipeModalTitle.textContent = `${rec.icone} ${rec.nome}`;
         if (recipeIngredients) recipeIngredients.innerHTML = rec.ingredientes.map(ing => `<li>${ing}</li>`).join('');
-        if (recipeInstructions) recipeInstructions.textContent = rec.preparo;
-        if (recipeModal) recipeModal.style.display = 'flex';
-    }
-
-    if (btnCloseRecipeModal) {
-        btnCloseRecipeModal.addEventListener('click', function() {
-            recipeModal.style.display = 'none';
-        });
-    }
-
-    // Fecha modais clicando fora
-    document.querySelectorAll('.result-overlay').forEach(overlay => {
-        overlay.addEventListener('click', function(e) {
-   
+        if (recipeInstructions) recipeInstructions.textContent = rec
