@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Pizza · Roda do Sabor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Ajustes específicos para a página de receita */
+        .recipe-hero {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .recipe-hero h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
+        .recipe-hero p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        .pizza-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .pizza-tab {
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: 40px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+            box-shadow: var(--shadow);
+        }
+        .pizza-tab.active {
+            border-color: var(--gold);
+            background: rgba(245, 179, 66, 0.15);
+        }
+        .pizza-tab:hover {
+            transform: translateY(-2px);
+        }
+        .pizza-content {
+            display: none;
+            animation: fadeUp 0.4s ease;
+        }
+        .pizza-content.active {
+            display: block;
+        }
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .pizza-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        .pizza-image {
+            border-radius: 2rem;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: var(--bg-card);
+        }
+        .pizza-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .pizza-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .pizza-details h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.2rem;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .pizza-details .description {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .ingredients-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .ingredients-list li {
+            background: var(--bg-card);
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .ingredients-list li i {
+            color: var(--gold);
+            font-size: 0.8rem;
+        }
+        .prep-steps {
+            background: var(--bg-card);
+            padding: 1rem 1.5rem;
+            border-radius: 1.5rem;
+            border-left: 4px solid var(--gold);
+        }
+        .prep-steps ol {
+            padding-left: 1.2rem;
+            margin: 0.5rem 0 0;
+        }
+        .prep-steps li {
+            margin-bottom: 0.4rem;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        .btn-back:hover {
+            transform: translateX(-4px);
+            box-shadow: var(--shadow);
+        }
+        @media(max-width: 700px) {
+            .pizza-card {
+                grid-template-columns: 1fr;
+            }
+            .ingredients-list {
+                grid-template-columns: 1fr;
+            }
+            .recipe-hero h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ===== HEADER (mesmo do index) ===== -->
+        <header class="header">
+            <div class="logo-area">
+                <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-box" style="display: none;">🍽️</div>
+                <div class="logo-title">
+                    <h1>Roda do Sabor</h1>
+                    <p><i class="fas fa-star"></i> Receita de Pizza</p>
+                </div>
+            </div>
+            <div class="top-stats">
+                <div class="stat-badge">
+                    <i class="fas fa-coins"></i>
+                    <span id="coin-balance">0</span>
+                </div>
+                <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="index.html" class="btn-toggle-mode" title="Voltar à Roda" style="text-decoration:none;">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- ===== CONTEÚDO PRINCIPAL ===== -->
+        <div class="card">
+            <div class="recipe-hero">
+                <h1>🍕 Pizzas Artesanais</h1>
+                <p>Escolha seu sabor favorito e veja a receita completa com ingredientes e modo de preparo.</p>
+            </div>
+
+            <!-- Abas de sabores -->
+            <div class="pizza-tabs" id="pizzaTabs">
+                <button class="pizza-tab active" data-target="margherita">Margherita</button>
+                <button class="pizza-tab" data-target="pepperoni">Pepperoni</button>
+                <button class="pizza-tab" data-target="quatroqueijos">Quatro Queijos</button>
+                <button class="pizza-tab" data-target="calabresa">Calabresa</button>
+                <button class="pizza-tab" data-target="vegetariana">Vegetariana</button>
+            </div>
+
+            <!-- Conteúdo das receitas -->
+            <div id="pizzaContents">
+                <!-- Margherita -->
+                <div class="pizza-content active" id="pizza-margherita">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=600&h=400&fit=crop" alt="Pizza Margherita" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Margherita</h2>
+                            <p class="description">A clássica pizza italiana com molho de tomate, mussarela de búfala, manjericão fresco e azeite. Simples e deliciosa.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
+                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
+                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
+                                    <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
+                                    <li><i class="fas fa-circle"></i> 200g de mussarela de búfala</li>
+                                    <li><i class="fas fa-circle"></i> Folhas de manjericão fresco</li>
+                                    <li><i class="fas fa-circle"></i> Azeite extravirgem para finalizar</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Em uma tigela, dissolva o fermento na água morna e deixe descansar por 5 minutos.</li>
+                                    <li>Adicione a farinha, o sal e o azeite. Misture até formar uma massa homogênea.</li>
+                                    <li>Sove a massa por 10 minutos até ficar lisa. Deixe crescer por 1 hora.</li>
+                                    <li>Abra a massa em um círculo de 30 cm de diâmetro.</li>
+                                    <li>Espalhe o molho de tomate, distribua a mussarela e leve ao forno a 220°C por 15 minutos.</li>
+                                    <li>Retire, adicione as folhas de manjericão e regue com azeite. Sirva quente.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pepperoni -->
+                <div class="pizza-content" id="pizza-pepperoni">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&h=400&fit=crop" alt="Pizza Pepperoni" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Pepperoni</h2>
+                            <p class="description">A favorita dos americanos: molho de tomate, queijo mussarela e rodelas de pepperoni crocante.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
+                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
+                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
+                                    <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
+                                    <li><i class="fas fa-circle"></i> 250g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> 150g de pepperoni em rodelas</li>
+                                    <li><i class="fas fa-circle"></i> Orégano a gosto</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Prepare a massa seguindo o mesmo processo da Margherita.</li>
+                                    <li>Abra a massa, espalhe o molho de tomate e cubra com a mussarela.</li>
+                                    <li>Distribua as rodelas de pepperoni por cima.</li>
+                                    <li>Polvilhe orégano e leve ao forno a 220°C por 18 minutos.</li>
+                                    <li>Sirva com mais orégano fresco, se desejar.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quatro Queijos -->
+                <div class="pizza-content" id="pizza-quatroqueijos">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&h=400&fit=crop" alt="Pizza Quatro Queijos" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Quatro Queijos</h2>
+                            <p class="description">Uma explosão de sabor com mussarela, provolone, parmesão e gorgonzola.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
+                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
+                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
+                                    <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
+                                    <li><i class="fas fa-circle"></i> 100g de mussarela</li>
+                                    <li><i class="fas fa-circle"></i> 100g de provolone</li>
+                                    <li><i class="fas fa-circle"></i> 50g de parmesão ralado</li>
+                                    <li><i class="fas fa-circle"></i> 80g de gorgonzola</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Faça a massa básica e deixe crescer.</li>
+                                    <li>Abra a massa, espalhe o molho de tomate.</li>
+                                    <li>Distribua os quatro queijos em pedaços ou ralados.</li>
+                                    <li>Asse a 220°C por 16 minutos até o queijo borbulhar.</li>
+                                    <li>Finalize com um fio de azeite e sirva.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calabresa -->
+                <div class="pizza-content" id="pizza-calabresa">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&h=400&fit=crop" alt="Pizza Calabresa" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Calabresa</h2>
+                            <p class="description">Molho de tomate, queijo mussarela, rodelas de calabresa e cebola. Um clássico brasileiro.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
+                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
+                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
+                                    <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
+                                    <li><i class="fas fa-circle"></i> 250g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> 150g de calabresa em rodelas</li>
+                                    <li><i class="fas fa-circle"></i> 1 cebola média em fatias</li>
+                                    <li><i class="fas fa-circle"></i> Orégano e azeitonas (opcional)</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Prepare a massa e deixe crescer.</li>
+                                    <li>Abra a massa, espalhe o molho e cubra com a mussarela.</li>
+                                    <li>Distribua a calabresa e as cebolas.</li>
+                                    <li>Asse a 220°C por 18 minutos.</li>
+                                    <li>Adicione orégano e azeitonas antes de servir.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vegetariana -->
+                <div class="pizza-content" id="pizza-vegetariana">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=600&h=400&fit=crop" alt="Pizza Vegetariana" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Vegetariana</h2>
+                            <p class="description">Recheio colorido com cogumelos, pimentão, azeitonas, cebola, tomate e muito queijo.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
+                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
+                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
+                                    <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
+                                    <li><i class="fas fa-circle"></i> 250g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> 1/2 xícara de cogumelos fatiados</li>
+                                    <li><i class="fas fa-circle"></i> 1/2 pimentão vermelho em tiras</li>
+                          
