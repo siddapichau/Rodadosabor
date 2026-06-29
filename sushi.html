@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Sushi · Roda do Sabor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Reutilizamos os mesmos estilos das páginas anteriores */
+        .recipe-hero {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .recipe-hero h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
+        .recipe-hero p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        .pizza-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .pizza-tab {
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: 40px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+            box-shadow: var(--shadow);
+        }
+        .pizza-tab.active {
+            border-color: var(--gold);
+            background: rgba(245, 179, 66, 0.15);
+        }
+        .pizza-tab:hover {
+            transform: translateY(-2px);
+        }
+        .pizza-content {
+            display: none;
+            animation: fadeUp 0.4s ease;
+        }
+        .pizza-content.active {
+            display: block;
+        }
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .pizza-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        .pizza-image {
+            border-radius: 2rem;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: var(--bg-card);
+        }
+        .pizza-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .pizza-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .pizza-details h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.2rem;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .pizza-details .description {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .ingredients-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .ingredients-list li {
+            background: var(--bg-card);
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .ingredients-list li i {
+            color: var(--gold);
+            font-size: 0.8rem;
+        }
+        .prep-steps {
+            background: var(--bg-card);
+            padding: 1rem 1.5rem;
+            border-radius: 1.5rem;
+            border-left: 4px solid var(--gold);
+        }
+        .prep-steps ol {
+            padding-left: 1.2rem;
+            margin: 0.5rem 0 0;
+        }
+        .prep-steps li {
+            margin-bottom: 0.4rem;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        .btn-back:hover {
+            transform: translateX(-4px);
+            box-shadow: var(--shadow);
+        }
+        @media(max-width: 700px) {
+            .pizza-card {
+                grid-template-columns: 1fr;
+            }
+            .ingredients-list {
+                grid-template-columns: 1fr;
+            }
+            .recipe-hero h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="logo-area">
+                <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-box" style="display: none;">🍽️</div>
+                <div class="logo-title">
+                    <h1>Roda do Sabor</h1>
+                    <p><i class="fas fa-star"></i> Receita de Sushi</p>
+                </div>
+            </div>
+            <div class="top-stats">
+                <div class="stat-badge">
+                    <i class="fas fa-coins"></i>
+                    <span id="coin-balance">0</span>
+                </div>
+                <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="index.html" class="btn-toggle-mode" title="Voltar à Roda" style="text-decoration:none;">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- CONTEÚDO -->
+        <div class="card">
+            <div class="recipe-hero">
+                <h1>🍣 Sushi Artesanal</h1>
+                <p>Descubra os diferentes tipos de sushi com receitas autênticas e ingredientes frescos.</p>
+            </div>
+
+            <!-- Abas -->
+            <div class="pizza-tabs" id="sushiTabs">
+                <button class="pizza-tab active" data-target="maki">Maki</button>
+                <button class="pizza-tab" data-target="nigiri">Nigiri</button>
+                <button class="pizza-tab" data-target="sashimi">Sashimi</button>
+                <button class="pizza-tab" data-target="temaki">Temaki</button>
+                <button class="pizza-tab" data-target="uramaki">Uramaki</button>
+            </div>
+
+            <div id="sushiContents">
+                <!-- Maki -->
+                <div class="pizza-content active" id="sushi-maki">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&h=400&fit=crop" alt="Sushi Maki" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Maki</h2>
+                            <p class="description">Rolinho de arroz e alga nori recheado com salmão, cream cheese e pepino. O clássico japonês.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 2 xícaras de arroz japonês</li>
+                                    <li><i class="fas fa-circle"></i> 2 colheres (sopa) de vinagre de arroz</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de açúcar</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 4 folhas de alga nori</li>
+                                    <li><i class="fas fa-circle"></i> 200g de salmão fresco (em tiras)</li>
+                                    <li><i class="fas fa-circle"></i> 100g de cream cheese</li>
+                                    <li><i class="fas fa-circle"></i> 1/2 pepino (em tiras)</li>
+                                    <li><i class="fas fa-circle"></i> Gergelim para decorar</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Cozinhe o arroz e tempere com vinagre, açúcar e sal. Deixe esfriar.</li>
+                                    <li>Coloque a alga nori em uma esteira de bambu, espalhe o arroz, deixando 1 cm na borda.</li>
+                                    <li>Distribua o salmão, cream cheese e pepino no centro.</li>
+                                    <li>Enrole firmemente com a esteira.</li>
+                                    <li>Corte em 8 fatias e sirva com shoyu e wasabi.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nigiri -->
+                <div class="pizza-content" id="sushi-nigiri">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1583623025817-d180a2221d0a?w=600&h=400&fit=crop" alt="Sushi Nigiri" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Nigiri</h2>
+                            <p class="description">Pequenas porções de arroz moldadas à mão, cobertas com fatias de peixe fresco.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 2 xícaras de arroz japonês</li>
+                                    <li><i class="fas fa-circle"></i> 2 colheres (sopa) de vinagre de arroz</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de açúcar</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 200g de salmão ou atum (fatias finas)</li>
+                                    <li><i class="fas fa-circle"></i> Wasabi a gosto</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Prepare o arroz temperado como no Maki.</li>
+                                    <li>Molhe as mãos com água e modele pequenas porções de arroz em forma oval.</li>
+                                    <li>Passe um pouco de wasabi sobre o arroz.</li>
+                                    <li>Cubra com a fatia de peixe, pressionando levemente.</li>
+                                    <li>Sirva com shoyu.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sashimi -->
+                <div class="pizza-content" id="sushi-sashimi">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1533622597524-a9f5f9ea9c1c?w=600&h=400&fit=crop" alt="Sashimi" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Sashimi</h2>
+                            <p class="description">Fatias finas de peixe fresco servidas sem arroz. Aprecie o sabor puro.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 300g de salmão ou atum (fresco)</li>
+                                    <li><i class="fas fa-circle"></i> 1 limão siciliano</li>
+                                    <li><i class="fas fa-circle"></i> Molho shoyu</li>
+                                    <li><i class="fas fa-circle"></i> Wasabi</li>
+                                    <li><i class="fas fa-circle"></i> Gengibre em conserva</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Com uma faca bem afiada, corte o peixe em fatias finas (cerca de 0,5 cm).</li>
+                                    <li>Disponha as fatias em um prato com papel absorvente.</li>
+                                    <li>Decore com gengibre e sirva com shoyu e wasabi.</li>
+                                    <li>Esprema limão a gosto antes de comer.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Temaki -->
+                <div class="pizza-content" id="sushi-temaki">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1617196035154-1e7e6e28b0db?w=600&h=400&fit=crop" alt="Temaki" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Temaki</h2>
+                            <p class="description">Cone de alga nori recheado com arroz, peixe e vegetais. Perfeito para comer com as mãos.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 2 xícaras de arroz japonês</li>
+                                    <li><i class="fas fa-circle"></i> 2 colheres (sopa) de vinagre de arroz</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de açúcar</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 4 folhas de alga nori (cortadas ao meio)</li>
+                                    <li><i class="fas fa-circle"></i> 200g de salmão em cubos</li>
+                                    <li><i class="fas fa-circle"></i> 1/2 abacate (fatiado)</li>
+                                    <li><i class="fas fa-circle"></i> 1/2 pepino (em tiras)</li>
+                                    <li><i class="fas fa-circle"></i> Maionese</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Prepare o arroz temperado.</li>
+                                    <li>Pegue meia folha de alga e coloque arroz na lateral esquerda.</li>
+                                    <li>Adicione salmão, abacate, pepino e um fio de maionese.</li>
+                                    <li>Dobre a alga formando um cone.</li>
+                                    <li>Sirva imediatamente.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Uramaki -->
+                <div class="pizza-content" id="sushi-uramaki">
+                    <div class="pizza-card">
+                        <div class="pizza-image">
+                            <img src="https://images.unsplash.com/photo-1584589167171-541ce45f1eea?w=600&h=400&fit=crop" alt="Uramaki" loading="lazy">
+                        </div>
+                        <div class="pizza-details">
+                            <h2>Uramaki</h2>
+                            <p class="description">Rolinho invertido: arroz por fora, alga por dentro, recheado com salmão e abacate.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 2 xícaras de arroz japonês</li>
+                                    <li><i class="fas fa-circle"></i> 2 colheres (sopa) de vinagre de arroz</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de açúcar</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
+                                    <li><i class="fas fa-circle"></i> 4 folhas de alga nori</li>
+                                    <li><i class="fas fa-circle"></i> 200g de salmão (em tiras)</li>
+                                    <li><i class="fas fa-circle"></i> 1 abacate (fatiado)</li>
+                                    <li><i class="fas fa-circle"></i> Gergelim</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Prepare o arroz.</li>
+                                    <li>Coloque a alga na esteira, espalhe arroz sobre ela e vire.</li>
+                                    <li>Coloque o salmão e abacate sobre a alga.</li>
+                                    <li>Enrole e passe o rolinho no gergelim.</li>
+                                    <li>Corte em 8 fatias e sirva.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="index.html" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Voltar à Roda
+            </a>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="core.js"></script>
+    <script src="app.js"></script>
+    <script>
+        (function() {
+            function updateCoinDisplay() {
+                const el = document.getElementById('coin-balance');
+                if (el && typeof state !== 'undefined' && state.coins !== undefined) {
+                    el.textContent = state.coins;
+                }
+            }
+            if (typeof state !== 'undefined') updateCoinDisplay();
+            else document.addEventListener('stateReady', updateCoinDisplay);
+
+            const tabs = document.querySelectorAll('.pizza-tab');
+            const contents = document.querySelectorAll('.pizza-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    contents.forEach(c => c.classList.remove('active'));
+                    const target = this.dataset.target;
+                    const targetEl = document.getElementById('sushi-' + target);
+                    if (targetEl) targetEl.classList.add('active');
+                });
+            });
+
+            if (typeof applyThemes === 'function') applyThemes();
+            if (typeof saveToStorage === 'function') saveToStorage();
+        })();
+    </script>
+</body>
+</html>
