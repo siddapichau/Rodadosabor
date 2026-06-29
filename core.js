@@ -1,21 +1,20 @@
 // ============================================================
-// CONFIGURAÇÕES INICIAIS / BANCO DE DADOS LOCAL
+// ESTADO INICIAL (salvo no localStorage)
 // ============================================================
 let state = {
-    coins: 20, // começa com 20 moedas para o usuário experimentar
-    darkMode: false,
+    coins: 20,
+    darkMode: false,         // true = modo escuro ativo
     foods: [
         "Lasanha 🍝", "Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣",
         "Taco 🌮", "Salada 🥗", "Bolo 🍰", "Lámen 🍜",
         "Frango Assado 🍗", "Espaguete 🍝", "Sorvete 🍦", "Burrito 🌯"
     ],
-    unlockedThemes: ["theme-1", "theme-2", "theme-3"],
+    unlockedThemes: ["theme-1", "theme-2", "theme-3"], // IDs dos temas desbloqueados
     currentTheme: "theme-1",
     unlockedSpinSounds: ["spin-1"],
     currentSpinSound: "spin-1",
     unlockedWinSounds: ["win-1"],
-    currentWinSound: "win-1",
-    unlockedRecipes: [], // receitas desbloqueadas (por enquanto todas livres)
+    currentWinSound: "win-1"
 };
 
 if (localStorage.getItem('rodaDoSaborState')) {
@@ -25,58 +24,118 @@ if (localStorage.getItem('rodaDoSaborState')) {
 }
 
 // ============================================================
-// TEMAS (10 temas com cores da roleta + estilo do site)
+// 10 TEMAS (cada um com versões LIGHT e DARK)
 // ============================================================
 const listTemas = [
     {
         id: "theme-1", name: "Amarelo + Verde", price: 0,
-        colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'],
-        style: { bg: '#f3e7da', card: 'rgba(255,255,255,0.88)', text: '#1e2a3a', accent: '#7b9e5a' }
+        light: {
+            colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'],
+            style: { bg: '#f3e7da', card: 'rgba(255,255,255,0.88)', text: '#1e2a3a', accent: '#7b9e5a' }
+        },
+        dark: {
+            colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'],
+            style: { bg: '#1a1a1a', card: 'rgba(40,40,40,0.9)', text: '#f1f5f9', accent: '#7b9e5a' }
+        }
     },
     {
         id: "theme-2", name: "Roxo + Azul", price: 0,
-        colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'],
-        style: { bg: '#11111d', card: 'rgba(26,26,43,0.88)', text: '#f1f5f9', accent: '#a78bfa' }
+        light: {
+            colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'],
+            style: { bg: '#eef2ff', card: 'rgba(255,255,255,0.9)', text: '#1e1b4b', accent: '#6366f1' }
+        },
+        dark: {
+            colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'],
+            style: { bg: '#0f0f23', card: 'rgba(30,30,60,0.9)', text: '#e0e7ff', accent: '#818cf8' }
+        }
     },
     {
         id: "theme-3", name: "Neon Vibrante", price: 0,
-        colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'],
-        style: { bg: '#1a0a1a', card: 'rgba(40,20,40,0.9)', text: '#f0e6f0', accent: '#ff00aa' }
+        light: {
+            colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'],
+            style: { bg: '#f0e6f0', card: 'rgba(255,240,255,0.9)', text: '#1a0a1a', accent: '#7000ff' }
+        },
+        dark: {
+            colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'],
+            style: { bg: '#0a0010', card: 'rgba(30,10,40,0.9)', text: '#f0e6f0', accent: '#ff00aa' }
+        }
     },
     {
         id: "theme-4", name: "Pôr do Sol", price: 20,
-        colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'],
-        style: { bg: '#2d1b0e', card: 'rgba(60,40,25,0.9)', text: '#f5e6d3', accent: '#ff5e36' }
+        light: {
+            colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'],
+            style: { bg: '#fde9e0', card: 'rgba(255,245,235,0.9)', text: '#3d1a0e', accent: '#e64a19' }
+        },
+        dark: {
+            colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'],
+            style: { bg: '#1a0e0a', card: 'rgba(50,25,15,0.9)', text: '#f5e0d0', accent: '#ff6e40' }
+        }
     },
     {
         id: "theme-5", name: "Floresta", price: 20,
-        colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'],
-        style: { bg: '#0f2a1a', card: 'rgba(20,50,30,0.9)', text: '#d4edda', accent: '#3cb371' }
+        light: {
+            colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'],
+            style: { bg: '#e8f5e9', card: 'rgba(240,255,240,0.9)', text: '#1b3a1b', accent: '#2e7d32' }
+        },
+        dark: {
+            colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'],
+            style: { bg: '#0f1a0f', card: 'rgba(20,40,20,0.9)', text: '#d0e8d0', accent: '#66bb6a' }
+        }
     },
     {
         id: "theme-6", name: "Oceano", price: 30,
-        colors: ['#005C53', '#9FC131', '#DBF227', '#D6D58E', '#042940', '#005C53', '#042940', '#9FC131'],
-        style: { bg: '#0a1f2e', card: 'rgba(15,40,60,0.9)', text: '#cce5ff', accent: '#9fc131' }
+        light: {
+            colors: ['#005C53', '#9FC131', '#DBF227', '#D6D58E', '#042940', '#005C53', '#042940', '#9FC131'],
+            style: { bg: '#e0f2f1', card: 'rgba(225,245,245,0.9)', text: '#004d40', accent: '#00695c' }
+        },
+        dark: {
+            colors: ['#005C53', '#9FC131', '#DBF227', '#D6D58E', '#042940', '#005C53', '#042940', '#9FC131'],
+            style: { bg: '#0a1a1a', card: 'rgba(10,40,40,0.9)', text: '#b2dfdb', accent: '#26a69a' }
+        }
     },
     {
         id: "theme-7", name: "Chocolate Ouro", price: 30,
-        colors: ['#4A2E2B', '#7B3F00', '#A0522D', '#D2691E', '#CD853F', '#F5B342', '#E5A93C', '#3D2314'],
-        style: { bg: '#1c110c', card: 'rgba(40,25,18,0.9)', text: '#f0dcc0', accent: '#d4ac0d' }
+        light: {
+            colors: ['#4A2E2B', '#7B3F00', '#A0522D', '#D2691E', '#CD853F', '#F5B342', '#E5A93C', '#3D2314'],
+            style: { bg: '#f5ede3', card: 'rgba(255,250,240,0.9)', text: '#3e2723', accent: '#8d6e63' }
+        },
+        dark: {
+            colors: ['#4A2E2B', '#7B3F00', '#A0522D', '#D2691E', '#CD853F', '#F5B342', '#E5A93C', '#3D2314'],
+            style: { bg: '#1a100c', card: 'rgba(40,25,18,0.9)', text: '#f0dcc0', accent: '#d4ac0d' }
+        }
     },
     {
         id: "theme-8", name: "Morango Creme", price: 40,
-        colors: ['#FF4D6D', '#FF758F', '#FF8FA3', '#FFB3C1', '#FFCCD5', '#FFF0F3', '#C9184A', '#A11D33'],
-        style: { bg: '#1c0e12', card: 'rgba(50,20,30,0.9)', text: '#fce4ec', accent: '#ff4d6d' }
+        light: {
+            colors: ['#FF4D6D', '#FF758F', '#FF8FA3', '#FFB3C1', '#FFCCD5', '#FFF0F3', '#C9184A', '#A11D33'],
+            style: { bg: '#fce4ec', card: 'rgba(255,240,245,0.9)', text: '#4a1a2a', accent: '#e91e63' }
+        },
+        dark: {
+            colors: ['#FF4D6D', '#FF758F', '#FF8FA3', '#FFB3C1', '#FFCCD5', '#FFF0F3', '#C9184A', '#A11D33'],
+            style: { bg: '#1a0a0e', card: 'rgba(50,20,30,0.9)', text: '#fce4ec', accent: '#ff4d6d' }
+        }
     },
     {
         id: "theme-9", name: "Galáxia Retro", price: 40,
-        colors: ['#140152', '#22007C', '#0D00A3', '#03001E', '#730071', '#41006F', '#AA0078', '#FF00AA'],
-        style: { bg: '#0a0014', card: 'rgba(20,0,40,0.9)', text: '#e0d0f0', accent: '#aa0078' }
+        light: {
+            colors: ['#140152', '#22007C', '#0D00A3', '#03001E', '#730071', '#41006F', '#AA0078', '#FF00AA'],
+            style: { bg: '#ede7f6', card: 'rgba(240,230,255,0.9)', text: '#1a0033', accent: '#7c4dff' }
+        },
+        dark: {
+            colors: ['#140152', '#22007C', '#0D00A3', '#03001E', '#730071', '#41006F', '#AA0078', '#FF00AA'],
+            style: { bg: '#0a0014', card: 'rgba(20,0,40,0.9)', text: '#e0d0f0', accent: '#aa0078' }
+        }
     },
     {
         id: "theme-10", name: "Ouro Premium", price: 50,
-        colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'],
-        style: { bg: '#0d0d0d', card: 'rgba(30,30,30,0.95)', text: '#f5e6c8', accent: '#d4ac0d' }
+        light: {
+            colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'],
+            style: { bg: '#faf5eb', card: 'rgba(255,250,240,0.9)', text: '#1a1a1a', accent: '#b8860b' }
+        },
+        dark: {
+            colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'],
+            style: { bg: '#0d0d0d', card: 'rgba(30,30,30,0.95)', text: '#f5e6c8', accent: '#d4ac0d' }
+        }
     }
 ];
 
@@ -189,6 +248,34 @@ function saveToStorage() {
 }
 
 // ============================================================
+// APLICAÇÃO DO TEMA (roleta + estilo do site)
+// ============================================================
+function applyTheme(themeId, darkMode) {
+    const theme = listTemas.find(t => t.id === themeId) || listTemas[0];
+    const mode = darkMode ? 'dark' : 'light';
+    const themeData = theme[mode];
+    if (!themeData) return;
+
+    // Atualiza variáveis CSS do site
+    const root = document.documentElement;
+    root.style.setProperty('--bg-body', themeData.style.bg);
+    root.style.setProperty('--bg-card', themeData.style.card);
+    root.style.setProperty('--text-primary', themeData.style.text);
+    root.style.setProperty('--accent', themeData.style.accent);
+    // Gradiente do título
+    root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${themeData.colors[0]}, ${themeData.colors[1]})`);
+    // Borda e centro da roleta
+    root.style.setProperty('--wheel-border', themeData.colors[0]);
+    root.style.setProperty('--wheel-center', themeData.colors[2] || '#f5d742');
+
+    // Salva no estado
+    state.currentTheme = themeId;
+    state.darkMode = darkMode;
+    saveToStorage();
+    drawRoulette();
+}
+
+// ============================================================
 // ROLETA (CANVAS)
 // ============================================================
 const canvas = document.getElementById('rouletteCanvas');
@@ -199,7 +286,9 @@ let isSpinning = false;
 
 function drawRoulette() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const activeTheme = listTemas.find(t => t.id === state.currentTheme) || listTemas[0];
+    const theme = listTemas.find(t => t.id === state.currentTheme) || listTemas[0];
+    const mode = state.darkMode ? 'dark' : 'light';
+    const themeData = theme[mode];
     const items = state.foods;
     const numSegments = items.length;
 
@@ -241,7 +330,7 @@ function drawRoulette() {
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + (i * arcSize);
         ctx.beginPath();
-        ctx.fillStyle = activeTheme.colors[i % activeTheme.colors.length];
+        ctx.fillStyle = themeData.colors[i % themeData.colors.length];
         ctx.moveTo(center, center);
         ctx.arc(center, center, 260, currentArc, currentArc + arcSize);
         ctx.lineTo(center, center);
@@ -257,11 +346,11 @@ function drawRoulette() {
         ctx.rotate(currentArc + arcSize / 2);
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
-        ctx.font = "bold 36px 'Inter', sans-serif";
+        ctx.font = "bold 40px 'Inter', sans-serif";
         ctx.fillStyle = "#ffffff";
         ctx.shadowColor = 'rgba(0,0,0,0.6)';
         ctx.shadowBlur = 8;
-        ctx.fillText(items[i], 225, 0);
+        ctx.fillText(items[i], 235, 0);
         ctx.shadowBlur = 0;
         ctx.restore();
     }
@@ -330,7 +419,7 @@ function finalizeSpin() {
     const activeWinSound = listWinSounds.find(s => s.id === state.currentWinSound) || listWinSounds[0];
     playSynthesizedSound(activeWinSound.type);
 
-    // Dispara confetes
+    // Dispara confetes com mais formas e cores
     launchConfetti();
 
     setTimeout(() => {
@@ -342,7 +431,7 @@ function finalizeSpin() {
 }
 
 // ============================================================
-// CONFETES (5 estilos diferentes)
+// CONFETES (7 formas diferentes)
 // ============================================================
 const confettiCanvas = document.getElementById('confettiCanvas');
 const confCtx = confettiCanvas.getContext('2d');
@@ -360,21 +449,21 @@ function launchConfetti() {
     if (confettiRunning) return;
     confettiRunning = true;
     confettiPieces = [];
-    const colors = ['#ff0', '#f0f', '#0ff', '#f44', '#4f4', '#44f', '#ffa500', '#ff69b4'];
-    const shapes = ['circle', 'square', 'star', 'heart', 'diamond']; // 5 estilos
+    const colors = ['#ff0', '#f0f', '#0ff', '#f44', '#4f4', '#44f', '#ffa500', '#ff69b4', '#adff2f', '#ff4500', '#9400d3', '#00ffff'];
+    const shapes = ['circle', 'square', 'star', 'heart', 'diamond', 'triangle', 'star6'];
 
-    for (let i = 0; i < 150; i++) {
+    for (let i = 0; i < 180; i++) {
         confettiPieces.push({
             x: Math.random() * confettiCanvas.width,
             y: Math.random() * confettiCanvas.height - confettiCanvas.height,
-            w: Math.random() * 12 + 6,
-            h: Math.random() * 12 + 6,
+            w: Math.random() * 14 + 6,
+            h: Math.random() * 14 + 6,
             color: colors[Math.floor(Math.random() * colors.length)],
             shape: shapes[Math.floor(Math.random() * shapes.length)],
-            vx: (Math.random() - 0.5) * 6,
-            vy: Math.random() * 4 + 3,
+            vx: (Math.random() - 0.5) * 7,
+            vy: Math.random() * 5 + 3,
             rot: Math.random() * 360,
-            rotSpeed: (Math.random() - 0.5) * 10,
+            rotSpeed: (Math.random() - 0.5) * 12,
             life: 1
         });
     }
@@ -432,68 +521,10 @@ function animateConfetti() {
                 confCtx.closePath();
                 confCtx.fill();
                 break;
-        }
-        confCtx.restore();
-    }
-
-    requestAnimationFrame(animateConfetti);
-}
-
-function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
-    let rot = -Math.PI / 2;
-    const step = Math.PI / spikes;
-    ctx.beginPath();
-    for (let i = 0; i < spikes * 2; i++) {
-        const r = i % 2 === 0 ? outerRadius : innerRadius;
-        const x = cx + r * Math.cos(rot);
-        const y = cy + r * Math.sin(rot);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-        rot += step;
-    }
-    ctx.closePath();
-    ctx.fill();
-}
-
-function drawHeart(ctx, cx, cy, size) {
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + size * 0.3);
-    ctx.bezierCurveTo(cx - size * 0.5, cy - size * 0.3, cx - size * 0.7, cy + size * 0.2, cx, cy + size * 0.7);
-    ctx.bezierCurveTo(cx + size * 0.7, cy + size * 0.2, cx + size * 0.5, cy - size * 0.3, cx, cy + size * 0.3);
-    ctx.closePath();
-    ctx.fill();
-}
-
-// ============================================================
-// APLICAR TEMA VISUAL (além das cores da roleta)
-// ============================================================
-function applyThemeStyle(themeId) {
-    const theme = listTemas.find(t => t.id === themeId) || listTemas[0];
-    const root = document.documentElement;
-    root.style.setProperty('--bg-body', theme.style.bg);
-    root.style.setProperty('--bg-card', theme.style.card);
-    root.style.setProperty('--text-primary', theme.style.text);
-    root.style.setProperty('--accent', theme.style.accent);
-    // também ajusta o gradiente do título
-    root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${theme.colors[0]}, ${theme.colors[1]})`);
-    // ajusta a borda da roleta
-    root.style.setProperty('--wheel-border', theme.colors[0]);
-    root.style.setProperty('--wheel-center', theme.colors[2] || '#f5d742');
-    // salva
-    state.currentTheme = themeId;
-    saveToStorage();
-}
-
-// ============================================================
-// EXPORTA FUNÇÕES GLOBAIS (usadas no app.js e HTML)
-// ============================================================
-window.state = state;
-window.listTemas = listTemas;
-window.listSpinSounds = listSpinSounds;
-window.listWinSounds = listWinSounds;
-window.saveToStorage = saveToStorage;
-window.drawRoulette = drawRoulette;
-window.spin = spin;
-window.applyThemeStyle = applyThemeStyle;
-window.playSynthesizedSound = playSynthesizedSound;
-window.launchConfetti = launchConfetti;
+            case 'triangle':
+                confCtx.beginPath();
+                confCtx.moveTo(0, -p.h / 2);
+                confCtx.lineTo(p.w / 2, p.h / 2);
+                confCtx.lineTo(-p.w / 2, p.h / 2);
+                confCtx.closePath();
+                          
