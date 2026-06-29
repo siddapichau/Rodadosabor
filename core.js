@@ -1,67 +1,52 @@
 'use strict';
 console.log('core.js carregado');
 
-// ========================== 1. DADOS BASE GLOBAIS ==========================
 window.listTemas = [
     { id: "theme-1", name: "Amarelo + Verde", price: 0, light: { colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'], style: { bg: '#f3e7da', card: 'rgba(255,255,255,0.88)', text: '#1e2a3a', accent: '#7b9e5a' } }, dark: { colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'], style: { bg: '#1a1a1a', card: 'rgba(40,40,40,0.9)', text: '#f1f5f9', accent: '#7b9e5a' } } },
     { id: "theme-2", name: "Roxo + Azul", price: 0, light: { colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'], style: { bg: '#eef2ff', card: 'rgba(255,255,255,0.9)', text: '#1e1b4b', accent: '#6366f1' } }, dark: { colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'], style: { bg: '#0f0f23', card: 'rgba(30,30,60,0.9)', text: '#e0e7ff', accent: '#818cf8' } } },
     { id: "theme-3", name: "Neon Vibrante", price: 0, light: { colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'], style: { bg: '#f0e6f0', card: 'rgba(255,240,255,0.9)', text: '#1a0a1a', accent: '#7000ff' } }, dark: { colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'], style: { bg: '#0a0010', card: 'rgba(30,10,40,0.9)', text: '#f0e6f0', accent: '#ff00aa' } } },
     { id: "theme-4", name: "Pôr do Sol", price: 20, light: { colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'], style: { bg: '#fde9e0', card: 'rgba(255,245,235,0.9)', text: '#3d1a0e', accent: '#e64a19' } }, dark: { colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'], style: { bg: '#1a0e0a', card: 'rgba(50,25,15,0.9)', text: '#f5e0d0', accent: '#ff6e40' } } },
-    { id: "theme-5", name: "Floresta", price: 20, light: { colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'], style: { bg: '#e8f5e9', card: 'rgba(240,255,240,0.9)', text: '#1b3a1b', accent: '#2e7d32' } }, dark: { colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'], style: { bg: '#0f1a0f', card: 'rgba(20,40,20,0.9)', text: '#d0e8d0', accent: '#66bb6a' } } },
-    { id: "theme-6", name: "Oceano", price: 30, light: { colors: ['#005C53', '#9FC131', '#DBF227', '#D6D58E', '#042940', '#005C53', '#042940', '#9FC131'], style: { bg: '#e0f2f1', card: 'rgba(225,245,245,0.9)', text: '#004d40', accent: '#00695c' } }, dark: { colors: ['#005C53', '#9FC131', '#DBF227', '#D6D58E', '#042940', '#005C53', '#042940', '#9FC131'], style: { bg: '#0a1a1a', card: 'rgba(10,40,40,0.9)', text: '#b2dfdb', accent: '#26a69a' } } },
-    { id: "theme-7", name: "Chocolate Ouro", price: 30, light: { colors: ['#4A2E2B', '#7B3F00', '#A0522D', '#D2691E', '#CD853F', '#F5B342', '#E5A93C', '#3D2314'], style: { bg: '#f5ede3', card: 'rgba(255,250,240,0.9)', text: '#3e2723', accent: '#8d6e63' } }, dark: { colors: ['#4A2E2B', '#7B3F00', '#A0522D', '#D2691E', '#CD853F', '#F5B342', '#E5A93C', '#3D2314'], style: { bg: '#1a100c', card: 'rgba(40,25,18,0.9)', text: '#f0dcc0', accent: '#d4ac0d' } } },
-    { id: "theme-8", name: "Morango Creme", price: 40, light: { colors: ['#FF4D6D', '#FF758F', '#FF8FA3', '#FFB3C1', '#FFCCD5', '#FFF0F3', '#C9184A', '#A11D33'], style: { bg: '#fce4ec', card: 'rgba(255,240,245,0.9)', text: '#4a1a2a', accent: '#e91e63' } }, dark: { colors: ['#FF4D6D', '#FF758F', '#FF8FA3', '#FFB3C1', '#FFCCD5', '#FFF0F3', '#C9184A', '#A11D33'], style: { bg: '#1a0a0e', card: 'rgba(50,20,30,0.9)', text: '#fce4ec', accent: '#ff4d6d' } } },
-    { id: "theme-9", name: "Galáxia Retro", price: 40, light: { colors: ['#140152', '#22007C', '#0D00A3', '#03001E', '#730071', '#41006F', '#AA0078', '#FF00AA'], style: { bg: '#ede7f6', card: 'rgba(240,230,255,0.9)', text: '#1a0033', accent: '#7c4dff' } }, dark: { colors: ['#140152', '#22007C', '#0D00A3', '#03001E', '#730071', '#41006F', '#AA0078', '#FF00AA'], style: { bg: '#0a0014', card: 'rgba(20,0,40,0.9)', text: '#e0d0f0', accent: '#aa0078' } } },
-    { id: "theme-10", name: "Ouro Premium", price: 50, light: { colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'], style: { bg: '#faf5eb', card: 'rgba(255,250,240,0.9)', text: '#1a1a1a', accent: '#b8860b' } }, dark: { colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'], style: { bg: '#0d0d0d', card: 'rgba(30,30,30,0.95)', text: '#f5e6c8', accent: '#d4ac0d' } } }
+    { id: "theme-5", name: "Floresta", price: 20, light: { colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'], style: { bg: '#e8f5e9', card: 'rgba(240,255,240,0.9)', text: '#1b3a1b', accent: '#2e7d32' } }, dark: { colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'], style: { bg: '#0f1a0f', card: 'rgba(20,40,20,0.9)', text: '#d0e8d0', accent: '#66bb6a' } } }
 ];
 
-// ========================== 2. ESTADO UNIFICADO (O CÉREBRO) ==========================
 window.appState = {
     coins: 20,
     darkMode: false,
     foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
-    unlockedPageThemes: ["theme-1"],
-    currentPageTheme: "theme-1",
-    unlockedRouletteThemes: ["theme-1"],
-    currentRouletteTheme: "theme-1",
-    unlockedSpinSounds: ["spin-1"],
-    currentSpinSound: "spin-1",
-    unlockedWinSounds: ["win-1"],
-    currentWinSound: "win-1",
-    unlockedRecipes: [],
-    customFoods: []
+    unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
+    unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
+    unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1",
+    unlockedEndSounds: ["end-1"], currentEndSound: "end-1",
+    unlockedWinSounds: ["win-1"], currentWinSound: "win-1",
+    unlockedRecipes: [], customFoods: []
 };
 
-// ========================== 3. SISTEMA DE ARMAZENAMENTO SEGURO ==========================
 window.loadData = function() {
     try {
-        // Puxa qualquer lixo antigo e aplica em cima do modelo limpo
-        const saved = localStorage.getItem('rodaDoSaborState') || localStorage.getItem('appState');
+        const saved = localStorage.getItem('rodaDoSaborState');
         if (saved) {
             window.appState = { ...window.appState, ...JSON.parse(saved) };
+            if (!window.appState.unlockedEndSounds) {
+                window.appState.unlockedEndSounds = ["end-1"]; window.appState.currentEndSound = "end-1";
+            }
         }
-        // Vacina: Se por algum erro a lista ficou vazia no passado, recria itens básicos
         if (!window.appState.foods || window.appState.foods.length === 0) {
             window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
         }
-    } catch(e) { console.warn("Erro ao ler dados:", e); }
+    } catch(e) {}
 };
 
 window.saveData = function() {
     try {
         localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
-        localStorage.removeItem('appState'); // Apaga rastros do conflito antigo
-        
-        // Atualiza a moeda na tela instantaneamente
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = window.appState.coins;
     } catch(e) {}
 };
 
-// Carrega os dados imediatamente ao iniciar
 window.loadData();
 
-// ========================== 4. SINTETIZADOR DE ÁUDIO ==========================
+// ========================== SINTETIZADOR DE ÁUDIO ==========================
 let audioCtx = null;
 function getAudioContext() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -73,19 +58,45 @@ window.playSynthesizedSound = function(soundType) {
         const ctx = getAudioContext();
         const now = ctx.currentTime;
         switch (soundType) {
+            // Giro
             case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
             case 'swoosh': osc(ctx, now, 80, 250, 0.08, 'triangle', 0.2); break;
             case 'arcade': oscSquare(ctx, now, 600, 900, 0.06, 0.15); break;
+            case 'motor': oscSquare(ctx, now, 100, 50, 0.08, 0.2); break;
             case 'whoosh': osc(ctx, now, 60, 350, 0.15, 'sawtooth', 0.15); break;
             case 'digital': oscSquare(ctx, now, 500, 1200, 0.05, 0.1); break;
-            case 'tada': [523.25, 659.25, 783.99].forEach((f, i) => osc(ctx, now + i * 0.05, f, f, 0.4, 'sine', 0.2)); break;
-            case 'bell': osc(ctx, now, 987.77, 987.77, 0.6, 'triangle', 0.4); break;
-            case 'levelup': [261.63, 329.63, 392.00, 523.25].forEach((f, i) => oscSquare(ctx, now + i * 0.08, f, f, 0.15, 0.15)); break;
-            case 'fanfare': [392, 523, 659, 784, 880].forEach((f, i) => osc(ctx, now + i * 0.1, f, f, 0.2, 'sine', 0.15)); break;
-            case 'glory': [440, 554, 659, 880, 1108].forEach((f, i) => osc(ctx, now + i * 0.06, f, f * 1.2, 0.3, 'sine', 0.12)); break;
+            
+            // Fim da Roleta (Quando para)
+            case 'end-chord': [392, 493, 587].forEach((f, i) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
+            case 'end-bell': osc(ctx, now, 987.77, 987.77, 0.6, 'triangle', 0.4); break;
+            case 'end-coin': [987.77, 1318.51].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.2, 0.15)); break;
+            case 'end-thud': osc(ctx, now, 150, 40, 0.2, 'square', 0.4); break;
+            case 'end-zap': oscSquare(ctx, now, 800, 100, 0.3, 0.2); break;
+
+            // Vitória Real (Com Confetes)
+            case 'win-tada': 
+                [523.25, 659.25, 783.99].forEach((f) => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); 
+                [523.25, 659.25, 783.99, 1046.50].forEach((f) => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); 
+                break;
+            case 'win-applause': playNoise(ctx, now, 2.5, 0.3); break;
+            case 'win-arcade': [261.63, 329.63, 392.00, 523.25, 659.25, 783.99].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.15, 0.15)); break;
+            case 'win-epic': [261.63, 392, 523.25, 783.99].forEach((f, i) => osc(ctx, now + i * 0.2, f, f, 1.2, 'triangle', 0.2)); break;
+            case 'win-party': [440, 440, 440, 554, 659, 554, 659, 880].forEach((f, i) => osc(ctx, now + i * 0.12, f, f, 0.1, 'square', 0.15)); break;
         }
     } catch (e) {}
 };
+
+function playNoise(ctx, start, duration, gainValue) {
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource(); noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1000;
+    const g = ctx.createGain(); g.gain.setValueAtTime(gainValue, start); g.gain.exponentialRampToValueAtTime(0.01, start + duration);
+    noise.connect(filter); filter.connect(g); g.connect(ctx.destination);
+    noise.start(start);
+}
 
 function osc(ctx, start, freqStart, freqEnd, duration, type, gain) {
     const o = ctx.createOscillator(); const g = ctx.createGain();
@@ -100,7 +111,6 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
     o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
 }
 
-// ========================== 5. LÓGICA DE CORES E DESENHO DA ROLETA ==========================
 window.applyThemes = function() {
     const pageTheme = window.listTemas.find(t => t.id === window.appState.currentPageTheme) || window.listTemas[0];
     const rouletteTheme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
@@ -118,12 +128,10 @@ window.applyThemes = function() {
     root.style.setProperty('--wheel-border', rouletteData.colors[0]);
     root.style.setProperty('--wheel-center', rouletteData.colors[2] || '#f5d742');
 
-    window.saveData();
-    window.drawRoulette();
+    window.saveData(); window.drawRoulette();
 };
 
-let startAngle = 0;
-let isSpinning = false;
+let startAngle = 0; let isSpinning = false;
 let spinSpeed = 0; let spinTimeTotal = 0; let spinTimeCount = 0; let lastSoundAngle = 0;
 
 window.drawRoulette = function() {
@@ -136,7 +144,6 @@ window.drawRoulette = function() {
     const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
     const mode = window.appState.darkMode ? 'dark' : 'light';
     const themeData = theme[mode];
-    
     const items = window.appState.foods;
     const numSegments = items.length;
 
@@ -168,11 +175,7 @@ window.drawRoulette = function() {
 
 window.spinRoulette = function() {
     if (isSpinning || window.appState.foods.length === 0) return;
-    
-    // Desbloqueia o som
-    const ctx = getAudioContext();
-    if (ctx.state === 'suspended') ctx.resume();
-    
+    const ctx = getAudioContext(); if (ctx.state === 'suspended') ctx.resume();
     isSpinning = true; spinTimeCount = 0; spinTimeTotal = Math.random() * 1000 + 4000; 
     spinSpeed = Math.random() * 0.3 + 0.4; lastSoundAngle = startAngle; 
     animateSpin();
@@ -202,9 +205,14 @@ function finalizeSpin() {
     if (index < 0) index = numSegments + index;
     const winningFood = window.appState.foods[index];
 
+    // 1. Toca SOM DE FIM IMEDIATAMENTE (avisa que parou)
+    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
+    window.playSynthesizedSound(activeEndSound.type); 
+
+    // 2. Espera 2 Segundos (SUSPENSE)
     setTimeout(() => {
-        // Toca SOM de Vitória e Lança Confete APENAS agora
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'tada' };
+        // 3. Toca SOM DE VITÓRIA REAL e Lança Confete
+        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
         window.playSynthesizedSound(activeWinSound.type); 
         window.launchConfetti(); 
 
@@ -218,10 +226,10 @@ function finalizeSpin() {
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; 
             overlay.style.display = 'flex'; 
         }
-    }, 300);
+    }, 2000); // Exatos 2 segundos de pausa
 }
 
-// ========================== 6. CONFETES ==========================
+// ========================== CONFETES ==========================
 let confettiPieces = []; let confettiRunning = false;
 window.launchConfetti = function() {
     const confettiCanvas = document.getElementById('confettiCanvas');
