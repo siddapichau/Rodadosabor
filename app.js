@@ -2,11 +2,8 @@
 console.log('app.js carregado');
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM pronto, iniciando renderização...');
-
     let comidasSelecionadasTemporarias = [];
 
-    // ========================== EVENTOS BÁSICOS ==========================
     const btnSpinEl = document.getElementById('btnSpin');
     if (btnSpinEl) btnSpinEl.addEventListener('click', window.spinRoulette);
 
@@ -44,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ========================== MODAL DE SELEÇÃO DE COMIDAS ==========================
     document.getElementById('btnOpenFoodModal')?.addEventListener('click', () => {
         comidasSelecionadasTemporarias = [...window.appState.foods];
         document.getElementById('foodSelectionModal').style.display = 'flex';
@@ -73,7 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('resultOverlay').style.display = 'none';
     });
 
-    // ========================== ADICIONAR COMIDA PERSONALIZADA ==========================
     document.getElementById('btnAddCustomFood')?.addEventListener('click', () => {
         const nome = document.getElementById('newFoodName').value.trim();
         const emoji = document.getElementById('newFoodEmoji').value.trim() || '🍽️';
@@ -91,7 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ========================== FUNÇÕES DE RENDERIZAÇÃO ==========================
     function renderFoodList() {
         const container = document.getElementById('foodListContainer');
         if (!container) return;
@@ -146,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- LOJA: Temas ----
+    // ---- LOJA DE TEMAS ----
     function renderThemes() {
         const pageGrid = document.getElementById('pageThemesGrid');
         const rouletteGrid = document.getElementById('rouletteThemesGrid');
@@ -156,7 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
         (window.listTemas || []).forEach(tema => {
             const coresPreview = tema.light.colors.slice(0, 4).map(c => `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`).join('');
             
-            // Página
             const isPageUnlocked = window.appState.unlockedPageThemes.includes(tema.id);
             const isPageActive = window.appState.currentPageTheme === tema.id;
             const pageCard = document.createElement('div');
@@ -165,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
             pageCard.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p><div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div></div>${btnPage}`;
             pageGrid.appendChild(pageCard);
 
-            // Roleta
             const isRouletteUnlocked = window.appState.unlockedRouletteThemes.includes(tema.id);
             const isRouletteActive = window.appState.currentRouletteTheme === tema.id;
             const rouletteCard = document.createElement('div');
@@ -181,40 +173,58 @@ document.addEventListener('DOMContentLoaded', function() {
     window.buyRouletteTheme = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedRouletteThemes.push(id); window.useRouletteTheme(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useRouletteTheme = (id) => { window.appState.currentRouletteTheme = id; window.applyThemes(); renderThemes(); };
 
-    // ---- LOJA: Sons ----
+    // ---- LOJA DE SONS (Três categorias agora) ----
     function renderSounds() {
         const spinGrid = document.getElementById('spinSoundsGrid');
+        const endGrid = document.getElementById('endSoundsGrid');
         const winGrid = document.getElementById('winSoundsGrid');
-        if (!spinGrid || !winGrid) return;
-        spinGrid.innerHTML = ''; winGrid.innerHTML = '';
+        if (!spinGrid || !winGrid || !endGrid) return;
+        spinGrid.innerHTML = ''; endGrid.innerHTML = ''; winGrid.innerHTML = '';
         
+        // Categoria 1: Giro
         (window.SONS_GIRO || []).forEach(sound => {
             const isUnlocked = window.appState.unlockedSpinSounds.includes(sound.id);
             const isActive = window.appState.currentSpinSound === sound.id;
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
             let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="useSpinSound('${sound.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buySpinSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
-            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4><p>Giro</p></div>${btnHTML}`;
+            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4></div>${btnHTML}`;
             spinGrid.appendChild(card);
         });
 
+        // Categoria 2: Fim da Roleta
+        (window.SONS_FIM || []).forEach(sound => {
+            const isUnlocked = window.appState.unlockedEndSounds.includes(sound.id);
+            const isActive = window.appState.currentEndSound === sound.id;
+            const card = document.createElement('div');
+            card.className = `item-card ${isActive ? 'active' : ''}`;
+            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="useEndSound('${sound.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyEndSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
+            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4></div>${btnHTML}`;
+            endGrid.appendChild(card);
+        });
+
+        // Categoria 3: Vitória Real
         (window.SONS_VITORIA || []).forEach(sound => {
             const isUnlocked = window.appState.unlockedWinSounds.includes(sound.id);
             const isActive = window.appState.currentWinSound === sound.id;
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
             let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="useWinSound('${sound.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyWinSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
-            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4><p>Vitória</p></div>${btnHTML}`;
+            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4></div>${btnHTML}`;
             winGrid.appendChild(card);
         });
     }
 
     window.buySpinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedSpinSounds.push(id); window.useSpinSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useSpinSound = (id) => { window.appState.currentSpinSound = id; window.saveData(); renderSounds(); };
+    
+    window.buyEndSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedEndSounds.push(id); window.useEndSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+    window.useEndSound = (id) => { window.appState.currentEndSound = id; window.saveData(); renderSounds(); };
+
     window.buyWinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedWinSounds.push(id); window.useWinSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useWinSound = (id) => { window.appState.currentWinSound = id; window.saveData(); renderSounds(); };
 
-    // ---- LOJA: Receitas ----
+    // ---- LOJA DE RECEITAS ----
     function renderRecipes() {
         const grid = document.getElementById('recipesGrid');
         if (!grid) return;
@@ -250,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (coinBalance) coinBalance.textContent = window.appState.coins;
     }
 
-    // ========================== PWA - INSTALAÇÃO ==========================
+    // PWA E INICIALIZAÇÃO
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault(); deferredPrompt = e;
@@ -267,8 +277,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ========================== INICIALIZAÇÃO FINAL ==========================
-    // Previne que receitas gratuitas fiquem bloqueadas
     (window.RECEITAS || []).forEach(rec => {
         if (rec.preco === 0 && !window.appState.unlockedRecipes.includes(rec.id)) {
             window.appState.unlockedRecipes.push(rec.id);
