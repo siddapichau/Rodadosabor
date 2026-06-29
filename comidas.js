@@ -1,7 +1,6 @@
 'use strict';
 console.log('comidas.js carregado');
 
-// ========================== BANCO DE COMIDAS EXPANDIDO (80 itens) ==========================
 window.BANCO_DE_COMIDAS = [
     { nome: 'Pizza', icone: '🍕' }, { nome: 'Hambúrguer', icone: '🍔' },
     { nome: 'Sushi', icone: '🍣' }, { nome: 'Sorvete', icone: '🍦' },
@@ -45,7 +44,6 @@ window.BANCO_DE_COMIDAS = [
     { nome: 'Escondidinho', icone: '🥧' }, { nome: 'Omelete Recheado', icone: '🍳' }
 ];
 
-// ========================== RECEITAS EXPANDIDAS (20 itens) ==========================
 window.RECEITAS = [
     { id: 'rec-1', nome: 'Pizza Caseira', icone: '🍕', preco: 0, link: 'pizza.html' },
     { id: 'rec-2', nome: 'Hambúrguer Artesanal', icone: '🍔', preco: 0, link: 'hamburguer.html' },
