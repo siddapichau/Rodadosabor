@@ -1,5 +1,5 @@
 // ============================================================
-// core.js – Lógica principal (tema, roleta, sons, confetes)
+// core.js â€“ LÃ³gica principal (tema, roleta, sons, confetes)
 // ============================================================
 'use strict';
 
@@ -10,9 +10,9 @@ let state = {
     coins: 20,
     darkMode: false,
     foods: [
-        "Lasanha 🍝", "Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣",
-        "Taco 🌮", "Salada 🥗", "Bolo 🍰", "Lámen 🍜",
-        "Frango Assado 🍗", "Espaguete 🍝", "Sorvete 🍦", "Burrito 🌯"
+        "Lasanha ðŸ", "Pizza ðŸ•", "HambÃºrguer ðŸ”", "Sushi ðŸ£",
+        "Taco ðŸŒ®", "Salada ðŸ¥—", "Bolo ðŸ°", "LÃ¡men ðŸœ",
+        "Frango Assado ðŸ—", "Espaguete ðŸ", "Sorvete ðŸ¦", "Burrito ðŸŒ¯"
     ],
     unlockedThemes: ["theme-1", "theme-2", "theme-3"],
     currentTheme: "theme-1",
@@ -34,7 +34,7 @@ try {
     console.warn('Erro ao carregar estado:', e);
 }
 
-// --- 10 TEMAS (cada um com versões LIGHT e DARK) ---
+// --- 10 TEMAS (cada um com versÃµes LIGHT e DARK) ---
 const listTemas = [
     {
         id: "theme-1", name: "Amarelo + Verde", price: 0,
@@ -70,7 +70,7 @@ const listTemas = [
         }
     },
     {
-        id: "theme-4", name: "Pôr do Sol", price: 20,
+        id: "theme-4", name: "PÃ´r do Sol", price: 20,
         light: {
             colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'],
             style: { bg: '#fde9e0', card: 'rgba(255,245,235,0.9)', text: '#3d1a0e', accent: '#e64a19' }
@@ -125,7 +125,7 @@ const listTemas = [
         }
     },
     {
-        id: "theme-9", name: "Galáxia Retro", price: 40,
+        id: "theme-9", name: "GalÃ¡xia Retro", price: 40,
         light: {
             colors: ['#140152', '#22007C', '#0D00A3', '#03001E', '#730071', '#41006F', '#AA0078', '#FF00AA'],
             style: { bg: '#ede7f6', card: 'rgba(240,230,255,0.9)', text: '#1a0033', accent: '#7c4dff' }
@@ -148,9 +148,9 @@ const listTemas = [
     }
 ];
 
-// --- SONS (5 de giro + 5 de vitória) ---
+// --- SONS (5 de giro + 5 de vitÃ³ria) ---
 const listSpinSounds = [
-    { id: "spin-1", name: "Clássico", price: 0, type: "click" },
+    { id: "spin-1", name: "ClÃ¡ssico", price: 0, type: "click" },
     { id: "spin-2", name: "Swoosh", price: 15, type: "swoosh" },
     { id: "spin-3", name: "Arcade", price: 25, type: "arcade" },
     { id: "spin-4", name: "Whoosh", price: 20, type: "whoosh" },
@@ -162,10 +162,10 @@ const listWinSounds = [
     { id: "win-2", name: "Sino", price: 15, type: "bell" },
     { id: "win-3", name: "Level Up", price: 25, type: "levelup" },
     { id: "win-4", name: "Fanfarra", price: 30, type: "fanfare" },
-    { id: "win-5", name: "Glória", price: 35, type: "glory" }
+    { id: "win-5", name: "GlÃ³ria", price: 35, type: "glory" }
 ];
 
-// --- ÁUDIO (Web Audio API) ---
+// --- ÃUDIO (Web Audio API) ---
 let audioCtx = null;
 
 function getAudioContext() {
@@ -255,7 +255,7 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
     o.stop(start + duration);
 }
 
-// --- PERSISTÊNCIA ---
+// --- PERSISTÃŠNCIA ---
 function saveToStorage() {
     try {
         localStorage.setItem('rodaDoSaborState', JSON.stringify(state));
@@ -266,7 +266,7 @@ function saveToStorage() {
     }
 }
 
-// --- APLICAÇÃO DO TEMA (roleta + estilo do site) ---
+// --- APLICAÃ‡ÃƒO DO TEMA (roleta + estilo do site) ---
 function applyTheme(themeId, darkMode) {
     const theme = listTemas.find(t => t.id === themeId) || listTemas[0];
     const mode = darkMode ? 'dark' : 'light';
@@ -298,7 +298,7 @@ let isSpinning = false;
 
 function drawRoulette() {
     if (!canvas) {
-        console.warn('Canvas não encontrado');
+        console.warn('Canvas nÃ£o encontrado');
         return;
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -371,7 +371,7 @@ function drawRoulette() {
         ctx.restore();
     }
 
-    // Círculo central
+    // CÃ­rculo central
     ctx.beginPath();
     ctx.arc(center, center, 60, 0, 2 * Math.PI);
     ctx.fillStyle = 'var(--wheel-center)';
@@ -389,7 +389,7 @@ let lastSoundAngle = 0;
 
 function spin() {
     if (isSpinning || state.foods.length === 0) {
-        console.log('Giro bloqueado: já girando ou sem comidas');
+        console.log('Giro bloqueado: jÃ¡ girando ou sem comidas');
         return;
     }
     isSpinning = true;
@@ -442,8 +442,8 @@ function finalizeSpin() {
         const overlay = document.getElementById('resultOverlay');
         if (nameEl && emojiEl && overlay) {
             nameEl.textContent = winningFood;
-            const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u);
-            emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️";
+            const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}â˜€-âž¿]/u);
+            emojiEl.textContent = emojiMatch ? emojiMatch[0] : "ðŸ½ï¸";
             overlay.style.display = 'flex';
         }
     }, 300);
@@ -546,4 +546,57 @@ function animateConfetti() {
                 confCtx.lineTo(-p.w / 2, p.h / 2);
                 confCtx.closePath();
                 confCtx.fill();
-        
+                break;
+            case 'star6':
+                drawStar6(confCtx, 0, 0, p.w / 2);
+                break;
+        }
+        confCtx.restore();
+    }
+
+    requestAnimationFrame(animateConfetti);
+}
+
+// --- FUNÃ‡Ã•ES AUXILIARES DE DESENHO ---
+function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+    let rot = -Math.PI / 2;
+    const step = Math.PI / spikes;
+    ctx.beginPath();
+    for (let i = 0; i < spikes * 2; i++) {
+        const r = i % 2 === 0 ? outerR : innerR;
+        const x = cx + r * Math.cos(rot);
+        const y = cy + r * Math.sin(rot);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+        rot += step;
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawStar6(ctx, cx, cy, r) {
+    drawStar(ctx, cx, cy, 6, r, r * 0.4);
+}
+
+function drawHeart(ctx, cx, cy, size) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + size * 0.3);
+    ctx.bezierCurveTo(cx - size * 0.5, cy - size * 0.3, cx - size * 0.7, cy + size * 0.2, cx, cy + size * 0.7);
+    ctx.bezierCurveTo(cx + size * 0.7, cy + size * 0.2, cx + size * 0.5, cy - size * 0.3, cx, cy + size * 0.3);
+    ctx.closePath();
+    ctx.fill();
+}
+
+// --- EXPORTA FUNÃ‡Ã•ES GLOBAIS (para uso no app.js e HTML) ---
+window.state = state;
+window.listTemas = listTemas;
+window.listSpinSounds = listSpinSounds;
+window.listWinSounds = listWinSounds;
+window.saveToStorage = saveToStorage;
+window.drawRoulette = drawRoulette;
+window.spin = spin;
+window.applyTheme = applyTheme;
+window.playSynthesizedSound = playSynthesizedSound;
+window.launchConfetti = launchConfetti;
+
+console.log('core.js finalizado');
