@@ -148,7 +148,7 @@ const listTemas = [
     }
 ];
 
-// --- SONS ---
+// --- SONS (5 de giro + 5 de vitória) ---
 const listSpinSounds = [
     { id: "spin-1", name: "Clássico", price: 0, type: "click" },
     { id: "spin-2", name: "Swoosh", price: 15, type: "swoosh" },
@@ -266,7 +266,7 @@ function saveToStorage() {
     }
 }
 
-// --- APLICAÇÃO DO TEMA ---
+// --- APLICAÇÃO DO TEMA (roleta + estilo do site) ---
 function applyTheme(themeId, darkMode) {
     const theme = listTemas.find(t => t.id === themeId) || listTemas[0];
     const mode = darkMode ? 'dark' : 'light';
@@ -289,7 +289,7 @@ function applyTheme(themeId, darkMode) {
     console.log(`Tema aplicado: ${themeId} (${mode})`);
 }
 
-// --- ROLETA ---
+// --- ROLETA (CANVAS) ---
 const canvas = document.getElementById('rouletteCanvas');
 const ctx = canvas.getContext('2d');
 const center = canvas.width / 2;
@@ -389,7 +389,7 @@ let lastSoundAngle = 0;
 
 function spin() {
     if (isSpinning || state.foods.length === 0) {
-        console.log('Giro bloqueado');
+        console.log('Giro bloqueado: já girando ou sem comidas');
         return;
     }
     isSpinning = true;
@@ -449,7 +449,7 @@ function finalizeSpin() {
     }, 300);
 }
 
-// --- CONFETES ---
+// --- CONFETES (7 formas diferentes) ---
 const confettiCanvas = document.getElementById('confettiCanvas');
 const confCtx = confettiCanvas.getContext('2d');
 let confettiPieces = [];
@@ -546,7 +546,4 @@ function animateConfetti() {
                 confCtx.lineTo(-p.w / 2, p.h / 2);
                 confCtx.closePath();
                 confCtx.fill();
-                break;
-            case 'star6':
-                drawStar6(confCtx, 0, 0, p.w / 2);
-                bre
+        
