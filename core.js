@@ -41,9 +41,6 @@ const listTemas = [
     { id: "theme-10", name: "Ouro Premium", price: 50, light: { colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'], style: { bg: '#faf5eb', card: 'rgba(255,250,240,0.9)', text: '#1a1a1a', accent: '#b8860b' } }, dark: { colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'], style: { bg: '#0d0d0d', card: 'rgba(30,30,30,0.95)', text: '#f5e6c8', accent: '#d4ac0d' } } }
 ];
 
-const listSpinSounds = [{ id: "spin-1", name: "Clássico", price: 0, type: "click" }, { id: "spin-2", name: "Swoosh", price: 15, type: "swoosh" }, { id: "spin-3", name: "Arcade", price: 25, type: "arcade" }, { id: "spin-4", name: "Whoosh", price: 20, type: "whoosh" }, { id: "spin-5", name: "Digital", price: 30, type: "digital" }];
-const listWinSounds = [{ id: "win-1", name: "Tadaa!", price: 0, type: "tada" }, { id: "win-2", name: "Sino", price: 15, type: "bell" }, { id: "win-3", name: "Level Up", price: 25, type: "levelup" }, { id: "win-4", name: "Fanfarra", price: 30, type: "fanfare" }, { id: "win-5", name: "Glória", price: 35, type: "glory" }];
-
 let audioCtx = null;
 function getAudioContext() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -159,7 +156,6 @@ let spinSpeed = 0; let spinTimeTotal = 0; let spinTimeCount = 0; let lastSoundAn
 function spin() {
     if (isSpinning || state.foods.length === 0) return;
     
-    // CORREÇÃO DO ÁUDIO: Desbloqueia o som no momento do clique do usuário
     const audioContext = getAudioContext();
     if (audioContext.state === 'suspended') {
         audioContext.resume();
@@ -177,10 +173,13 @@ function animateSpin() {
     spinTimeCount += 20;
     if (spinTimeCount >= spinTimeTotal) { isSpinning = false; finalizeSpin(); return; }
     let progress = spinTimeCount / spinTimeTotal; let currentVelocity = spinSpeed * Math.pow(1 - progress, 2); startAngle += currentVelocity; drawRoulette();
+    
     const arcSize = (2 * Math.PI) / state.foods.length;
     if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = listSpinSounds.find(s => s.id === state.currentSpinSound) || listSpinSounds[0];
-        playSynthesizedSound(activeSpinSound.type); lastSoundAngle = startAngle;
+        // Usa as variáveis puxadas do sons.js
+        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === state.currentSpinSound)) || { type: 'click' };
+        playSynthesizedSound(activeSpinSound.type); 
+        lastSoundAngle = startAngle;
     }
     requestAnimationFrame(animateSpin);
 }
@@ -191,12 +190,24 @@ function finalizeSpin() {
     let index = Math.floor((360 - (degrees - 90)) % 360 / (360 / numSegments));
     if (index < 0) index = numSegments + index;
     const winningFood = state.foods[index];
-    const activeWinSound = listWinSounds.find(s => s.id === state.currentWinSound) || listWinSounds[0];
-    playSynthesizedSound(activeWinSound.type); 
-    launchConfetti(); 
+
+    // O modal e a festa abrem APÓS o tempinho de "assentar" visualmente
     setTimeout(() => {
-        const nameEl = document.getElementById('modalFoodName'); const emojiEl = document.getElementById('modalEmoji'); const overlay = document.getElementById('resultOverlay');
-        if (nameEl && emojiEl && overlay) { nameEl.textContent = winningFood; const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u); emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; overlay.style.display = 'flex'; }
+        // Dispara Som e Confetes exatos com o Modal
+        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === state.currentWinSound)) || { type: 'tada' };
+        playSynthesizedSound(activeWinSound.type); 
+        launchConfetti(); 
+
+        const nameEl = document.getElementById('modalFoodName'); 
+        const emojiEl = document.getElementById('modalEmoji'); 
+        const overlay = document.getElementById('resultOverlay');
+        
+        if (nameEl && emojiEl && overlay) { 
+            nameEl.textContent = winningFood; 
+            const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u); 
+            emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; 
+            overlay.style.display = 'flex'; 
+        }
     }, 300);
 }
 
