@@ -9,14 +9,19 @@ let state = {
         "Taco 🌮", "Salada 🥗", "Bolo 🍰", "Lámen 🍜",
         "Frango Assado 🍗", "Espaguete 🍝", "Sorvete 🍦", "Burrito 🌯"
     ],
+    // Temas separados
     unlockedPageThemes: ["theme-1", "theme-2", "theme-3"],
     currentPageTheme: "theme-1",
     unlockedRouletteThemes: ["theme-1", "theme-2", "theme-3"],
     currentRouletteTheme: "theme-1",
+    
     unlockedSpinSounds: ["spin-1"],
     currentSpinSound: "spin-1",
     unlockedWinSounds: ["win-1"],
-    currentWinSound: "win-1"
+    currentWinSound: "win-1",
+
+    // Comidas personalizadas adicionadas pelo usuário
+    customFoods: []
 };
 
 try {
@@ -64,13 +69,6 @@ function playSynthesizedSound(soundType) {
             case 'levelup': [261.63, 329.63, 392.00, 523.25].forEach((f, i) => oscSquare(ctx, now + i * 0.08, f, f, 0.15, 0.15)); break;
             case 'fanfare': [392, 523, 659, 784, 880].forEach((f, i) => osc(ctx, now + i * 0.1, f, f, 0.2, 'sine', 0.15)); break;
             case 'glory': [440, 554, 659, 880, 1108].forEach((f, i) => osc(ctx, now + i * 0.06, f, f * 1.2, 0.3, 'sine', 0.12)); break;
-            // 🔥 NOVO: som de comemoração (sequência ascendente)
-            case 'celebration':
-                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
-                notes.forEach((freq, i) => {
-                    osc(ctx, now + i * 0.08, freq, freq * 1.1, 0.12, 'sine', 0.12);
-                });
-                break;
         }
     } catch (e) {}
 }
@@ -96,6 +94,7 @@ function saveToStorage() {
     } catch (e) {}
 }
 
+// NOVA FUNÇÃO: Aplica Tema da Página e Tema da Roleta
 function applyThemes() {
     const pageTheme = listTemas.find(t => t.id === state.currentPageTheme) || listTemas[0];
     const rouletteTheme = listTemas.find(t => t.id === state.currentRouletteTheme) || listTemas[0];
@@ -127,6 +126,7 @@ function drawRoulette() {
     if (!canvas) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Roleta puxa cor EXCLUSIVA dela
     const theme = listTemas.find(t => t.id === state.currentRouletteTheme) || listTemas[0];
     const mode = state.darkMode ? 'dark' : 'light';
     const themeData = theme[mode];
@@ -186,22 +186,11 @@ function finalizeSpin() {
     if (index < 0) index = numSegments + index;
     const winningFood = state.foods[index];
     const activeWinSound = listWinSounds.find(s => s.id === state.currentWinSound) || listWinSounds[0];
-    playSynthesizedSound(activeWinSound.type);
-    
-    // 🔥 NOVO: som de comemoração junto com os confetes
-    playSynthesizedSound('celebration');
-    launchConfetti();
-    
+    playSynthesizedSound(activeWinSound.type); // Toca som de vitória
+    launchConfetti(); // Lança confetes imediatamente após o som
     setTimeout(() => {
-        const nameEl = document.getElementById('modalFoodName');
-        const emojiEl = document.getElementById('modalEmoji');
-        const overlay = document.getElementById('resultOverlay');
-        if (nameEl && emojiEl && overlay) {
-            nameEl.textContent = winningFood;
-            const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u);
-            emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️";
-            overlay.style.display = 'flex';
-        }
+        const nameEl = document.getElementById('modalFoodName'); const emojiEl = document.getElementById('modalEmoji'); const overlay = document.getElementById('resultOverlay');
+        if (nameEl && emojiEl && overlay) { nameEl.textContent = winningFood; const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u); emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; overlay.style.display = 'flex'; }
     }, 300);
 }
 
@@ -239,4 +228,4 @@ function animateConfetti() {
         confCtx.restore();
     }
     requestAnimationFrame(animateConfetti);
-        }
+}
