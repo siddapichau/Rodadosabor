@@ -377,4 +377,130 @@
                                     <li><i class="fas fa-circle"></i> 250g de mussarela ralada</li>
                                     <li><i class="fas fa-circle"></i> 1/2 xícara de cogumelos fatiados</li>
                                     <li><i class="fas fa-circle"></i> 1/2 pimentão vermelho em tiras</li>
-                          
+                                    <li><i class="fas fa-circle"></i> 1/2 cebola em rodelas</li>
+                                    <li><i class="fas fa-circle"></i> Azeitonas pretas a gosto</li>
+                                    <li><i class="fas fa-circle"></i> Tomate-cereja para decorar</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Prepare a massa e deixe crescer.</li>
+                                    <li>Abra a massa, espalhe o molho de tomate e a mussarela.</li>
+                                    <li>Distribua os legumes e as azeitonas.</li>
+                                    <li>Leve ao forno a 220°C por 15-18 minutos.</li>
+                                    <li>Decore com tomate-cereja e sirva.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="index.html" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Voltar à Roda
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="core.js"></script>
+    <script src="app.js"></script>
+    <script>
+        (function() {
+            // Atualiza saldo de moedas
+            function updateCoinDisplay() {
+                const el = document.getElementById('coin-balance');
+                if (el && typeof state !== 'undefined' && state.coins !== undefined) {
+                    el.textContent = state.coins;
+                }
+            }
+
+            // Aguarda o state ser carregado
+            if (typeof state !== 'undefined') {
+                updateCoinDisplay();
+            } else {
+                document.addEventListener('stateReady', updateCoinDisplay);
+            }
+
+            // Lógica das abas
+            const tabs = document.querySelectorAll('.pizza-tab');
+            const contents = document.querySelectorAll('.pizza-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active de todas as abas
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Esconde todos os conteúdos
+                    contents.forEach(c => c.classList.remove('active'));
+
+                    // Mostra o conteúdo alvo
+                    const target = this.dataset.target;
+                    const targetEl = document.getElementById('pizza-' + target);
+                    if (targetEl) targetEl.classList.add('active');
+                });
+            });
+
+            // Aplica tema (já feito pelo core.js, mas garantimos)
+            if (typeof applyThemes === 'function') {
+                applyThemes();
+            }
+
+            // Se o state for carregado depois, atualiza moedas
+            if (typeof state !== 'undefined') {
+                // Salva o estado atual
+                saveToStorage();
+            }
+        })();
+    </script>
+
+    <!-- ===== PROMPT PARA FUTURAS RECEITAS ===== -->
+    <!--
+    PROMPT COMPLETO PARA CRIAÇÃO DE PÁGINAS DE RECEITA:
+    -------------------------------------------------
+    Ao criar uma nova página de receita (ex: hamburguer.html, sushi.html, etc.), siga este padrão:
+
+    1. Estrutura HTML:
+       - Use o mesmo header do index (com logo, moedas, botão de tema e link de volta).
+       - Inclua as meta tags, fontes e link para style.css.
+       - Crie um container principal com a classe .container e um card.
+
+    2. Conteúdo:
+       - Título principal com ícone e nome da receita.
+       - Sistema de abas para diferentes variações (sabores) da receita.
+       - Cada aba deve conter:
+           - Imagem real (via Unsplash ou similar) com tamanho adequado.
+           - Lista de ingredientes com medidas exatas (em gramas, ml, colheres, etc.).
+           - Modo de preparo passo a passo numerado.
+       - Botão "Voltar à Roda" estilizado.
+
+    3. Estilos:
+       - Use as variáveis CSS do tema (--bg-body, --text-primary, etc.) para consistência.
+       - Adicione um bloco <style> específico para a página, com classes como .pizza-tabs, .pizza-card, etc., mantendo o design moderno e limpo.
+       - Garanta responsividade (grid se ajusta em telas menores).
+
+    4. Scripts:
+       - Carregue core.js e app.js (para temas e moedas).
+       - Adicione um script inline que:
+           - Atualiza o saldo de moedas (usando a função saveToStorage e o state).
+           - Implementa a lógica de abas (toggle de classes active).
+           - Chama applyThemes() para aplicar o tema atual.
+       - Mantenha a compatibilidade com o estado global (state) e localStorage.
+
+    5. Imagens:
+       - Use URLs diretas do Unsplash com parâmetros de tamanho (ex: ?w=600&h=400&fit=crop).
+       - Escolha imagens que representem bem cada variação.
+
+    6. Receitas:
+       - Pesquise receitas reais e populares para cada variação.
+       - Forneça ingredientes completos e modo de preparo detalhado.
+       - Inclua dicas ou rendimento (ex: serve 2 pessoas, rende 1 pizza média).
+
+    7. Ao final do arquivo, inclua este prompt como comentário para referência futura.
+
+    Exemplo de uso: para criar 'hamburguer.html', substitua 'pizza' por 'hamburguer', ajuste os sabores (ex: Clássico, Bacon, Vegano) e mantenha a mesma estrutura.
+    -->
+</body>
+</html>
