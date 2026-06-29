@@ -1,389 +1,137 @@
-'use strict';
-console.log('app.js carregado');
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Roda do Sabor · O Aplicativo</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f5b342">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-area">
+                <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-box" style="display: none;">🍽️</div>
+                <div class="logo-title">
+                    <h1>Roda do Sabor</h1>
+                    <p><i class="fas fa-star"></i> O seu guia de refeição diário</p>
+                </div>
+            </div>
+            <div class="top-stats">
+                <div class="stat-badge">
+                    <i class="fas fa-coins"></i>
+                    <span id="coin-balance">0</span>
+                </div>
+                <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="installAppBtn" class="btn-toggle-mode" style="display:none; background:var(--accent-gradient); color:white;" title="Instalar App">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </header>
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM pronto, iniciando app...');
+        <div class="card" style="padding: 1.5rem 1rem;">
+            <div class="roulette-wrapper">
+                <div class="roulette-arrow"></div>
+                <div class="canvas-container">
+                    <canvas id="rouletteCanvas" width="600" height="600"></canvas>
+                    <button class="center-spin-button" id="btnSpin">
+                        <span class="txt-top">Roda</span>
+                        <span class="txt-bottom">do Sabor</span>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-    // Puxa as listas globais do comidas.js e sons.js
-    const BANCO_DE_COMIDAS = window.BANCO_DE_COMIDAS || [];
-    const RECEITAS = window.RECEITAS || [];
-    const SONS_GIRO = window.SONS_GIRO || [];
-    const SONS_VITORIA = window.SONS_VITORIA || [];
+        <div class="action-row-buttons">
+            <button id="btnOpenFoodModal" class="btn-gradient-action dynamic-blue">
+                <i class="fas fa-utensils"></i> Selecionar Comidas
+            </button>
+            <button id="btnWatchAd" class="btn-gradient-action dynamic-green">
+                <i class="fas fa-video"></i> 📺 Ver Anúncio (+3 Moedas)
+            </button>
+        </div>
 
-    // ========================== REFERÊNCIAS DO DOM ==========================
-    const btnOpenFoodModal = document.getElementById('btnOpenFoodModal');
-    const btnCloseFoodModal = document.getElementById('btnCloseFoodModal');
-    const foodSelectionModal = document.getElementById('foodSelectionModal');
-    const modalFoodOptionsGrid = document.getElementById('modalFoodOptionsGrid');
-    const searchFoodInput = document.getElementById('searchFoodInput');
-    const btnSaveFoodSelection = document.getElementById('btnSaveFoodSelection');
-    const btnWatchAd = document.getElementById('btnWatchAd');
-    const adOverlay = document.getElementById('adOverlay');
-    const adCountdown = document.getElementById('adCountdown');
-    const adFrame = document.getElementById('adFrame');
-    const btnCloseModal = document.getElementById('btnCloseModal');
-    const resultOverlay = document.getElementById('resultOverlay');
-    const btnModeToggle = document.getElementById('btnModeToggle');
-    const recipesGrid = document.getElementById('recipesGrid');
+        <section class="card">
+            <h2><i class="fas fa-clipboard-list"></i> Itens Ativos na Roleta</h2>
+            <div class="food-list" id="foodListContainer"></div>
+        </section>
 
-    const btnAddCustomFood = document.getElementById('btnAddCustomFood');
-    const newFoodName = document.getElementById('newFoodName');
-    const newFoodEmoji = document.getElementById('newFoodEmoji');
-    const installAppBtn = document.getElementById('installAppBtn');
-
-    let comidasSelecionadasTemporarias = [];
-
-    // ========================== INICIALIZAÇÃO DO STATE ==========================
-    if (typeof state === 'undefined') {
-        window.state = {
-            foods: [], coins: 0, darkMode: false,
-            unlockedPageThemes: [], currentPageTheme: 'default',
-            unlockedRouletteThemes: [], currentRouletteTheme: 'default',
-            unlockedSpinSounds: [], currentSpinSound: 'default',
-            unlockedWinSounds: [], currentWinSound: 'default',
-            unlockedRecipes: [], customFoods: []
-        };
-    }
-    if (!state.unlockedRecipes) state.unlockedRecipes = [];
-    if (!state.customFoods) state.customFoods = [];
-    
-    // Desbloqueia receitas com preço 0 automaticamente
-    RECEITAS.forEach(rec => {
-        if (rec.preco === 0 && !state.unlockedRecipes.includes(rec.id)) {
-            state.unlockedRecipes.push(rec.id);
-        }
-    });
-
-    // ========================== FUNÇÕES AUXILIARES ==========================
-    if (typeof saveToStorage !== 'function') {
-        window.saveToStorage = function() {
-            try { localStorage.setItem('appState', JSON.stringify(state)); } catch (e) {}
-        };
-    }
-    if (typeof loadFromStorage !== 'function') {
-        window.loadFromStorage = function() {
-            try {
-                const data = localStorage.getItem('appState');
-                if (data) { const parsed = JSON.parse(data); Object.assign(state, parsed); }
-            } catch (e) {}
-        };
-    }
-    
-    loadFromStorage();
-
-    // ========================== EVENTOS ==========================
-    const btnSpinEl = document.getElementById('btnSpin');
-    if (btnSpinEl) btnSpinEl.addEventListener('click', typeof spin !== 'undefined' ? spin : () => console.log('Spin'));
-
-    if (btnModeToggle) {
-        btnModeToggle.addEventListener('click', () => {
-            state.darkMode = !state.darkMode;
-            if(typeof applyThemes !== 'undefined') applyThemes();
-        });
-    }
-
-    if (btnWatchAd) {
-        btnWatchAd.addEventListener('click', function() {
-            let secondsLeft = 30;
-            adCountdown.textContent = secondsLeft;
-            adFrame.src = "anuncio.html";
-            adOverlay.style.display = 'flex';
-            const adInterval = setInterval(() => {
-                secondsLeft--;
-                adCountdown.textContent = secondsLeft;
-                if (secondsLeft <= 0) {
-                    clearInterval(adInterval);
-                    adOverlay.style.display = 'none';
-                    adFrame.src = 'about:blank';
-                    state.coins += 3;
-                    saveToStorage();
-                    updateCoinsDisplay();
-                    alert("🎉 Você ganhou 3 moedas! Use na loja.");
-                }
-            }, 1000);
-        });
-    }
-
-    if (btnOpenFoodModal) {
-        btnOpenFoodModal.addEventListener('click', function() {
-            comidasSelecionadasTemporarias = [...state.foods];
-            foodSelectionModal.style.display = 'flex';
-            renderModalFoodOptions();
-        });
-    }
-    if (btnCloseFoodModal) {
-        btnCloseFoodModal.addEventListener('click', () => foodSelectionModal.style.display = 'none');
-    }
-
-    if (searchFoodInput) {
-        searchFoodInput.addEventListener('input', e => renderModalFoodOptions(e.target.value));
-    }
-
-    if (btnSaveFoodSelection) {
-        btnSaveFoodSelection.addEventListener('click', function() {
-            if (comidasSelecionadasTemporarias.length < 2) {
-                alert("Selecione pelo menos 2 comidas!");
-                return;
-            }
-            state.foods = [...comidasSelecionadasTemporarias];
-            saveToStorage();
-            renderFoodList();
-            foodSelectionModal.style.display = 'none';
-        });
-    }
-
-    if (btnCloseModal) {
-        btnCloseModal.addEventListener('click', () => {
-            if (resultOverlay) resultOverlay.style.display = 'none';
-        });
-    }
-
-    // ========================== ADICIONAR COMIDA PERSONALIZADA ==========================
-    if (btnAddCustomFood) {
-        btnAddCustomFood.addEventListener('click', function() {
-            const nome = newFoodName.value.trim();
-            const emoji = newFoodEmoji.value.trim() || '🍽️';
-            if (!nome) {
-                alert('Digite o nome da comida.');
-                return;
-            }
-            const itemString = `${nome} ${emoji}`;
-            if (!state.customFoods.some(f => f === itemString)) {
-                state.customFoods.push(itemString);
-                saveToStorage();
-                renderModalFoodOptions(searchFoodInput ? searchFoodInput.value : '');
-                newFoodName.value = '';
-                newFoodEmoji.value = '';
-            } else {
-                alert('Esta comida já foi adicionada como personalizada.');
-            }
-        });
-    }
-
-    // ========================== FUNÇÕES DE RENDERIZAÇÃO ==========================
-    function renderFoodList() {
-        const container = document.getElementById('foodListContainer');
-        if (!container) return;
-        container.innerHTML = '';
-        state.foods.forEach((food, idx) => {
-            const tag = document.createElement('div');
-            tag.className = 'food-tag';
-            tag.innerHTML = `${food} <i class="fas fa-times" onclick="removeFood(${idx})"></i>`;
-            container.appendChild(tag);
-        });
-        if (typeof drawRoulette !== 'undefined') drawRoulette();
-    }
-    
-    window.removeFood = function(idx) {
-        state.foods.splice(idx, 1);
-        saveToStorage();
-        renderFoodList();
-    };
-
-    function renderModalFoodOptions(filterText = '') {
-        if (!modalFoodOptionsGrid) return;
-        modalFoodOptionsGrid.innerHTML = '';
-
-        const allItems = [...BANCO_DE_COMIDAS];
-        if (state.customFoods) {
-            state.customFoods.forEach(custom => {
-                const match = custom.match(/^(.*?)\s+([\p{Emoji_Presentation}\p{Emoji}☀-➿])$/u);
-                if (match) {
-                    allItems.push({ nome: match[1], icone: match[2] });
-                } else {
-                    allItems.push({ nome: custom, icone: '🍽️' });
-                }
-            });
-        }
-
-        const filtradas = allItems.filter(item =>
-            item.nome.toLowerCase().includes(filterText.toLowerCase())
-        );
-
-        filtradas.forEach(item => {
-            const itemString = `${item.nome} ${item.icone}`;
-            const card = document.createElement('div');
-            card.className = 'food-option-card';
-            if (comidasSelecionadasTemporarias.includes(itemString)) {
-                card.classList.add('selected');
-            }
-            card.innerHTML = `<span>${item.icone}</span> ${item.nome}`;
-            card.addEventListener('click', function() {
-                const idx = comidasSelecionadasTemporarias.indexOf(itemString);
-                if (idx > -1) {
-                    comidasSelecionadasTemporarias.splice(idx, 1);
-                    card.classList.remove('selected');
-                } else {
-                    comidasSelecionadasTemporarias.push(itemString);
-                    card.classList.add('selected');
-                }
-            });
-            modalFoodOptionsGrid.appendChild(card);
-        });
-    }
-
-    // ---- Temas ----
-    function renderThemes() {
-        const pageGrid = document.getElementById('pageThemesGrid');
-        const rouletteGrid = document.getElementById('rouletteThemesGrid');
-        if (!pageGrid || !rouletteGrid) return;
-        pageGrid.innerHTML = ''; rouletteGrid.innerHTML = '';
-        
-        if (typeof listTemas === 'undefined') window.listTemas = [];
-        listTemas.forEach(tema => {
-            const coresPreview = tema.light.colors.slice(0, 4).map(c => `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`).join('');
+        <section class="card">
+            <h2><i class="fas fa-palette"></i> Temas da Página</h2>
+            <div class="store-grid" id="pageThemesGrid" style="margin-bottom: 2rem;"></div>
             
-            // Render Página
-            const isPageUnlocked = state.unlockedPageThemes.includes(tema.id);
-            const isPageActive = state.currentPageTheme === tema.id;
-            const pageCard = document.createElement('div');
-            pageCard.className = `item-card ${isPageActive ? 'active' : ''}`;
-            let btnPageHTML = isPageActive ? `<button class="btn-action btn-active">Ativo</button>` : isPageUnlocked ? `<button class="btn-action btn-use" onclick="usePageTheme('${tema.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyPageTheme('${tema.id}', ${tema.price})"><i class="fas fa-coins"></i> ${tema.price}</button>`;
-            pageCard.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p><div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div></div>${btnPageHTML}`;
-            pageGrid.appendChild(pageCard);
+            <h2><i class="fas fa-life-ring"></i> Temas da Roleta</h2>
+            <div class="store-grid" id="rouletteThemesGrid"></div>
+        </section>
 
-            // Render Roleta
-            const isRouletteUnlocked = state.unlockedRouletteThemes.includes(tema.id);
-            const isRouletteActive = state.currentRouletteTheme === tema.id;
-            const rouletteCard = document.createElement('div');
-            rouletteCard.className = `item-card ${isRouletteActive ? 'active' : ''}`;
-            let btnRouletteHTML = isRouletteActive ? `<button class="btn-action btn-active">Ativo</button>` : isRouletteUnlocked ? `<button class="btn-action btn-use" onclick="useRouletteTheme('${tema.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyRouletteTheme('${tema.id}', ${tema.price})"><i class="fas fa-coins"></i> ${tema.price}</button>`;
-            rouletteCard.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p><div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div></div>${btnRouletteHTML}`;
-            rouletteGrid.appendChild(rouletteCard);
-        });
-    }
+        <section class="card">
+            <h2><i class="fas fa-volume-up"></i> Sons Personalizados</h2>
+            <div style="margin-bottom:1rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">Sons de Giro:</div>
+            <div class="store-grid" id="spinSoundsGrid" style="margin-bottom: 1.5rem;"></div>
+            <div style="margin-bottom:1rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">Sons de Vitória:</div>
+            <div class="store-grid" id="winSoundsGrid"></div>
+        </section>
 
-    window.buyPageTheme = function(id, price) {
-        if (state.coins >= price) { state.coins -= price; state.unlockedPageThemes.push(id); usePageTheme(id); updateCoinsDisplay(); } else { alert("Moedas insuficientes!"); }
-    };
-    window.usePageTheme = function(id) { state.currentPageTheme = id; if(typeof applyThemes !== 'undefined') applyThemes(); renderThemes(); saveToStorage(); };
-    window.buyRouletteTheme = function(id, price) {
-        if (state.coins >= price) { state.coins -= price; state.unlockedRouletteThemes.push(id); useRouletteTheme(id); updateCoinsDisplay(); } else { alert("Moedas insuficientes!"); }
-    };
-    window.useRouletteTheme = function(id) { state.currentRouletteTheme = id; if(typeof applyThemes !== 'undefined') applyThemes(); renderThemes(); saveToStorage(); };
+        <section class="card">
+            <h2><i class="fas fa-book-open"></i> Receitas Completas</h2>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Clique em uma receita para ver os detalhes.</p>
+            <div class="recipes-grid" id="recipesGrid"></div>
+        </section>
+    </div>
 
-    // ---- Sons (Agora lendo das novas variáveis globais) ----
-    function renderSounds() {
-        const spinGrid = document.getElementById('spinSoundsGrid');
-        const winGrid = document.getElementById('winSoundsGrid');
-        if (!spinGrid || !winGrid) return;
-        spinGrid.innerHTML = ''; winGrid.innerHTML = '';
-        
-        SONS_GIRO.forEach(sound => {
-            const isUnlocked = state.unlockedSpinSounds.includes(sound.id);
-            const isActive = state.currentSpinSound === sound.id;
-            const card = document.createElement('div');
-            card.className = `item-card ${isActive ? 'active' : ''}`;
-            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="useSpinSound('${sound.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buySpinSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
-            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4><p>Giro</p></div>${btnHTML}`;
-            spinGrid.appendChild(card);
-        });
+    <div id="foodSelectionModal" class="result-overlay">
+        <div class="modal-content-box">
+            <div class="modal-header-container">
+                <h3>Selecione os Pratos</h3>
+                <span class="close-modal-x" id="btnCloseFoodModal">&times;</span>
+            </div>
+            <div class="search-box-modal">
+                <input type="text" id="searchFoodInput" placeholder="🔍 Buscar comida...">
+            </div>
+            <div class="add-food-section" style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;">
+                <input type="text" id="newFoodName" placeholder="Nova comida" style="flex:2; min-width:120px; padding:0.6rem; border-radius:10px; border:1px solid var(--border-color); background:rgba(128,128,128,0.05); color:var(--text-primary);">
+                <input type="text" id="newFoodEmoji" placeholder="Emoji" maxlength="2" style="flex:0.5; min-width:60px; padding:0.6rem; border-radius:10px; border:1px solid var(--border-color); background:rgba(128,128,128,0.05); color:var(--text-primary); text-align:center;">
+                <button id="btnAddCustomFood" class="btn-gradient-action dynamic-blue" style="flex:0.8; padding:0.6rem 1rem; font-size:0.9rem;">+ Adicionar</button>
+            </div>
+            <div class="grid-food-options" id="modalFoodOptionsGrid"></div>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn-close-modal" id="btnSaveFoodSelection">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
 
-        SONS_VITORIA.forEach(sound => {
-            const isUnlocked = state.unlockedWinSounds.includes(sound.id);
-            const isActive = state.currentWinSound === sound.id;
-            const card = document.createElement('div');
-            card.className = `item-card ${isActive ? 'active' : ''}`;
-            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="useWinSound('${sound.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyWinSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
-            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4><p>Vitória</p></div>${btnHTML}`;
-            winGrid.appendChild(card);
-        });
-    }
+    <div id="adOverlay" class="iframe-overlay">
+        <div class="iframe-box">
+            <div class="iframe-header">
+                Aguarde <span id="adCountdown">20</span> segundos para coletar suas moedas...
+            </div>
+            <iframe id="adFrame" src="about:blank"></iframe>
+        </div>
+    </div>
 
-    window.buySpinSound = function(id, price) {
-        if (state.coins >= price) { state.coins -= price; state.unlockedSpinSounds.push(id); state.currentSpinSound = id; saveToStorage(); renderSounds(); updateCoinsDisplay(); } else { alert("Moedas insuficientes!"); }
-    };
-    window.useSpinSound = function(id) { state.currentSpinSound = id; saveToStorage(); renderSounds(); };
-    window.buyWinSound = function(id, price) {
-        if (state.coins >= price) { state.coins -= price; state.unlockedWinSounds.push(id); state.currentWinSound = id; saveToStorage(); renderSounds(); updateCoinsDisplay(); } else { alert("Moedas insuficientes!"); }
-    };
-    window.useWinSound = function(id) { state.currentWinSound = id; saveToStorage(); renderSounds(); };
+    <div class="result-overlay" id="resultOverlay">
+        <div class="result-modal">
+            <h3>Refeição Sorteada!</h3>
+            <span class="food-emoji" id="modalEmoji">🍕</span>
+            <div class="food-name" id="modalFoodName">Pizza</div>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem;">Bom apetite!</p>
+            <button class="btn-close-modal" id="btnCloseModal">Maravilha!</button>
+        </div>
+    </div>
 
-    // ---- Receitas ----
-    function renderRecipes() {
-        if (!recipesGrid) return;
-        recipesGrid.innerHTML = '';
-        RECEITAS.forEach(rec => {
-            const isUnlocked = state.unlockedRecipes.includes(rec.id);
-            const card = document.createElement('div');
-            card.className = 'recipe-card';
-            const info = document.createElement('div');
-            info.className = 'recipe-info';
-            info.innerHTML = `<span class="recipe-icon">${rec.icone}</span><span class="recipe-name">${rec.nome}</span>`;
-            
-            let action;
-            if (isUnlocked) {
-                const openBtn = document.createElement('button');
-                openBtn.className = 'btn-action btn-recipe-open';
-                openBtn.textContent = 'Ver';
-                openBtn.addEventListener('click', e => { e.stopPropagation(); window.location.href = rec.link; });
-                action = openBtn;
-            } else {
-                const buyBtn = document.createElement('button');
-                buyBtn.className = 'btn-action btn-buy';
-                buyBtn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco}`;
-                buyBtn.addEventListener('click', e => { e.stopPropagation(); buyRecipe(rec.id, rec.preco); });
-                action = buyBtn;
-            }
-            card.appendChild(info);
-            card.appendChild(action);
-            recipesGrid.appendChild(card);
-        });
-    }
+    <canvas id="confettiCanvas"></canvas>
 
-    window.buyRecipe = function(id, price) {
-        if (state.coins >= price) {
-            state.coins -= price;
-            state.unlockedRecipes.push(id);
-            saveToStorage();
-            renderRecipes();
-            updateCoinsDisplay();
-            alert(`🎉 Receita "${RECEITAS.find(r => r.id === id).nome}" desbloqueada!`);
-        } else {
-            alert("Moedas insuficientes! Assista a um anúncio para ganhar mais.");
-        }
-    };
-
-    function updateCoinsDisplay() {
-        const display = document.getElementById('coinDisplay');
-        if (display) display.textContent = state.coins;
-        const coinBalance = document.getElementById('coin-balance');
-        if (coinBalance) coinBalance.textContent = state.coins;
-    }
-
-    // ========================== PWA - INSTALAÇÃO ==========================
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (installAppBtn) installAppBtn.style.display = 'flex';
-    });
-
-    if (installAppBtn) {
-        installAppBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') console.log('App instalado com sucesso');
-                deferredPrompt = null;
-                installAppBtn.style.display = 'none';
-            }
-        });
-    }
-
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-            .then(() => console.log('SW registrado com sucesso'))
-            .catch(err => console.warn('Falha ao registrar SW', err));
-    }
-
-    // ========================== INICIALIZAÇÃO FINAL ==========================
-    renderFoodList();
-    renderThemes();
-    renderSounds();
-    renderRecipes();
-    if(typeof applyThemes !== 'undefined') applyThemes();
-    updateCoinsDisplay();
-
-    console.log('App inicializado com sucesso!');
-});
+    <script src="sons.js"></script>
+    <script src="comidas.js"></script>
+    <script src="core.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
