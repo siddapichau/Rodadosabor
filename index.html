@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Roda do Sabor · O Aplicativo</title>
+    <!-- PWA Meta -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f5b342">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -28,6 +31,10 @@
                 </div>
                 <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
                     <i class="fas fa-moon"></i>
+                </button>
+                <!-- Botão de instalação do PWA -->
+                <button id="installAppBtn" class="btn-toggle-mode" style="display:none; background:var(--accent-gradient); color:white;" title="Instalar App">
+                    <i class="fas fa-download"></i>
                 </button>
             </div>
         </header>
@@ -82,6 +89,7 @@
         </section>
     </div>
 
+    <!-- Modal de Seleção de Comidas -->
     <div id="foodSelectionModal" class="result-overlay">
         <div class="modal-content-box">
             <div class="modal-header-container">
@@ -90,6 +98,12 @@
             </div>
             <div class="search-box-modal">
                 <input type="text" id="searchFoodInput" placeholder="🔍 Buscar comida...">
+            </div>
+            <!-- Área para adicionar comida personalizada -->
+            <div class="add-food-section" style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;">
+                <input type="text" id="newFoodName" placeholder="Nova comida" style="flex:2; min-width:120px; padding:0.6rem; border-radius:10px; border:1px solid var(--border-color); background:rgba(128,128,128,0.05); color:var(--text-primary);">
+                <input type="text" id="newFoodEmoji" placeholder="Emoji" maxlength="2" style="flex:0.5; min-width:60px; padding:0.6rem; border-radius:10px; border:1px solid var(--border-color); background:rgba(128,128,128,0.05); color:var(--text-primary); text-align:center;">
+                <button id="btnAddCustomFood" class="btn-gradient-action dynamic-blue" style="flex:0.8; padding:0.6rem 1rem; font-size:0.9rem;">+ Adicionar</button>
             </div>
             <div class="grid-food-options" id="modalFoodOptionsGrid"></div>
             <div style="text-align: center; margin-top: 1rem;">
@@ -137,4 +151,4 @@
     <script src="core.js"></script>
     <script src="app.js"></script>
 </body>
-</html>
+    </html>
