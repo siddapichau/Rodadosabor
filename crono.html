@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronograma de Desenvolvimento - Roda do Sabor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f3e7da;
+            --card-bg: #ffffff;
+            --primary-text: #1e2a3a;
+            --secondary-text: #5a6a7a;
+            --accent: #7b9e5a;
+            --gold: #f5b342;
+            --danger: #e94b3c;
+            --done: #9ca3af;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body { background: var(--bg-color); color: var(--primary-text); padding: 2rem; line-height: 1.6; }
+        
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        /* Cabeçalho */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; flex-wrap: wrap; gap: 1rem; }
+        .header h1 { font-size: 2.2rem; font-weight: 800; display: flex; align-items: center; gap: 0.8rem; }
+        .header h1 i { color: var(--gold); }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #f5d742, #f5b342);
+            color: #1e2a3a; border: none; padding: 0.8rem 1.5rem; border-radius: 50px;
+            font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(245, 179, 66, 0.4); transition: transform 0.2s;
+        }
+        .btn-download:hover { transform: translateY(-2px); }
+
+        /* Area de exportação PDF */
+        #pdf-content { background: var(--bg-color); padding: 1rem; border-radius: 12px; }
+
+        /* Fases */
+        .phase-card {
+            background: var(--card-bg); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-left: 6px solid var(--accent);
+            page-break-inside: avoid;
+        }
+        .phase-card.completed { border-left-color: var(--done); opacity: 0.85; }
+        
+        .phase-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem; }
+        .phase-title h2 { font-size: 1.4rem; color: var(--primary-text); margin-bottom: 0.3rem; }
+        .phase-title p { font-size: 0.9rem; color: var(--secondary-text); font-weight: 500; }
+        .status-badge { padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 700; }
+        .status-done { background: #e5e7eb; color: var(--done); }
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-pending { background: #fef9c3; color: #854d0e; }
+
+        /* Tarefas */
+        .task-list { list-style: none; }
+        .task-item { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+        .task-item i { margin-top: 0.2rem; font-size: 1.2rem; }
+        .task-item.done i { color: var(--done); }
+        .task-item.todo i { color: var(--secondary-text); opacity: 0.5; }
+        .task-content h4 { font-size: 1rem; margin-bottom: 0.2rem; }
+        .task-item.done .task-content h4 { text-decoration: line-through; color: var(--done); }
+        .task-content p { font-size: 0.85rem; color: var(--secondary-text); }
+
+        /* Notas */
+        .note-box {
+            background: rgba(245, 179, 66, 0.1); border: 1px dashed var(--gold);
+            padding: 1rem; border-radius: 12px; margin-top: 1.5rem; font-size: 0.85rem;
+            color: #854d0e; display: flex; gap: 0.8rem; align-items: flex-start;
+        }
+        .note-box i { font-size: 1.2rem; color: var(--gold); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-map-marked-alt"></i> Roadmap: Roda do Sabor</h1>
+            <button class="btn-download" onclick="downloadPDF()">
+                <i class="fas fa-file-pdf"></i> Baixar PDF
+            </button>
+        </header>
+
+        <div id="pdf-content">
+
+            <div class="phase-card completed">
+                <div class="phase-header">
+                    <div class="phase-title">
+                        <h2>Fase 1: Refatoração, Modularização e Áudio</h2>
+                        <p>Estruturação base para escalabilidade e correção de bugs core.</p>
+                    </div>
+                    <span class="status-badge status-done">CONCLUÍDO</span>
+                </div>
+                <ul class="task-list">
+                    <li class="task-item done">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="task-content">
+                            <h4>Isolar Banco de Dados (comidas.js e sons.js)</h4>
+                            <p>Separação do objeto de comidas, receitas e implementação das listas de áudio independentes para limpeza do app.js.</p>
+                        </div>
+                    </li>
+                    <li class="task-item done">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="task-content">
+                            <h4>Correção do Sintetizador e Autoplay</h4>
+                            <p>Desbloqueio do `AudioContext` no clique do usuário para garantir que sons nativos toquem em todos os navegadores móveis.</p>
+                        </div>
+                    </li>
+                    <li class="task-item done">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="task-content">
+                            <h4>Sistema de Áudio em 3 Fases (Suspense)</h4>
+                            <p>Implementação do fluxo: Som de Giro ➔ Som de Parada ➔ Pausa de 1s ➔ Confetes + Som de Vitória.</p>
+                        </div>
+                    </li>
+                    <li class="task-item done">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="task-content">
+                            <h4>Painel de Testes (Debug Tool)</h4>
+                            <p>Criação do `temp.html` para manipulação rápida de moedas, hard resets e limpeza do localStorage durante desenvolvimento.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-title">
+                        <h2>Fase 2: Integração Cloud (Firebase)</h2>
+                        <p>Remover a dependência exclusiva do localStorage e salvar progresso na nuvem.</p>
+                    </div>
+                    <span class="status-badge status-active">EM ANDAMENTO</span>
+                </div>
+                <ul class="task-list">
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Configurar Firebase & Autenticação Anônima</h4>
+                            <p>Criar o projeto no Google Firebase e ativar o login "sem senha" para atrelar os dados ao ID invisível do dispositivo do usuário.</p>
+                        </div>
+                    </li>
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Cloud Firestore: Progresso do Usuário</h4>
+                            <p>Migrar a lógica do `core.js` para salvar/ler as Moedas, Temas e Sons desbloqueados diretamente do banco de dados.</p>
+                        </div>
+                    </li>
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Cloud Firestore: Logs de Comidas Personalizadas</h4>
+                            <p>Criar rotina que captura toda vez que o usuário adiciona uma "Nova Comida" e envia para uma coleção global chamada `logs_comidas`.</p>
+                        </div>
+                    </li>
+                </ul>
+                <div class="note-box">
+                    <i class="fas fa-lightbulb"></i>
+                    <div>
+                        <strong>Atenção ao Modo Offline:</strong> Como o app é um PWA, precisamos configurar o Firebase Firestore com `enablePersistence()`. Isso garante que se o usuário estiver no 4G ruim, o app continue funcionando e envie as comidas manuais pro banco assim que a internet voltar.
+                    </div>
+                </div>
+            </div>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-title">
+                        <h2>Fase 3: Imersão e Segurança (UX/UI)</h2>
+                        <p>Polimento das animações, tato (haptics) e proteção de dados.</p>
+                    </div>
+                    <span class="status-badge status-pending">PENDENTE</span>
+                </div>
+                <ul class="task-list">
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Sanitização de Inputs (Segurança XSS)</h4>
+                            <p>Criar função para limpar textos digitados no input de "Nova Comida", bloqueando inserção de tags &lt;script&gt; antes de salvar no DB.</p>
+                        </div>
+                    </li>
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Feedback Tátil (Vibration API)</h4>
+                            <p>Programar pequenos pulsos (`navigator.vibrate(50)`) enquanto a roleta gira e uma vibração comemorativa forte ao final.</p>
+                        </div>
+                    </li>
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Transições CSS Suaves</h4>
+                            <p>Remover a aparição "dura" (display: flex repentino) do modal de vitória, adicionando fade-in (opacity) e scale (zoom).</p>
+                        </div>
+                    </li>
+                </ul>
+                <div class="note-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Nota sobre iOS:</strong> A API de vibração nativa da web tem suporte muito limitado em iPhones (Safari). Precisamos colocar os comandos de vibração dentro de um `try...catch` para o app não quebrar caso o celular não suporte a função.
+                    </div>
+                </div>
+            </div>
+
+            <div class="phase-card">
+                <div class="phase-header">
+                    <div class="phase-title">
+                        <h2>Fase 4: Recursos Sociais e Administrativos</h2>
+                        <p>Página de análise de métricas para o dono do app e expansão social.</p>
+                    </div>
+                    <span class="status-badge status-pending">PENDENTE</span>
+                </div>
+                <ul class="task-list">
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Página Secreta de Admin (`admin.html`)</h4>
+                            <p>Criar uma página com senha restrita ao criador do app, que lê e exibe em formato de tabela todas as comidas da coleção `logs_comidas` do Firebase.</p>
+                        </div>
+                    </li>
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Web Share API (WhatsApp)</h4>
+                            <p>Adicionar botão no modal de vitória: "Compartilhar Resultado". Irá gerar uma mensagem automática: "A Roda do Sabor decidiu que hoje vamos comer 🍕 Pizza! Vamos?"</p>
+                        </div>
+                    </li>
+                    <li class="task-item todo">
+                        <i class="far fa-circle"></i>
+                        <div class="task-content">
+                            <h4>Update Helper do Service Worker</h4>
+                            <p>Aprimorar o `sw.js` para detectar novas versões do app automaticamente, avisando o usuário para atualizar e limpando o cache velho do celular.</p>
+                        </div>
+                    </li>
+                </ul>
+                <div class="note-box">
+                    <i class="fas fa-shield-alt"></i>
+                    <div>
+                        <strong>Segurança Admin:</strong> O arquivo `admin.html` não deve ser referenciado em nenhum link dentro do `index.html`. Você só acessará digitando a URL direta.
+                    </div>
+                </div>
+            </div>
+
+        </div> </div>
+
+    <script>
+        function downloadPDF() {
+            const element = document.getElementById('pdf-content');
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     'RodaDoSabor_Cronograma.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Muda visualmente o botão durante o processamento
+            const btn = document.querySelector('.btn-download');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalText;
+            });
+        }
+    </script>
+</body>
+</html>
