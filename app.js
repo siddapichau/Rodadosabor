@@ -230,6 +230,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const recipeIngredients = document.getElementById('recipeIngredients');
     const recipeInstructions = document.getElementById('recipeInstructions');
 
+    // Novos elementos para comida personalizada
+    const btnAddCustomFood = document.getElementById('btnAddCustomFood');
+    const newFoodName = document.getElementById('newFoodName');
+    const newFoodEmoji = document.getElementById('newFoodEmoji');
+
+    // Botão de instalação PWA
+    const installAppBtn = document.getElementById('installAppBtn');
+
     let comidasSelecionadasTemporarias = [];
 
     // ========================== INICIALIZAÇÃO DO STATE ==========================
@@ -246,11 +254,15 @@ document.addEventListener('DOMContentLoaded', function() {
             currentSpinSound: 'default',
             unlockedWinSounds: [],
             currentWinSound: 'default',
-            unlockedRecipes: []
+            unlockedRecipes: [],
+            customFoods: []
         };
     }
     if (!state.unlockedRecipes) {
         state.unlockedRecipes = [];
+    }
+    if (!state.customFoods) {
+        state.customFoods = [];
     }
     // Desbloqueia receitas com preço 0 automaticamente
     RECEITAS.forEach(rec => {
@@ -378,6 +390,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ========================== ADICIONAR COMIDA PERSONALIZADA ==========================
+    if (btnAddCustomFood) {
+        btnAddCustomFood.addEventListener('click', function() {
+            const nome = newFoodName.value.trim();
+            const emoji = newFoodEmoji.value.trim() || '🍽️';
+            if (!nome) {
+                alert('Digite o nome da comida.');
+                return;
+            }
+            // Cria a string no formato "Nome Emoji"
+            const itemString = `${nome} ${emoji}`;
+            // Evita duplicatas exatas
+            if (!state.customFoods.some(f => f === itemString)) {
+                state.customFoods.push(itemString);
+                saveToStorage();
+                // Atualiza o modal
+                renderModalFoodOptions(searchFoodInput ? searchFoodInput.value : '');
+                // Limpa os campos
+                newFoodName.value = '';
+                newFoodEmoji.value = '';
+            } else {
+                alert('Esta comida já foi adicionada como personalizada.');
+            }
+        });
+    }
+
     // ========================== FUNÇÕES DE RENDERIZAÇÃO ==========================
 
     function renderFoodList() {
@@ -398,12 +436,29 @@ document.addEventListener('DOMContentLoaded', function() {
         renderFoodList();
     };
 
+    // Função renderModalFoodOptions modificada para incluir comidas personalizadas
     function renderModalFoodOptions(filterText = '') {
         if (!modalFoodOptionsGrid) return;
         modalFoodOptionsGrid.innerHTML = '';
-        const filtradas = BANCO_DE_COMIDAS.filter(item =>
+
+        // Monta lista completa: banco fixo + personalizadas
+        const allItems = [...BANCO_DE_COMIDAS];
+        if (state.customFoods) {
+            state.customFoods.forEach(custom => {
+                // Tenta extrair ícone (se houver)
+                const match = custom.match(/^(.*?)\s+([\p{Emoji_Presentation}\p{Emoji}☀-➿])$/u);
+                if (match) {
+                    allItems.push({ nome: match[1], icone: match[2] });
+                } else {
+                    allItems.push({ nome: custom, icone: '🍽️' });
+                }
+            });
+        }
+
+        const filtradas = allItems.filter(item =>
             item.nome.toLowerCase().includes(filterText.toLowerCase())
         );
+
         filtradas.forEach(item => {
             const itemString = `${item.nome} ${item.icone}`;
             const card = document.createElement('div');
@@ -658,6 +713,40 @@ document.addEventListener('DOMContentLoaded', function() {
         if (display) {
             display.textContent = state.coins;
         }
+        // Atualiza também o badge do header (coin-balance)
+        const coinBalance = document.getElementById('coin-balance');
+        if (coinBalance) coinBalance.textContent = state.coins;
+    }
+
+    // ========================== PWA - INSTALAÇÃO ==========================
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installAppBtn) {
+            installAppBtn.style.display = 'flex';
+        }
+    });
+
+    if (installAppBtn) {
+        installAppBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('App instalado com sucesso');
+                }
+                deferredPrompt = null;
+                installAppBtn.style.display = 'none';
+            }
+        });
+    }
+
+    // Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('SW registrado com sucesso'))
+            .catch(err => console.warn('Falha ao registrar SW', err));
     }
 
     // ========================== INICIALIZAÇÃO FINAL ==========================
