@@ -226,7 +226,7 @@ function finalizeSpin() {
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; 
             overlay.style.display = 'flex'; 
         }
-    }, 800); // Exatos 2 segundos de pausa
+    }, 1000); // Exatos 2 segundos de pausa
 }
 
 // ========================== CONFETES ==========================
