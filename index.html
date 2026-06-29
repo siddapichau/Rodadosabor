@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Roda do Sabor · O Aplicativo</title>
-    <!-- PWA Meta -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#f5b342">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -32,7 +31,6 @@
                 <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
                     <i class="fas fa-moon"></i>
                 </button>
-                <!-- Botão de instalação do PWA -->
                 <button id="installAppBtn" class="btn-toggle-mode" style="display:none; background:var(--accent-gradient); color:white;" title="Instalar App">
                     <i class="fas fa-download"></i>
                 </button>
@@ -89,7 +87,6 @@
         </section>
     </div>
 
-    <!-- Modal de Seleção de Comidas -->
     <div id="foodSelectionModal" class="result-overlay">
         <div class="modal-content-box">
             <div class="modal-header-container">
@@ -99,7 +96,6 @@
             <div class="search-box-modal">
                 <input type="text" id="searchFoodInput" placeholder="🔍 Buscar comida...">
             </div>
-            <!-- Área para adicionar comida personalizada -->
             <div class="add-food-section" style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;">
                 <input type="text" id="newFoodName" placeholder="Nova comida" style="flex:2; min-width:120px; padding:0.6rem; border-radius:10px; border:1px solid var(--border-color); background:rgba(128,128,128,0.05); color:var(--text-primary);">
                 <input type="text" id="newFoodEmoji" placeholder="Emoji" maxlength="2" style="flex:0.5; min-width:60px; padding:0.6rem; border-radius:10px; border:1px solid var(--border-color); background:rgba(128,128,128,0.05); color:var(--text-primary); text-align:center;">
@@ -131,24 +127,10 @@
         </div>
     </div>
 
-    <div class="result-overlay" id="recipeModal">
-        <div class="modal-content-box" style="max-width: 600px;">
-            <div class="modal-header-container">
-                <h3 id="recipeModalTitle">Receita</h3>
-                <span class="close-modal-x" id="btnCloseRecipeModal">&times;</span>
-            </div>
-            <div id="recipeModalContent" style="overflow-y: auto; max-height: 60vh;">
-                <p><strong>Ingredientes:</strong></p>
-                <ul id="recipeIngredients" style="margin-left:1.5rem;"></ul>
-                <p><strong>Modo de Preparo:</strong></p>
-                <p id="recipeInstructions" style="white-space: pre-wrap;"></p>
-            </div>
-        </div>
-    </div>
-
     <canvas id="confettiCanvas"></canvas>
 
     <script src="core.js"></script>
+    <script src="comidas.js"></script>
     <script src="app.js"></script>
 </body>
-    </html>
+</html>
