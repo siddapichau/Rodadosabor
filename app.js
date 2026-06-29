@@ -1,137 +1,284 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Roda do Sabor · O Aplicativo</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#f5b342">
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <div class="logo-area">
-                <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="logo-box" style="display: none;">🍽️</div>
-                <div class="logo-title">
-                    <h1>Roda do Sabor</h1>
-                    <p><i class="fas fa-star"></i> O seu guia de refeição diário</p>
-                </div>
-            </div>
-            <div class="top-stats">
-                <div class="stat-badge">
-                    <i class="fas fa-coins"></i>
-                    <span id="coin-balance">0</span>
-                </div>
-                <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <button id="installAppBtn" class="btn-toggle-mode" style="display:none; background:var(--accent-gradient); color:white;" title="Instalar App">
-                    <i class="fas fa-download"></i>
-                </button>
-            </div>
-        </header>
+'use strict';
+console.log('app.js carregado');
 
-        <div class="card" style="padding: 1.5rem 1rem;">
-            <div class="roulette-wrapper">
-                <div class="roulette-arrow"></div>
-                <div class="canvas-container">
-                    <canvas id="rouletteCanvas" width="600" height="600"></canvas>
-                    <button class="center-spin-button" id="btnSpin">
-                        <span class="txt-top">Roda</span>
-                        <span class="txt-bottom">do Sabor</span>
-                    </button>
-                </div>
-            </div>
-        </div>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM pronto, iniciando renderização...');
 
-        <div class="action-row-buttons">
-            <button id="btnOpenFoodModal" class="btn-gradient-action dynamic-blue">
-                <i class="fas fa-utensils"></i> Selecionar Comidas
-            </button>
-            <button id="btnWatchAd" class="btn-gradient-action dynamic-green">
-                <i class="fas fa-video"></i> 📺 Ver Anúncio (+3 Moedas)
-            </button>
-        </div>
+    let comidasSelecionadasTemporarias = [];
 
-        <section class="card">
-            <h2><i class="fas fa-clipboard-list"></i> Itens Ativos na Roleta</h2>
-            <div class="food-list" id="foodListContainer"></div>
-        </section>
+    // ========================== EVENTOS BÁSICOS ==========================
+    const btnSpinEl = document.getElementById('btnSpin');
+    if (btnSpinEl) btnSpinEl.addEventListener('click', window.spinRoulette);
 
-        <section class="card">
-            <h2><i class="fas fa-palette"></i> Temas da Página</h2>
-            <div class="store-grid" id="pageThemesGrid" style="margin-bottom: 2rem;"></div>
+    const btnModeToggle = document.getElementById('btnModeToggle');
+    if (btnModeToggle) {
+        btnModeToggle.addEventListener('click', () => {
+            window.appState.darkMode = !window.appState.darkMode;
+            window.applyThemes();
+        });
+    }
+
+    const btnWatchAd = document.getElementById('btnWatchAd');
+    if (btnWatchAd) {
+        btnWatchAd.addEventListener('click', function() {
+            const adCountdown = document.getElementById('adCountdown');
+            const adOverlay = document.getElementById('adOverlay');
+            let secondsLeft = 30;
+            adCountdown.textContent = secondsLeft;
+            document.getElementById('adFrame').src = "anuncio.html";
+            adOverlay.style.display = 'flex';
             
-            <h2><i class="fas fa-life-ring"></i> Temas da Roleta</h2>
-            <div class="store-grid" id="rouletteThemesGrid"></div>
-        </section>
+            const adInterval = setInterval(() => {
+                secondsLeft--;
+                adCountdown.textContent = secondsLeft;
+                if (secondsLeft <= 0) {
+                    clearInterval(adInterval);
+                    adOverlay.style.display = 'none';
+                    document.getElementById('adFrame').src = 'about:blank';
+                    window.appState.coins += 3;
+                    window.saveData();
+                    updateCoinsDisplay();
+                    alert("🎉 Você ganhou 3 moedas! Use na loja.");
+                }
+            }, 1000);
+        });
+    }
 
-        <section class="card">
-            <h2><i class="fas fa-volume-up"></i> Sons Personalizados</h2>
-            <div style="margin-bottom:1rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">Sons de Giro:</div>
-            <div class="store-grid" id="spinSoundsGrid" style="margin-bottom: 1.5rem;"></div>
-            <div style="margin-bottom:1rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">Sons de Vitória:</div>
-            <div class="store-grid" id="winSoundsGrid"></div>
-        </section>
+    // ========================== MODAL DE SELEÇÃO DE COMIDAS ==========================
+    document.getElementById('btnOpenFoodModal')?.addEventListener('click', () => {
+        comidasSelecionadasTemporarias = [...window.appState.foods];
+        document.getElementById('foodSelectionModal').style.display = 'flex';
+        renderModalFoodOptions();
+    });
 
-        <section class="card">
-            <h2><i class="fas fa-book-open"></i> Receitas Completas</h2>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Clique em uma receita para ver os detalhes.</p>
-            <div class="recipes-grid" id="recipesGrid"></div>
-        </section>
-    </div>
+    document.getElementById('btnCloseFoodModal')?.addEventListener('click', () => {
+        document.getElementById('foodSelectionModal').style.display = 'none';
+    });
 
-    <div id="foodSelectionModal" class="result-overlay">
-        <div class="modal-content-box">
-            <div class="modal-header-container">
-                <h3>Selecione os Pratos</h3>
-                <span class="close-modal-x" id="btnCloseFoodModal">&times;</span>
-            </div>
-            <div class="search-box-modal">
-                <input type="text" id="searchFoodInput" placeholder="🔍 Buscar comida...">
-            </div>
-            <div class="add-food-section" style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;">
-                <input type="text" id="newFoodName" placeholder="Nova comida" style="flex:2; min-width:120px; padding:0.6rem; border-radius:10px; border:1px solid var(--border-color); background:rgba(128,128,128,0.05); color:var(--text-primary);">
-                <input type="text" id="newFoodEmoji" placeholder="Emoji" maxlength="2" style="flex:0.5; min-width:60px; padding:0.6rem; border-radius:10px; border:1px solid var(--border-color); background:rgba(128,128,128,0.05); color:var(--text-primary); text-align:center;">
-                <button id="btnAddCustomFood" class="btn-gradient-action dynamic-blue" style="flex:0.8; padding:0.6rem 1rem; font-size:0.9rem;">+ Adicionar</button>
-            </div>
-            <div class="grid-food-options" id="modalFoodOptionsGrid"></div>
-            <div style="text-align: center; margin-top: 1rem;">
-                <button class="btn-close-modal" id="btnSaveFoodSelection">Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
+    document.getElementById('searchFoodInput')?.addEventListener('input', e => {
+        renderModalFoodOptions(e.target.value);
+    });
 
-    <div id="adOverlay" class="iframe-overlay">
-        <div class="iframe-box">
-            <div class="iframe-header">
-                Aguarde <span id="adCountdown">20</span> segundos para coletar suas moedas...
-            </div>
-            <iframe id="adFrame" src="about:blank"></iframe>
-        </div>
-    </div>
+    document.getElementById('btnSaveFoodSelection')?.addEventListener('click', () => {
+        if (comidasSelecionadasTemporarias.length < 2) {
+            alert("Selecione pelo menos 2 comidas!"); return;
+        }
+        window.appState.foods = [...comidasSelecionadasTemporarias];
+        window.saveData();
+        renderFoodList();
+        document.getElementById('foodSelectionModal').style.display = 'none';
+    });
 
-    <div class="result-overlay" id="resultOverlay">
-        <div class="result-modal">
-            <h3>Refeição Sorteada!</h3>
-            <span class="food-emoji" id="modalEmoji">🍕</span>
-            <div class="food-name" id="modalFoodName">Pizza</div>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem;">Bom apetite!</p>
-            <button class="btn-close-modal" id="btnCloseModal">Maravilha!</button>
-        </div>
-    </div>
+    document.getElementById('btnCloseModal')?.addEventListener('click', () => {
+        document.getElementById('resultOverlay').style.display = 'none';
+    });
 
-    <canvas id="confettiCanvas"></canvas>
+    // ========================== ADICIONAR COMIDA PERSONALIZADA ==========================
+    document.getElementById('btnAddCustomFood')?.addEventListener('click', () => {
+        const nome = document.getElementById('newFoodName').value.trim();
+        const emoji = document.getElementById('newFoodEmoji').value.trim() || '🍽️';
+        if (!nome) { alert('Digite o nome da comida.'); return; }
+        
+        const itemString = `${nome} ${emoji}`;
+        if (!window.appState.customFoods.some(f => f === itemString)) {
+            window.appState.customFoods.push(itemString);
+            window.saveData();
+            renderModalFoodOptions(document.getElementById('searchFoodInput')?.value || '');
+            document.getElementById('newFoodName').value = '';
+            document.getElementById('newFoodEmoji').value = '';
+        } else {
+            alert('Esta comida já foi adicionada.');
+        }
+    });
 
-    <script src="sons.js"></script>
-    <script src="comidas.js"></script>
-    <script src="core.js"></script>
-    <script src="app.js"></script>
-</body>
-</html>
+    // ========================== FUNÇÕES DE RENDERIZAÇÃO ==========================
+    function renderFoodList() {
+        const container = document.getElementById('foodListContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        window.appState.foods.forEach((food, idx) => {
+            const tag = document.createElement('div');
+            tag.className = 'food-tag';
+            tag.innerHTML = `${food} <i class="fas fa-times" onclick="removeFood(${idx})"></i>`;
+            container.appendChild(tag);
+        });
+        window.drawRoulette();
+    }
+    
+    window.removeFood = function(idx) {
+        window.appState.foods.splice(idx, 1);
+        window.saveData();
+        renderFoodList();
+    };
+
+    function renderModalFoodOptions(filterText = '') {
+        const modalGrid = document.getElementById('modalFoodOptionsGrid');
+        if (!modalGrid) return;
+        modalGrid.innerHTML = '';
+
+        const allItems = [...(window.BANCO_DE_COMIDAS || [])];
+        window.appState.customFoods.forEach(custom => {
+            const match = custom.match(/^(.*?)\s+([\p{Emoji_Presentation}\p{Emoji}☀-➿])$/u);
+            if (match) allItems.push({ nome: match[1], icone: match[2] });
+            else allItems.push({ nome: custom, icone: '🍽️' });
+        });
+
+        const filtradas = allItems.filter(item => item.nome.toLowerCase().includes(filterText.toLowerCase()));
+
+        filtradas.forEach(item => {
+            const itemString = `${item.nome} ${item.icone}`;
+            const card = document.createElement('div');
+            card.className = 'food-option-card';
+            if (comidasSelecionadasTemporarias.includes(itemString)) card.classList.add('selected');
+            
+            card.innerHTML = `<span>${item.icone}</span> ${item.nome}`;
+            card.addEventListener('click', () => {
+                const idx = comidasSelecionadasTemporarias.indexOf(itemString);
+                if (idx > -1) {
+                    comidasSelecionadasTemporarias.splice(idx, 1);
+                    card.classList.remove('selected');
+                } else {
+                    comidasSelecionadasTemporarias.push(itemString);
+                    card.classList.add('selected');
+                }
+            });
+            modalGrid.appendChild(card);
+        });
+    }
+
+    // ---- LOJA: Temas ----
+    function renderThemes() {
+        const pageGrid = document.getElementById('pageThemesGrid');
+        const rouletteGrid = document.getElementById('rouletteThemesGrid');
+        if (!pageGrid || !rouletteGrid) return;
+        pageGrid.innerHTML = ''; rouletteGrid.innerHTML = '';
+        
+        (window.listTemas || []).forEach(tema => {
+            const coresPreview = tema.light.colors.slice(0, 4).map(c => `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`).join('');
+            
+            // Página
+            const isPageUnlocked = window.appState.unlockedPageThemes.includes(tema.id);
+            const isPageActive = window.appState.currentPageTheme === tema.id;
+            const pageCard = document.createElement('div');
+            pageCard.className = `item-card ${isPageActive ? 'active' : ''}`;
+            let btnPage = isPageActive ? `<button class="btn-action btn-active">Ativo</button>` : isPageUnlocked ? `<button class="btn-action btn-use" onclick="usePageTheme('${tema.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyPageTheme('${tema.id}', ${tema.price})"><i class="fas fa-coins"></i> ${tema.price}</button>`;
+            pageCard.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p><div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div></div>${btnPage}`;
+            pageGrid.appendChild(pageCard);
+
+            // Roleta
+            const isRouletteUnlocked = window.appState.unlockedRouletteThemes.includes(tema.id);
+            const isRouletteActive = window.appState.currentRouletteTheme === tema.id;
+            const rouletteCard = document.createElement('div');
+            rouletteCard.className = `item-card ${isRouletteActive ? 'active' : ''}`;
+            let btnRoulette = isRouletteActive ? `<button class="btn-action btn-active">Ativo</button>` : isRouletteUnlocked ? `<button class="btn-action btn-use" onclick="useRouletteTheme('${tema.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyRouletteTheme('${tema.id}', ${tema.price})"><i class="fas fa-coins"></i> ${tema.price}</button>`;
+            rouletteCard.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p><div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div></div>${btnRoulette}`;
+            rouletteGrid.appendChild(rouletteCard);
+        });
+    }
+
+    window.buyPageTheme = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedPageThemes.push(id); window.usePageTheme(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+    window.usePageTheme = (id) => { window.appState.currentPageTheme = id; window.applyThemes(); renderThemes(); };
+    window.buyRouletteTheme = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedRouletteThemes.push(id); window.useRouletteTheme(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+    window.useRouletteTheme = (id) => { window.appState.currentRouletteTheme = id; window.applyThemes(); renderThemes(); };
+
+    // ---- LOJA: Sons ----
+    function renderSounds() {
+        const spinGrid = document.getElementById('spinSoundsGrid');
+        const winGrid = document.getElementById('winSoundsGrid');
+        if (!spinGrid || !winGrid) return;
+        spinGrid.innerHTML = ''; winGrid.innerHTML = '';
+        
+        (window.SONS_GIRO || []).forEach(sound => {
+            const isUnlocked = window.appState.unlockedSpinSounds.includes(sound.id);
+            const isActive = window.appState.currentSpinSound === sound.id;
+            const card = document.createElement('div');
+            card.className = `item-card ${isActive ? 'active' : ''}`;
+            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="useSpinSound('${sound.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buySpinSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
+            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4><p>Giro</p></div>${btnHTML}`;
+            spinGrid.appendChild(card);
+        });
+
+        (window.SONS_VITORIA || []).forEach(sound => {
+            const isUnlocked = window.appState.unlockedWinSounds.includes(sound.id);
+            const isActive = window.appState.currentWinSound === sound.id;
+            const card = document.createElement('div');
+            card.className = `item-card ${isActive ? 'active' : ''}`;
+            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="useWinSound('${sound.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyWinSound('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
+            card.innerHTML = `<div class="item-info"><h4>${sound.name} <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="playSynthesizedSound('${sound.type}')"></i></h4><p>Vitória</p></div>${btnHTML}`;
+            winGrid.appendChild(card);
+        });
+    }
+
+    window.buySpinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedSpinSounds.push(id); window.useSpinSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+    window.useSpinSound = (id) => { window.appState.currentSpinSound = id; window.saveData(); renderSounds(); };
+    window.buyWinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedWinSounds.push(id); window.useWinSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+    window.useWinSound = (id) => { window.appState.currentWinSound = id; window.saveData(); renderSounds(); };
+
+    // ---- LOJA: Receitas ----
+    function renderRecipes() {
+        const grid = document.getElementById('recipesGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        (window.RECEITAS || []).forEach(rec => {
+            const isUnlocked = window.appState.unlockedRecipes.includes(rec.id);
+            const card = document.createElement('div');
+            card.className = 'recipe-card';
+            card.innerHTML = `<div class="recipe-info"><span class="recipe-icon">${rec.icone}</span><span class="recipe-name">${rec.nome}</span></div>`;
+            
+            let btn = document.createElement('button');
+            if (isUnlocked) {
+                btn.className = 'btn-action btn-recipe-open'; btn.textContent = 'Ver';
+                btn.onclick = () => window.location.href = rec.link;
+            } else {
+                btn.className = 'btn-action btn-buy'; btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco}`;
+                btn.onclick = () => {
+                    if (window.appState.coins >= rec.preco) {
+                        window.appState.coins -= rec.preco;
+                        window.appState.unlockedRecipes.push(rec.id);
+                        window.saveData(); renderRecipes(); updateCoinsDisplay();
+                        alert(`🎉 Receita "${rec.nome}" desbloqueada!`);
+                    } else alert("Moedas insuficientes!");
+                };
+            }
+            card.appendChild(btn);
+            grid.appendChild(card);
+        });
+    }
+
+    function updateCoinsDisplay() {
+        const coinBalance = document.getElementById('coin-balance');
+        if (coinBalance) coinBalance.textContent = window.appState.coins;
+    }
+
+    // ========================== PWA - INSTALAÇÃO ==========================
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault(); deferredPrompt = e;
+        const installAppBtn = document.getElementById('installAppBtn');
+        if (installAppBtn) installAppBtn.style.display = 'flex';
+    });
+
+    document.getElementById('installAppBtn')?.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            document.getElementById('installAppBtn').style.display = 'none';
+        }
+    });
+
+    // ========================== INICIALIZAÇÃO FINAL ==========================
+    // Previne que receitas gratuitas fiquem bloqueadas
+    (window.RECEITAS || []).forEach(rec => {
+        if (rec.preco === 0 && !window.appState.unlockedRecipes.includes(rec.id)) {
+            window.appState.unlockedRecipes.push(rec.id);
+        }
+    });
+
+    renderFoodList();
+    renderThemes();
+    renderSounds();
+    renderRecipes();
+    window.applyThemes();
+    updateCoinsDisplay();
+});
