@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Lasanha · Roda do Sabor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* ===== ESTILOS PADRÃO ===== */
+        .recipe-hero {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .recipe-hero h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
+        .recipe-hero p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+        .recipe-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .recipe-tab {
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: 40px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+            box-shadow: var(--shadow);
+            font-size: 0.9rem;
+        }
+        .recipe-tab.active {
+            border-color: var(--gold);
+            background: rgba(245, 179, 66, 0.15);
+        }
+        .recipe-tab:hover {
+            transform: translateY(-2px);
+        }
+        .recipe-content {
+            display: none;
+            animation: fadeUp 0.4s ease;
+        }
+        .recipe-content.active {
+            display: block;
+        }
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .recipe-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        .recipe-image {
+            border-radius: 2rem;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: var(--bg-card);
+        }
+        .recipe-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            min-height: 280px;
+            object-fit: cover;
+        }
+        .recipe-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .recipe-details h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.2rem;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .recipe-details .description {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .ingredients-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .ingredients-list li {
+            background: var(--bg-card);
+            padding: 0.4rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .ingredients-list li i {
+            color: var(--gold);
+            font-size: 0.8rem;
+        }
+        .prep-steps {
+            background: var(--bg-card);
+            padding: 1rem 1.5rem;
+            border-radius: 1.5rem;
+            border-left: 4px solid var(--gold);
+        }
+        .prep-steps ol {
+            padding-left: 1.2rem;
+            margin: 0.5rem 0 0;
+        }
+        .prep-steps li {
+            margin-bottom: 0.4rem;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+        .btn-back:hover {
+            transform: translateX(-4px);
+            box-shadow: var(--shadow);
+        }
+        .dica-box {
+            background: rgba(245, 179, 66, 0.1);
+            border-radius: 1rem;
+            padding: 0.8rem 1.2rem;
+            border-left: 3px solid var(--gold);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .dica-box i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        @media(max-width: 700px) {
+            .recipe-card {
+                grid-template-columns: 1fr;
+            }
+            .ingredients-list {
+                grid-template-columns: 1fr;
+            }
+            .recipe-hero h1 {
+                font-size: 1.8rem;
+            }
+            .recipe-tab {
+                font-size: 0.8rem;
+                padding: 0.4rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <div class="logo-area">
+                <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-box" style="display: none;">🍽️</div>
+                <div class="logo-title">
+                    <h1>Roda do Sabor</h1>
+                    <p><i class="fas fa-star"></i> Receita de Lasanha</p>
+                </div>
+            </div>
+            <div class="top-stats">
+                <div class="stat-badge">
+                    <i class="fas fa-coins"></i>
+                    <span id="coin-balance">0</span>
+                </div>
+                <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="index.html" class="btn-toggle-mode" title="Voltar à Roda" style="text-decoration:none;">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- ===== CONTEÚDO PRINCIPAL ===== -->
+        <div class="card">
+            <div class="recipe-hero">
+                <h1>🍛 Lasanhas Artesanais</h1>
+                <p>Escolha seu estilo favorito e veja a receita completa com ingredientes e preparo.</p>
+            </div>
+
+            <!-- Abas -->
+            <div class="recipe-tabs" id="lasanhaTabs">
+                <button class="recipe-tab active" data-target="bolonhesa">Bolonhesa</button>
+                <button class="recipe-tab" data-target="vegetariana">Vegetariana</button>
+                <button class="recipe-tab" data-target="frango">Frango com Requeijão</button>
+                <button class="recipe-tab" data-target="berinjela">Berinjela</button>
+                <button class="recipe-tab" data-target="branca">Branca (Quatro Queijos)</button>
+            </div>
+
+            <!-- Conteúdo -->
+            <div id="lasanhaContents">
+                <!-- Bolonhesa -->
+                <div class="recipe-content active" id="lasanha-bolonhesa">
+                    <div class="recipe-card">
+                        <div class="recipe-image">
+                            <img src="https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600&h=400&fit=crop&crop=center" alt="Lasanha à Bolonhesa" loading="lazy">
+                        </div>
+                        <div class="recipe-details">
+                            <h2>Bolonhesa</h2>
+                            <p class="description">A clássica lasanha com molho à bolonhesa, bechamel e queijo gratinado.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 500g de carne moída</li>
+                                    <li><i class="fas fa-circle"></i> 1 cebola picada</li>
+                                    <li><i class="fas fa-circle"></i> 2 dentes de alho</li>
+                                    <li><i class="fas fa-circle"></i> 1 lata de tomate pelado (400g)</li>
+                                    <li><i class="fas fa-circle"></i> 1 xícara de molho de tomate</li>
+                                    <li><i class="fas fa-circle"></i> 500ml de leite</li>
+                                    <li><i class="fas fa-circle"></i> 2 colheres (sopa) de manteiga</li>
+                                    <li><i class="fas fa-circle"></i> 2 colheres (sopa) de farinha de trigo</li>
+                                    <li><i class="fas fa-circle"></i> 200g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> 12 folhas de massa para lasanha</li>
+                                    <li><i class="fas fa-circle"></i> Sal, pimenta, noz-moscada</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Refogue a cebola e o alho, adicione a carne e doure. Acrescente o tomate pelado e o molho de tomate, cozinhe por 20 minutos. Tempere com sal e pimenta.</li>
+                                    <li>Prepare o bechamel: derreta a manteiga, adicione a farinha e cozinhe por 2 minutos. Adicione o leite aos poucos, mexendo até engrossar. Tempere com sal e noz-moscada.</li>
+                                    <li>Monte em uma travessa: molho bolonhesa, massa, bechamel, massa, repetindo. Finalize com queijo ralado.</li>
+                                    <li>Asse a 180°C por 30 minutos. Sirva quente.</li>
+                                </ol>
+                            </div>
+                            <div class="dica-box">
+                                <i class="fas fa-lightbulb"></i> Dica: deixe a lasanha descansar por 10 minutos antes de cortar.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vegetariana -->
+                <div class="recipe-content" id="lasanha-vegetariana">
+                    <div class="recipe-card">
+                        <div class="recipe-image">
+                            <img src="https://images.unsplash.com/photo-1625943551974-9f9a9b23e1a2?w=600&h=400&fit=crop&crop=center" alt="Lasanha Vegetariana" loading="lazy">
+                        </div>
+                        <div class="recipe-details">
+                            <h2>Vegetariana</h2>
+                            <p class="description">Lasanha recheada com legumes salteados, molho de tomate e queijo gratinado.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 1 abobrinha em cubos</li>
+                                    <li><i class="fas fa-circle"></i> 1 berinjela em cubos</li>
+                                    <li><i class="fas fa-circle"></i> 1 pimentão vermelho picado</li>
+                                    <li><i class="fas fa-circle"></i> 1 cebola picada</li>
+                                    <li><i class="fas fa-circle"></i> 2 dentes de alho</li>
+                                    <li><i class="fas fa-circle"></i> 1 lata de tomate pelado</li>
+                                    <li><i class="fas fa-circle"></i> 200g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> 12 folhas de massa para lasanha</li>
+                                    <li><i class="fas fa-circle"></i> Azeite, sal, orégano</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Refogue a cebola e o alho, adicione os legumes e cozinhe até amaciarem. Acrescente o tomate pelado e tempere com sal e orégano.</li>
+                                    <li>Monte em uma travessa alternando molho de legumes, massa e queijo. Finalize com queijo.</li>
+                                    <li>Asse a 180°C por 25 minutos. Sirva.</li>
+                                </ol>
+                            </div>
+                            <div class="dica-box">
+                                <i class="fas fa-lightbulb"></i> Dica: adicione cogumelos para um sabor mais intenso.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Frango com Requeijão -->
+                <div class="recipe-content" id="lasanha-frango">
+                    <div class="recipe-card">
+                        <div class="recipe-image">
+                            <img src="https://images.unsplash.com/photo-1659474274628-1b30f5c26651?w=600&h=400&fit=crop&crop=center" alt="Lasanha de Frango" loading="lazy">
+                        </div>
+                        <div class="recipe-details">
+                            <h2>Frango com Requeijão</h2>
+                            <p class="description">Lasanha cremosa com frango desfiado, requeijão e molho de tomate.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 500g de peito de frango cozido e desfiado</li>
+                                    <li><i class="fas fa-circle"></i> 1 cebola picada</li>
+                                    <li><i class="fas fa-circle"></i> 2 dentes de alho</li>
+                                    <li><i class="fas fa-circle"></i> 1 lata de molho de tomate</li>
+                                    <li><i class="fas fa-circle"></i> 200g de requeijão cremoso</li>
+                                    <li><i class="fas fa-circle"></i> 200g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> 12 folhas de massa para lasanha</li>
+                                    <li><i class="fas fa-circle"></i> Sal, pimenta, orégano</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Refogue a cebola e o alho, adicione o frango desfiado e o molho de tomate. Cozinhe por 10 minutos. Tempere com sal, pimenta e orégano.</li>
+                                    <li>Em uma travessa, monte camadas de molho, massa, requeijão e mussarela. Repita.</li>
+                                    <li>Asse a 180°C por 25 minutos. Sirva.</li>
+                                </ol>
+                            </div>
+                            <div class="dica-box">
+                                <i class="fas fa-lightbulb"></i> Dica: use requeijão de boa qualidade para mais cremosidade.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Berinjela -->
+                <div class="recipe-content" id="lasanha-berinjela">
+                    <div class="recipe-card">
+                        <div class="recipe-image">
+                            <img src="https://images.unsplash.com/photo-1634165457177-71cdd86e35a1?w=600&h=400&fit=crop&crop=center" alt="Lasanha de Berinjela" loading="lazy">
+                        </div>
+                        <div class="recipe-details">
+                            <h2>Berinjela</h2>
+                            <p class="description">Lasanha leve com fatias de berinjela no lugar da massa, molho de tomate e queijo.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 2 berinjelas grandes fatiadas</li>
+                                    <li><i class="fas fa-circle"></i> 500g de carne moída (ou soja)</li>
+                                    <li><i class="fas fa-circle"></i> 1 cebola picada</li>
+                                    <li><i class="fas fa-circle"></i> 2 dentes de alho</li>
+                                    <li><i class="fas fa-circle"></i> 1 lata de tomate pelado</li>
+                                    <li><i class="fas fa-circle"></i> 200g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> Azeite, sal, orégano</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Grelhe as fatias de berinjela em uma frigideira com azeite até dourarem.</li>
+                                    <li>Refogue a carne com cebola, alho e tomate. Tempere com sal e orégano.</li>
+                                    <li>Monte em uma travessa: berinjela, carne, queijo, repita.</li>
+                                    <li>Asse a 180°C por 20 minutos. Sirva.</li>
+                                </ol>
+                            </div>
+                            <div class="dica-box">
+                                <i class="fas fa-lightbulb"></i> Dica: a berinjela substitui a massa e deixa a lasanha mais leve.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Branca (Quatro Queijos) -->
+                <div class="recipe-content" id="lasanha-branca">
+                    <div class="recipe-card">
+                        <div class="recipe-image">
+                            <img src="https://images.unsplash.com/photo-1598576234630-f8f67100cafc?w=600&h=400&fit=crop&crop=center" alt="Lasanha Branca" loading="lazy">
+                        </div>
+                        <div class="recipe-details">
+                            <h2>Branca (Quatro Queijos)</h2>
+                            <p class="description">Lasanha cremosa com molho branco e quatro queijos: mussarela, provolone, parmesão e gorgonzola.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 500ml de leite</li>
+                                    <li><i class="fas fa-circle"></i> 2 colheres (sopa) de manteiga</li>
+                                    <li><i class="fas fa-circle"></i> 2 colheres (sopa) de farinha de trigo</li>
+                                    <li><i class="fas fa-circle"></i> 100g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> 100g de provolone ralado</li>
+                                    <li><i class="fas fa-circle"></i> 50g de parmesão ralado</li>
+                                    <li><i class="fas fa-circle"></i> 80g de gorgonzola esfarelado</li>
+                                    <li><i class="fas fa-circle"></i> 12 folhas de massa para lasanha</li>
+                                    <li><i class="fas fa-circle"></i> Sal, noz-moscada</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Prepare o molho branco: derreta a manteiga, adicione a farinha e cozinhe. Adicione o leite aos poucos, mexendo até engrossar. Tempere com sal e noz-moscada.</li>
+                                    <li>Adicione os quatro queijos ao molho e misture bem.</li>
+                                    <li>Monte em uma travessa camadas de molho, massa e mais molho. Finalize com queijo parmesão.</li>
+                                    <li>Asse a 180°C por 25 minutos. Sirva.</li>
+                                </ol>
+                            </div>
+                            <div class="dica-box">
+                                <i class="fas fa-lightbulb"></i> Dica: acrescente um toque de pimenta-do-reino para realçar os sabores.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="index.html" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Voltar à Roda
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="core.js"></script>
+    <script src="app.js"></script>
+    <script>
+        (function() {
+            function updateCoinDisplay() {
+                const el = document.getElementById('coin-balance');
+                if (el && typeof state !== 'undefined' && state.coins !== undefined) {
+                    el.textContent = state.coins;
+                }
+            }
+            if (typeof state !== 'undefined') updateCoinDisplay();
+            else document.addEventListener('stateReady', updateCoinDisplay);
+
+            const tabs = document.querySelectorAll('.recipe-tab');
+            const contents = document.querySelectorAll('.recipe-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    contents.forEach(c => c.classList.remove('active'));
+                    const target = this.dataset.target;
+                    const targetEl = document.getElementById('lasanha-' + target);
+                    if (targetEl) targetEl.classList.add('active');
+                });
+            });
+
+            if (typeof applyThemes === 'function') applyThemes();
+            if (typeof saveToStorage === 'function') saveToStorage();
+        })();
+    </script>
+</body>
+</html>
