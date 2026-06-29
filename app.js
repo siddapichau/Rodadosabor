@@ -4,9 +4,11 @@ console.log('app.js carregado');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM pronto, iniciando app...');
 
-    // Puxa as listas globais do comidas.js
+    // Puxa as listas globais do comidas.js e sons.js
     const BANCO_DE_COMIDAS = window.BANCO_DE_COMIDAS || [];
     const RECEITAS = window.RECEITAS || [];
+    const SONS_GIRO = window.SONS_GIRO || [];
+    const SONS_VITORIA = window.SONS_VITORIA || [];
 
     // ========================== REFERÊNCIAS DO DOM ==========================
     const btnOpenFoodModal = document.getElementById('btnOpenFoodModal');
@@ -24,12 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnModeToggle = document.getElementById('btnModeToggle');
     const recipesGrid = document.getElementById('recipesGrid');
 
-    // Novos elementos para comida personalizada
     const btnAddCustomFood = document.getElementById('btnAddCustomFood');
     const newFoodName = document.getElementById('newFoodName');
     const newFoodEmoji = document.getElementById('newFoodEmoji');
-
-    // Botão de instalação PWA
     const installAppBtn = document.getElementById('installAppBtn');
 
     let comidasSelecionadasTemporarias = [];
@@ -79,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnModeToggle) {
         btnModeToggle.addEventListener('click', () => {
             state.darkMode = !state.darkMode;
-            applyThemes();
+            if(typeof applyThemes !== 'undefined') applyThemes();
         });
     }
 
@@ -263,15 +262,14 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     window.useRouletteTheme = function(id) { state.currentRouletteTheme = id; if(typeof applyThemes !== 'undefined') applyThemes(); renderThemes(); saveToStorage(); };
 
-    // ---- Sons ----
+    // ---- Sons (Agora lendo das novas variáveis globais) ----
     function renderSounds() {
         const spinGrid = document.getElementById('spinSoundsGrid');
         const winGrid = document.getElementById('winSoundsGrid');
         if (!spinGrid || !winGrid) return;
         spinGrid.innerHTML = ''; winGrid.innerHTML = '';
         
-        if (typeof listSpinSounds === 'undefined') window.listSpinSounds = [];
-        listSpinSounds.forEach(sound => {
+        SONS_GIRO.forEach(sound => {
             const isUnlocked = state.unlockedSpinSounds.includes(sound.id);
             const isActive = state.currentSpinSound === sound.id;
             const card = document.createElement('div');
@@ -281,8 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
             spinGrid.appendChild(card);
         });
 
-        if (typeof listWinSounds === 'undefined') window.listWinSounds = [];
-        listWinSounds.forEach(sound => {
+        SONS_VITORIA.forEach(sound => {
             const isUnlocked = state.unlockedWinSounds.includes(sound.id);
             const isActive = state.currentWinSound === sound.id;
             const card = document.createElement('div');
