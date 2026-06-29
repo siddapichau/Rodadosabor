@@ -4,66 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Roda do Sabor · O Aplicativo</title>
-
-    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-    <!-- CSS Principal -->
     <link rel="stylesheet" href="style.css" />
-
-    <!-- Caso o style.css não carregue, um fallback mínimo -->
-    <style>
-        /* fallback básico para garantir que a página não fique quebrada */
-        body { font-family: 'Inter', sans-serif; margin: 0; padding: 1rem; background: #f5f0eb; color: #1e2a3a; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .card { background: rgba(255,255,255,0.9); border-radius: 2rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .logo-title h1 { background: linear-gradient(135deg, #f5b342, #7b9e5a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .stat-badge { background: #fff; padding: 0.5rem 1rem; border-radius: 40px; border: 1px solid #ddd; }
-        .btn-toggle-mode { background: #fff; border: 1px solid #ddd; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
-        .canvas-container { position: relative; width: 100%; max-width: 700px; margin: 0 auto; }
-        .roulette-arrow { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 35px solid #e94b3c; z-index: 10; }
-        .center-spin-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle, #f5d742, #f5b342); border: 6px solid #fff; cursor: pointer; z-index: 15; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; color: #7d1212; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-        .center-spin-button .txt-top { font-size: 0.8rem; }
-        .center-spin-button .txt-bottom { font-size: 0.5rem; }
-        .action-row-buttons { display: flex; gap: 1rem; margin: 1rem 0; }
-        .btn-gradient-action { flex: 1; padding: 1rem; border-radius: 16px; border: none; font-weight: 700; color: #fff; cursor: pointer; }
-        .dynamic-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-        .dynamic-green { background: linear-gradient(135deg, #10b981, #047857); }
-        .food-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-        .food-tag { background: #eee; padding: 0.3rem 0.8rem; border-radius: 30px; }
-        .store-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-        .item-card { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border: 1px solid #ddd; border-radius: 16px; background: rgba(255,255,255,0.5); }
-        .recipes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.8rem; }
-        .recipe-link { background: #fff; border: 1px solid #ddd; border-radius: 16px; padding: 1rem; text-align: center; cursor: pointer; }
-        .result-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 100; }
-        .modal-content-box { background: #fff; border-radius: 2rem; padding: 2rem; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
-        .iframe-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; align-items: center; justify-content: center; }
-        .iframe-box { background: #000; border-radius: 20px; overflow: hidden; width: 90%; max-width: 650px; height: 80vh; }
-        #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 150; }
-        /* Responsivo */
-        @media (max-width: 600px) { .store-grid { grid-template-columns: 1fr; } .action-row-buttons { flex-direction: column; } }
-    </style>
 </head>
 <body>
 
     <div class="container">
-
-        <!-- ====== HEADER ====== -->
         <header class="header">
-            <div class="logo-area" style="display: flex; align-items: center; gap: 1rem;">
-                <div class="logo-box" style="width: 56px; height: 56px; border-radius: 18px; background: linear-gradient(135deg, #f5b342, #7b9e5a); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">🍽️</div>
+            <div class="logo-area">
+                <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-box" style="display: none;">🍽️</div>
                 <div class="logo-title">
-                    <h1 style="font-size: 1.8rem; margin: 0;">Roda do Sabor</h1>
-                    <p style="font-size: 0.85rem; color: #5a6a7a; margin: 0;"><i class="fas fa-star"></i> O seu guia de refeição diário</p>
+                    <h1>Roda do Sabor</h1>
+                    <p><i class="fas fa-star"></i> O seu guia de refeição diário</p>
                 </div>
             </div>
-            <div class="top-stats" style="display: flex; align-items: center; gap: 1rem;">
+            <div class="top-stats">
                 <div class="stat-badge">
-                    <i class="fas fa-coins" style="color: #f5b342;"></i>
+                    <i class="fas fa-coins"></i>
                     <span id="coin-balance">0</span>
                 </div>
                 <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
@@ -72,12 +33,11 @@
             </div>
         </header>
 
-        <!-- ====== ROLETA ====== -->
-        <div class="card" style="padding: 1.5rem 0.5rem;">
-            <div class="roulette-wrapper" style="position: relative;">
+        <div class="card" style="padding: 1.5rem 1rem;">
+            <div class="roulette-wrapper">
                 <div class="roulette-arrow"></div>
                 <div class="canvas-container">
-                    <canvas id="rouletteCanvas" width="700" height="700" style="display: block; width: 100%; height: auto; aspect-ratio: 1/1;"></canvas>
+                    <canvas id="rouletteCanvas" width="600" height="600"></canvas>
                     <button class="center-spin-button" id="btnSpin">
                         <span class="txt-top">Roda</span>
                         <span class="txt-bottom">do Sabor</span>
@@ -86,7 +46,6 @@
             </div>
         </div>
 
-        <!-- ====== BOTÕES DE AÇÃO ====== -->
         <div class="action-row-buttons">
             <button id="btnOpenFoodModal" class="btn-gradient-action dynamic-blue">
                 <i class="fas fa-utensils"></i> Selecionar Comidas
@@ -96,127 +55,89 @@
             </button>
         </div>
 
-        <!-- ====== LISTA DE COMIDAS ATIVAS ====== -->
         <section class="card">
-            <h2 style="display: flex; align-items: center; gap: 0.6rem; border-bottom: 2px solid #ddd; padding-bottom: 0.4rem;">
-                <i class="fas fa-clipboard-list" style="color: #f5b342;"></i> Itens Ativos na Roleta
-            </h2>
+            <h2><i class="fas fa-clipboard-list"></i> Itens Ativos na Roleta</h2>
             <div class="food-list" id="foodListContainer"></div>
         </section>
 
-        <!-- ====== TEMAS ====== -->
         <section class="card">
-            <h2 style="display: flex; align-items: center; gap: 0.6rem; border-bottom: 2px solid #ddd; padding-bottom: 0.4rem;">
-                <i class="fas fa-palette" style="color: #f5b342;"></i> 10 Temas Visuais (Claro/Escuro)
-            </h2>
+            <h2><i class="fas fa-palette"></i> 10 Temas Visuais</h2>
             <div class="store-grid" id="themesGrid"></div>
         </section>
 
-        <!-- ====== SONS ====== -->
         <section class="card">
-            <h2 style="display: flex; align-items: center; gap: 0.6rem; border-bottom: 2px solid #ddd; padding-bottom: 0.4rem;">
-                <i class="fas fa-volume-up" style="color: #f5b342;"></i> Sons Personalizados
-            </h2>
-            <div style="margin-bottom: 0.5rem; font-weight: 600;">Sons de Giro:</div>
+            <h2><i class="fas fa-volume-up"></i> Sons Personalizados</h2>
+            <div style="margin-bottom:1rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">Sons de Giro:</div>
             <div class="store-grid" id="spinSoundsGrid" style="margin-bottom: 1.5rem;"></div>
-            <div style="margin-bottom: 0.5rem; font-weight: 600;">Sons de Vitória:</div>
+            <div style="margin-bottom:1rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">Sons de Vitória:</div>
             <div class="store-grid" id="winSoundsGrid"></div>
         </section>
 
-        <!-- ====== RECEITAS ====== -->
         <section class="card">
-            <h2 style="display: flex; align-items: center; gap: 0.6rem; border-bottom: 2px solid #ddd; padding-bottom: 0.4rem;">
-                <i class="fas fa-book-open" style="color: #f5b342;"></i> Receitas Completas
-            </h2>
-            <p style="font-size: 0.8rem; color: #5a6a7a; margin-bottom: 1rem;">Clique em uma receita para ver os detalhes.</p>
+            <h2><i class="fas fa-book-open"></i> Receitas Completas</h2>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Clique em uma receita para ver os detalhes.</p>
             <div class="recipes-grid" id="recipesGrid"></div>
         </section>
+    </div>
 
-    </div> <!-- /container -->
-
-    <!-- ====== MODAIS ====== -->
-
-    <!-- Modal de seleção de comidas -->
+    <!-- MODAL SELEÇÃO DE COMIDAS -->
     <div id="foodSelectionModal" class="result-overlay">
         <div class="modal-content-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="margin: 0;">Selecione os Pratos</h3>
-                <span class="close-modal-x" id="btnCloseFoodModal" style="font-size: 2rem; cursor: pointer;">&times;</span>
+            <div class="modal-header-container">
+                <h3>Selecione os Pratos</h3>
+                <span class="close-modal-x" id="btnCloseFoodModal">&times;</span>
             </div>
-            <input type="text" id="searchFoodInput" placeholder="🔍 Buscar comida..." style="width: 100%; padding: 0.75rem; border-radius: 12px; border: 1px solid #ddd; margin-bottom: 1rem;">
-            <div class="grid-food-options" id="modalFoodOptionsGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; max-height: 50vh; overflow-y: auto;"></div>
+            <div class="search-box-modal">
+                <input type="text" id="searchFoodInput" placeholder="🔍 Buscar comida...">
+            </div>
+            <div class="grid-food-options" id="modalFoodOptionsGrid"></div>
             <div style="text-align: center; margin-top: 1rem;">
-                <button class="btn-close-modal" id="btnSaveFoodSelection" style="background: linear-gradient(135deg, #f5b342, #d4ac0d); border: none; padding: 0.75rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer;">Salvar Alterações</button>
+                <button class="btn-close-modal" id="btnSaveFoodSelection">Salvar Alterações</button>
             </div>
         </div>
     </div>
 
-    <!-- Overlay do anúncio -->
+    <!-- OVERLAY ANÚNCIO -->
     <div id="adOverlay" class="iframe-overlay">
         <div class="iframe-box">
-            <div style="background: #1f2937; color: #fff; padding: 1rem; text-align: center; font-weight: 700;">
+            <div class="iframe-header">
                 Aguarde <span id="adCountdown">20</span> segundos para coletar suas moedas...
             </div>
-            <iframe id="adFrame" src="about:blank" style="width: 100%; height: calc(100% - 70px); border: none;"></iframe>
+            <iframe id="adFrame" src="about:blank"></iframe>
         </div>
     </div>
 
-    <!-- Modal de resultado -->
+    <!-- MODAL RESULTADO -->
     <div class="result-overlay" id="resultOverlay">
-        <div class="modal-content-box" style="max-width: 400px; text-align: center;">
+        <div class="result-modal">
             <h3>Refeição Sorteada!</h3>
-            <span class="food-emoji" id="modalEmoji" style="font-size: 4.5rem; display: block; margin: 1rem 0;">🍕</span>
-            <div class="food-name" id="modalFoodName" style="font-size: 1.4rem; font-weight: 700; color: #f5b342; margin-bottom: 1.5rem;">Pizza</div>
-            <p style="font-size: 0.85rem; color: #5a6a7a; margin-bottom: 1.5rem;">Bom apetite!</p>
-            <button class="btn-close-modal" id="btnCloseModal" style="background: linear-gradient(135deg, #f5b342, #d4ac0d); border: none; padding: 0.75rem 2.5rem; border-radius: 50px; font-weight: 700; cursor: pointer;">Maravilha!</button>
+            <span class="food-emoji" id="modalEmoji">🍕</span>
+            <div class="food-name" id="modalFoodName">Pizza</div>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem;">Bom apetite!</p>
+            <button class="btn-close-modal" id="btnCloseModal">Maravilha!</button>
         </div>
     </div>
 
-    <!-- Modal de receita -->
+    <!-- MODAL RECEITA -->
     <div class="result-overlay" id="recipeModal">
         <div class="modal-content-box" style="max-width: 600px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 id="recipeModalTitle" style="margin: 0;">Receita</h3>
-                <span class="close-modal-x" id="btnCloseRecipeModal" style="font-size: 2rem; cursor: pointer;">&times;</span>
+            <div class="modal-header-container">
+                <h3 id="recipeModalTitle">Receita</h3>
+                <span class="close-modal-x" id="btnCloseRecipeModal">&times;</span>
             </div>
-            <div id="recipeModalContent" style="max-height: 60vh; overflow-y: auto;">
+            <div id="recipeModalContent" style="overflow-y: auto; max-height: 60vh;">
                 <p><strong>Ingredientes:</strong></p>
-                <ul id="recipeIngredients" style="margin-left: 1.5rem;"></ul>
+                <ul id="recipeIngredients" style="margin-left:1.5rem;"></ul>
                 <p><strong>Modo de Preparo:</strong></p>
                 <p id="recipeInstructions" style="white-space: pre-wrap;"></p>
             </div>
         </div>
     </div>
 
-    <!-- Canvas para confetes -->
+    <!-- CONFETES CANVAS -->
     <canvas id="confettiCanvas"></canvas>
 
-    <!-- ====== SCRIPTS ====== -->
-    <!-- Carrega core.js e app.js na ordem correta -->
     <script src="core.js"></script>
     <script src="app.js"></script>
-
-    <!-- Script de fallback para caso os arquivos não carreguem -->
-    <script>
-        (function() {
-            // Verifica se o objeto 'state' foi definido pelo core.js
-            if (typeof state === 'undefined') {
-                console.warn('core.js não carregou corretamente. Tentando recarregar...');
-                // Tenta recarregar os scripts dinamicamente
-                var script1 = document.createElement('script');
-                script1.src = 'core.js';
-                document.body.appendChild(script1);
-                var script2 = document.createElement('script');
-                script2.src = 'app.js';
-                script2.onload = function() {
-                    console.log('app.js recarregado com sucesso.');
-                };
-                document.body.appendChild(script2);
-            } else {
-                console.log('core.js carregado, app.js em execução.');
-            }
-        })();
-    </script>
-
 </body>
 </html>
