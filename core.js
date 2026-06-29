@@ -1,34 +1,8 @@
 'use strict';
 console.log('core.js carregado');
 
-let state = {
-    coins: 20,
-    darkMode: false,
-    foods: [
-        "Lasanha 🍝", "Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣",
-        "Taco 🌮", "Salada 🥗", "Bolo 🍰", "Lámen 🍜",
-        "Frango Assado 🍗", "Espaguete 🍝", "Sorvete 🍦", "Burrito 🌯"
-    ],
-    unlockedPageThemes: ["theme-1", "theme-2", "theme-3"],
-    currentPageTheme: "theme-1",
-    unlockedRouletteThemes: ["theme-1", "theme-2", "theme-3"],
-    currentRouletteTheme: "theme-1",
-    unlockedSpinSounds: ["spin-1"],
-    currentSpinSound: "spin-1",
-    unlockedWinSounds: ["win-1"],
-    currentWinSound: "win-1",
-    customFoods: []
-};
-
-try {
-    const saved = localStorage.getItem('rodaDoSaborState');
-    if (saved) {
-        const parsed = JSON.parse(saved);
-        state = { ...state, ...parsed };
-    }
-} catch (e) { console.warn('Erro ao carregar estado:', e); }
-
-const listTemas = [
+// ========================== 1. DADOS BASE GLOBAIS ==========================
+window.listTemas = [
     { id: "theme-1", name: "Amarelo + Verde", price: 0, light: { colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'], style: { bg: '#f3e7da', card: 'rgba(255,255,255,0.88)', text: '#1e2a3a', accent: '#7b9e5a' } }, dark: { colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'], style: { bg: '#1a1a1a', card: 'rgba(40,40,40,0.9)', text: '#f1f5f9', accent: '#7b9e5a' } } },
     { id: "theme-2", name: "Roxo + Azul", price: 0, light: { colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'], style: { bg: '#eef2ff', card: 'rgba(255,255,255,0.9)', text: '#1e1b4b', accent: '#6366f1' } }, dark: { colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'], style: { bg: '#0f0f23', card: 'rgba(30,30,60,0.9)', text: '#e0e7ff', accent: '#818cf8' } } },
     { id: "theme-3", name: "Neon Vibrante", price: 0, light: { colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'], style: { bg: '#f0e6f0', card: 'rgba(255,240,255,0.9)', text: '#1a0a1a', accent: '#7000ff' } }, dark: { colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'], style: { bg: '#0a0010', card: 'rgba(30,10,40,0.9)', text: '#f0e6f0', accent: '#ff00aa' } } },
@@ -41,13 +15,60 @@ const listTemas = [
     { id: "theme-10", name: "Ouro Premium", price: 50, light: { colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'], style: { bg: '#faf5eb', card: 'rgba(255,250,240,0.9)', text: '#1a1a1a', accent: '#b8860b' } }, dark: { colors: ['#1A1A1A', '#D4AC0D', '#2B2B2B', '#F5B342', '#111111', '#E5A93C', '#333333', '#9A7D0A'], style: { bg: '#0d0d0d', card: 'rgba(30,30,30,0.95)', text: '#f5e6c8', accent: '#d4ac0d' } } }
 ];
 
+// ========================== 2. ESTADO UNIFICADO (O CÉREBRO) ==========================
+window.appState = {
+    coins: 20,
+    darkMode: false,
+    foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
+    unlockedPageThemes: ["theme-1"],
+    currentPageTheme: "theme-1",
+    unlockedRouletteThemes: ["theme-1"],
+    currentRouletteTheme: "theme-1",
+    unlockedSpinSounds: ["spin-1"],
+    currentSpinSound: "spin-1",
+    unlockedWinSounds: ["win-1"],
+    currentWinSound: "win-1",
+    unlockedRecipes: [],
+    customFoods: []
+};
+
+// ========================== 3. SISTEMA DE ARMAZENAMENTO SEGURO ==========================
+window.loadData = function() {
+    try {
+        // Puxa qualquer lixo antigo e aplica em cima do modelo limpo
+        const saved = localStorage.getItem('rodaDoSaborState') || localStorage.getItem('appState');
+        if (saved) {
+            window.appState = { ...window.appState, ...JSON.parse(saved) };
+        }
+        // Vacina: Se por algum erro a lista ficou vazia no passado, recria itens básicos
+        if (!window.appState.foods || window.appState.foods.length === 0) {
+            window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
+        }
+    } catch(e) { console.warn("Erro ao ler dados:", e); }
+};
+
+window.saveData = function() {
+    try {
+        localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
+        localStorage.removeItem('appState'); // Apaga rastros do conflito antigo
+        
+        // Atualiza a moeda na tela instantaneamente
+        const coinEl = document.getElementById('coin-balance');
+        if (coinEl) coinEl.textContent = window.appState.coins;
+    } catch(e) {}
+};
+
+// Carrega os dados imediatamente ao iniciar
+window.loadData();
+
+// ========================== 4. SINTETIZADOR DE ÁUDIO ==========================
 let audioCtx = null;
 function getAudioContext() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return audioCtx;
 }
 
-function playSynthesizedSound(soundType) {
+window.playSynthesizedSound = function(soundType) {
     try {
         const ctx = getAudioContext();
         const now = ctx.currentTime;
@@ -64,7 +85,7 @@ function playSynthesizedSound(soundType) {
             case 'glory': [440, 554, 659, 880, 1108].forEach((f, i) => osc(ctx, now + i * 0.06, f, f * 1.2, 0.3, 'sine', 0.12)); break;
         }
     } catch (e) {}
-}
+};
 
 function osc(ctx, start, freqStart, freqEnd, duration, type, gain) {
     const o = ctx.createOscillator(); const g = ctx.createGain();
@@ -79,18 +100,11 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
     o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
 }
 
-function saveToStorage() {
-    try {
-        localStorage.setItem('rodaDoSaborState', JSON.stringify(state));
-        const coinEl = document.getElementById('coin-balance');
-        if (coinEl) coinEl.textContent = state.coins;
-    } catch (e) {}
-}
-
-function applyThemes() {
-    const pageTheme = listTemas.find(t => t.id === state.currentPageTheme) || listTemas[0];
-    const rouletteTheme = listTemas.find(t => t.id === state.currentRouletteTheme) || listTemas[0];
-    const mode = state.darkMode ? 'dark' : 'light';
+// ========================== 5. LÓGICA DE CORES E DESENHO DA ROLETA ==========================
+window.applyThemes = function() {
+    const pageTheme = window.listTemas.find(t => t.id === window.appState.currentPageTheme) || window.listTemas[0];
+    const rouletteTheme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
+    const mode = window.appState.darkMode ? 'dark' : 'light';
     
     const pageData = pageTheme[mode];
     const root = document.documentElement;
@@ -104,25 +118,26 @@ function applyThemes() {
     root.style.setProperty('--wheel-border', rouletteData.colors[0]);
     root.style.setProperty('--wheel-center', rouletteData.colors[2] || '#f5d742');
 
-    saveToStorage();
-    drawRoulette();
-}
+    window.saveData();
+    window.drawRoulette();
+};
 
-const canvas = document.getElementById('rouletteCanvas');
-const ctx = canvas ? canvas.getContext('2d') : null;
-const center = canvas ? canvas.width / 2 : 0;
 let startAngle = 0;
 let isSpinning = false;
+let spinSpeed = 0; let spinTimeTotal = 0; let spinTimeCount = 0; let lastSoundAngle = 0;
 
-function drawRoulette() {
+window.drawRoulette = function() {
+    const canvas = document.getElementById('rouletteCanvas');
     if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const center = canvas.width / 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const theme = listTemas.find(t => t.id === state.currentRouletteTheme) || listTemas[0];
-    const mode = state.darkMode ? 'dark' : 'light';
+    const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
+    const mode = window.appState.darkMode ? 'dark' : 'light';
     const themeData = theme[mode];
     
-    const items = state.foods;
+    const items = window.appState.foods;
     const numSegments = items.length;
 
     if (numSegments === 0) {
@@ -149,54 +164,49 @@ function drawRoulette() {
         ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8; ctx.fillText(items[i], 235, 0); ctx.shadowBlur = 0; ctx.restore();
     }
     ctx.beginPath(); ctx.arc(center, center, 60, 0, 2 * Math.PI); ctx.fillStyle = 'var(--wheel-center)'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.fill(); ctx.stroke();
-}
+};
 
-let spinSpeed = 0; let spinTimeTotal = 0; let spinTimeCount = 0; let lastSoundAngle = 0;
-
-function spin() {
-    if (isSpinning || state.foods.length === 0) return;
+window.spinRoulette = function() {
+    if (isSpinning || window.appState.foods.length === 0) return;
     
-    const audioContext = getAudioContext();
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
+    // Desbloqueia o som
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
     
-    isSpinning = true; 
-    spinTimeCount = 0; 
-    spinTimeTotal = Math.random() * 1000 + 4000; 
-    spinSpeed = Math.random() * 0.3 + 0.4; 
-    lastSoundAngle = startAngle; 
+    isSpinning = true; spinTimeCount = 0; spinTimeTotal = Math.random() * 1000 + 4000; 
+    spinSpeed = Math.random() * 0.3 + 0.4; lastSoundAngle = startAngle; 
     animateSpin();
-}
+};
 
 function animateSpin() {
     spinTimeCount += 20;
     if (spinTimeCount >= spinTimeTotal) { isSpinning = false; finalizeSpin(); return; }
-    let progress = spinTimeCount / spinTimeTotal; let currentVelocity = spinSpeed * Math.pow(1 - progress, 2); startAngle += currentVelocity; drawRoulette();
+    let progress = spinTimeCount / spinTimeTotal; 
+    let currentVelocity = spinSpeed * Math.pow(1 - progress, 2); 
+    startAngle += currentVelocity; 
+    window.drawRoulette();
     
-    const arcSize = (2 * Math.PI) / state.foods.length;
+    const arcSize = (2 * Math.PI) / window.appState.foods.length;
     if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        // Usa as variáveis puxadas do sons.js
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === state.currentSpinSound)) || { type: 'click' };
-        playSynthesizedSound(activeSpinSound.type); 
+        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
+        window.playSynthesizedSound(activeSpinSound.type); 
         lastSoundAngle = startAngle;
     }
     requestAnimationFrame(animateSpin);
 }
 
 function finalizeSpin() {
-    const numSegments = state.foods.length;
+    const numSegments = window.appState.foods.length;
     let degrees = (startAngle * 180 / Math.PI) % 360;
     let index = Math.floor((360 - (degrees - 90)) % 360 / (360 / numSegments));
     if (index < 0) index = numSegments + index;
-    const winningFood = state.foods[index];
+    const winningFood = window.appState.foods[index];
 
-    // O modal e a festa abrem APÓS o tempinho de "assentar" visualmente
     setTimeout(() => {
-        // Dispara Som e Confetes exatos com o Modal
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === state.currentWinSound)) || { type: 'tada' };
-        playSynthesizedSound(activeWinSound.type); 
-        launchConfetti(); 
+        // Toca SOM de Vitória e Lança Confete APENAS agora
+        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'tada' };
+        window.playSynthesizedSound(activeWinSound.type); 
+        window.launchConfetti(); 
 
         const nameEl = document.getElementById('modalFoodName'); 
         const emojiEl = document.getElementById('modalEmoji'); 
@@ -211,14 +221,13 @@ function finalizeSpin() {
     }, 300);
 }
 
-const confettiCanvas = document.getElementById('confettiCanvas');
-const confCtx = confettiCanvas ? confettiCanvas.getContext('2d') : null;
+// ========================== 6. CONFETES ==========================
 let confettiPieces = []; let confettiRunning = false;
-
-function resizeConfetti() { if (confettiCanvas) { confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; } }
-window.addEventListener('resize', resizeConfetti); resizeConfetti();
-
-function launchConfetti() {
+window.launchConfetti = function() {
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    if (!confettiCanvas) return;
+    confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight;
+    
     if (confettiRunning) return;
     confettiRunning = true; confettiPieces = [];
     const colors = ['#ff0', '#f0f', '#0ff', '#f44', '#4f4', '#44f', '#ffa500', '#ff69b4', '#adff2f', '#ff4500', '#9400d3', '#00ffff'];
@@ -226,23 +235,23 @@ function launchConfetti() {
     for (let i = 0; i < 180; i++) {
         confettiPieces.push({ x: Math.random() * confettiCanvas.width, y: Math.random() * confettiCanvas.height - confettiCanvas.height, w: Math.random() * 14 + 6, h: Math.random() * 14 + 6, color: colors[Math.floor(Math.random() * colors.length)], shape: shapes[Math.floor(Math.random() * shapes.length)], vx: (Math.random() - 0.5) * 7, vy: Math.random() * 5 + 3, rot: Math.random() * 360, rotSpeed: (Math.random() - 0.5) * 12 });
     }
-    animateConfetti();
-}
+    animateConfetti(confettiCanvas, confettiCanvas.getContext('2d'));
+};
 
-function animateConfetti() {
-    if (confettiPieces.length === 0) { confettiRunning = false; confCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height); return; }
-    confCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+function animateConfetti(canvas, ctx) {
+    if (confettiPieces.length === 0) { confettiRunning = false; ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = confettiPieces.length - 1; i >= 0; i--) {
         const p = confettiPieces[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.rot += p.rotSpeed;
-        if (p.y > confettiCanvas.height + 50) { confettiPieces.splice(i, 1); continue; }
-        confCtx.save(); confCtx.translate(p.x, p.y); confCtx.rotate((p.rot * Math.PI) / 180); confCtx.globalAlpha = Math.max(0, 1 - (p.y / confettiCanvas.height) * 0.8); confCtx.fillStyle = p.color;
+        if (p.y > canvas.height + 50) { confettiPieces.splice(i, 1); continue; }
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate((p.rot * Math.PI) / 180); ctx.globalAlpha = Math.max(0, 1 - (p.y / canvas.height) * 0.8); ctx.fillStyle = p.color;
         switch (p.shape) {
-            case 'circle': confCtx.beginPath(); confCtx.arc(0, 0, p.w / 2, 0, 2 * Math.PI); confCtx.fill(); break;
-            case 'square': confCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); break;
-            case 'diamond': confCtx.beginPath(); confCtx.moveTo(0, -p.h / 2); confCtx.lineTo(p.w / 2, 0); confCtx.lineTo(0, p.h / 2); confCtx.lineTo(-p.w / 2, 0); confCtx.closePath(); confCtx.fill(); break;
-            case 'triangle': confCtx.beginPath(); confCtx.moveTo(0, -p.h / 2); confCtx.lineTo(p.w / 2, p.h / 2); confCtx.lineTo(-p.w / 2, p.h / 2); confCtx.closePath(); confCtx.fill(); break;
+            case 'circle': ctx.beginPath(); ctx.arc(0, 0, p.w / 2, 0, 2 * Math.PI); ctx.fill(); break;
+            case 'square': ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); break;
+            case 'diamond': ctx.beginPath(); ctx.moveTo(0, -p.h / 2); ctx.lineTo(p.w / 2, 0); ctx.lineTo(0, p.h / 2); ctx.lineTo(-p.w / 2, 0); ctx.closePath(); ctx.fill(); break;
+            case 'triangle': ctx.beginPath(); ctx.moveTo(0, -p.h / 2); ctx.lineTo(p.w / 2, p.h / 2); ctx.lineTo(-p.w / 2, p.h / 2); ctx.closePath(); ctx.fill(); break;
         }
-        confCtx.restore();
+        ctx.restore();
     }
-    requestAnimationFrame(animateConfetti);
+    requestAnimationFrame(() => animateConfetti(canvas, ctx));
 }
