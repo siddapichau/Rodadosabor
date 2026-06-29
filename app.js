@@ -4,13 +4,16 @@ console.log('app.js carregado');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM pronto, iniciando app...');
 
+    // Lista expandida com mais opções
     const BANCO_DE_COMIDAS = [
         { nome: 'Pizza', icone: '🍕' }, { nome: 'Hambúrguer', icone: '🍔' }, { nome: 'Sushi', icone: '🍣' }, { nome: 'Sorvete', icone: '🍦' },
         { nome: 'Taco', icone: '🌮' }, { nome: 'Burrito', icone: '🌯' }, { nome: 'Salada', icone: '🥗' }, { nome: 'Frango Assado', icone: '🍗' },
         { nome: 'Espaguete', icone: '🍝' }, { nome: 'Bolo', icone: '🍰' }, { nome: 'Rosquinha', icone: '🍩' }, { nome: 'Pipoca', icone: '🍿' },
         { nome: 'Batata Frita', icone: '🍟' }, { nome: 'Cachorro Quente', icone: '🌭' }, { nome: 'Lasanha', icone: '🍛' }, { nome: 'Sopa Quente', icone: '🍜' },
         { nome: 'Arroz e Feijão', icone: '🍲' }, { nome: 'Churrasco', icone: '🥩' }, { nome: 'Camarão', icone: '🍤' }, { nome: 'Panqueca', icone: '🥞' },
-        { nome: 'Sanduíche', icone: '🥪' }, { nome: 'Omelete', icone: '🍳' }
+        { nome: 'Sanduíche', icone: '🥪' }, { nome: 'Omelete', icone: '🍳' }, { nome: 'Pastel', icone: '🥟' }, { nome: 'Feijoada', icone: '🥘' },
+        { nome: 'Strogonoff', icone: '🍲' }, { nome: 'Açaí', icone: '🍧' }, { nome: 'Pão de Queijo', icone: '🧀' }, { nome: 'Cuscuz', icone: '🌽' },
+        { nome: 'Risoto', icone: '🥘' }, { nome: 'Peixe', icone: '🐟' }
     ];
 
     const RECEITAS = [
@@ -40,11 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let comidasSelecionadasTemporarias = [];
 
-    // Adiciona evento de giro no botão da roleta
     const btnSpinEl = document.getElementById('btnSpin');
     if (btnSpinEl) btnSpinEl.addEventListener('click', spin);
 
-    // Evento de Alternar Tema (Dark Mode)
     if (btnModeToggle) {
         btnModeToggle.addEventListener('click', () => {
             state.darkMode = !state.darkMode;
@@ -112,7 +113,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     window.removeFood = function(idx) { state.foods.splice(idx, 1); saveToStorage(); renderFoodList(); };
 
-    // --- NOVA RENDERIZAÇÃO: TEMAS SEPARADOS ---
     function renderThemes() {
         const pageGrid = document.getElementById('pageThemesGrid');
         const rouletteGrid = document.getElementById('rouletteThemesGrid');
@@ -123,7 +123,6 @@ document.addEventListener('DOMContentLoaded', function() {
         listTemas.forEach(tema => {
             const coresPreview = tema.light.colors.slice(0, 4).map(c => `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`).join('');
             
-            // 1. Temas da Página
             const isPageUnlocked = state.unlockedPageThemes.includes(tema.id);
             const isPageActive = state.currentPageTheme === tema.id;
             const pageCard = document.createElement('div');
@@ -135,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
             pageCard.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p><div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div></div>${btnPageHTML}`;
             pageGrid.appendChild(pageCard);
 
-            // 2. Temas da Roleta
             const isRouletteUnlocked = state.unlockedRouletteThemes.includes(tema.id);
             const isRouletteActive = state.currentRouletteTheme === tema.id;
             const rouletteCard = document.createElement('div');
@@ -149,7 +147,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Funções de Compra e Uso
     window.buyPageTheme = function(id, price) {
         if (state.coins >= price) { state.coins -= price; state.unlockedPageThemes.push(id); usePageTheme(id); } else alert("Moedas insuficientes!");
     };
@@ -208,7 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnCloseRecipeModal) btnCloseRecipeModal.addEventListener('click', () => { if (recipeModal) recipeModal.style.display = 'none'; });
     if (btnCloseModal) btnCloseModal.addEventListener('click', () => { if (resultOverlay) resultOverlay.style.display = 'none'; });
 
-    // Inicia tudo
     renderFoodList();
     renderThemes();
     renderSounds();
