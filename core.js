@@ -218,5 +218,5 @@ function finalizeSpin() {
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; 
             overlay.style.display = 'flex'; 
         }
-    }, 1500); // Exatos 1.5 segundos de pausa (ajustado para melhor experiência)
+    }, 1000); // Exatos 1.5 segundos de pausa (ajustado para melhor experiência)
 }
