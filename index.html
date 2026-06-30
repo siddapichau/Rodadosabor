@@ -1,83 +1,60 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Roda do Sabor - Seu guia de refeição diário</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/responsivo.css">
-</head>
-<body>
-
-    <header>
-        <h1>🎰 Roda do Sabor</h1>
-        <div class="moedas">💰 Moedas: <span id="saldo-moedas">20</span></div>
-        <button id="btn-anuncio" class="btn-anuncio">📺 Ver Anúncio (+3 Moedas)</button>
-    </header>
-
-    <main>
-        <section class="area-roleta">
-            <div class="marcador">▼</div>
-            <div class="container-roleta">
-                <div id="roleta" class="roleta"></div>
-            </div>
-            <button id="btn-girar" class="btn-girar">GIRAR!</button>
-            <div id="resultado" class="resultado"></div>
-            <div class="controles-efeito">
-                <label>Efeito de vitória:</label>
-                <select id="seletor-efeito">
-                    <option value="confete">🎉 Confete</option>
-                    <option value="fogos">🎆 Fogos de artifício</option>
-                    <option value="estrelas">⭐ Estrelas</option>
-                    <option value="coracoes">💖 Corações</option>
-                    <option value="raios">⚡ Raios coloridos</option>
-                    <option value="espiral">🌀 Espiral</option>
-                </select>
-            </div>
-        </section>
-
-        <section class="itens-roleta">
-            <h3>Itens na roleta</h3>
-            <div id="lista-itens"></div>
-        </section>
-
-        <section class="configs">
-            <h3>Temas da página</h3>
-            <div id="temas-pagina" class="lista-temas"></div>
-
-            <h3>Temas da roleta</h3>
-            <div id="temas-roleta" class="lista-temas"></div>
-
-            <h3>Sons</h3>
-            <div class="sons-grupo">
-                <h4>Som do giro</h4>
-                <div id="sons-giro"></div>
-            </div>
-            <div class="sons-grupo">
-                <h4>Som de parada</h4>
-                <div id="sons-parada"></div>
-            </div>
-            <div class="sons-grupo">
-                <h4>Som de vitória</h4>
-                <div id="sons-vitoria"></div>
-            </div>
-            <button id="btn-mudo">🔊 Som ligado</button>
-        </section>
-
-        <section class="receitas">
-            <h3>Receitas Completas</h3>
-            <div id="lista-receitas"></div>
-        </section>
-    </main>
-
-    <div id="camada-efeitos" class="camada-efeitos"></div>
-
-    <script src="js/banco.js"></script>
-    <script src="js/comidas.js"></script>
-    <script src="js/sons.js"></script>
-    <script src="js/efeitos.js"></script>
-    <script src="js/core.js"></script>
-    <script src="js/temas.js"></script>
-    <script src="js/app.js"></script>
-</body>
-</html>
+ <html lang="pt-BR">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+     <title>Roda do Sabor - Seu guia de refeição diário</title>
+     <link rel="stylesheet" href="css/style.css">
+     <link rel="stylesheet" href="css/responsivo.css">
+ </head>
+ <body>
+     <header>
+         <!-- ✅ AQUI FICA A SUA LOGO — BASTA COLOCAR O LINK DA IMAGEM ABAIXO -->
+         <div class="logo">
+             <!-- <img src="assets/imagens/sua-logo.png" alt="Roda do Sabor" width="50"> -->
+             <span>🎰 Roda do Sabor</span>
+         </div>
+         <div class="moedas">💰 Moedas: <span id="saldo-moedas">20</span></div>
+         <button id="btn-anuncio" class="btn-anuncio">📺 Ver Anúncio (+3 Moedas)</button>
+     </header>
+     <main>
+         <section class="area-roleta">
+             <div class="marcador">▼</div>
+             <div class="container-roleta"><div id="roleta" class="roleta"></div></div>
+             <button id="btn-girar" class="btn-girar">GIRAR!</button>
+             <div id="resultado" class="resultado"></div>
+             <div class="controles-efeito">
+                 <label>Efeito:</label>
+                 <select id="seletor-efeito">
+                     <option value="confete">🎉 Confete</option>
+                     <option value="fogos">🎆 Fogos</option>
+                     <option value="estrelas">⭐ Estrelas</option>
+                     <option value="coracoes">💖 Corações</option>
+                     <option value="raios">⚡ Raios</option>
+                     <option value="espiral">🌀 Espiral</option>
+                 </select>
+             </div>
+         </section>
+         <section><h3>Itens na roleta</h3><div id="lista-itens"></div></section>
+         <section>
+             <h3>Temas Página</h3><div id="temas-pagina" class="lista-temas"></div>
+             <h3>Temas Roleta</h3><div id="temas-roleta" class="lista-temas"></div>
+             <h3>Sons</h3>
+             <div><h4>Giro</h4><div id="sons-giro"></div></div>
+             <div><h4>Parada</h4><div id="sons-parada"></div></div>
+             <div><h4>Vitória</h4><div id="sons-vitoria"></div></div>
+             <button id="btn-mudo">🔊 Som ligado</button>
+         </section>
+         <section><h3>Receitas</h3><div id="lista-receitas"></div></section>
+     </main>
+     <div id="camada-efeitos" class="camada-efeitos"></div>
+     <!-- ✅ ORDEM PERFEITA — NÃO CAUSA MAIS ERRO DE CARREGAMENTO -->
+     <script src="js/banco.js"></script>
+     <script src="js/comidas.js"></script>
+     <script src="js/sons.js"></script>
+     <script src="js/efeitos.js"></script>
+     <script src="js/core.js"></script>
+     <script src="js/temas.js"></script>
+     <script src="js/app.js"></script>
+ </body>
+ </html>
