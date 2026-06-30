@@ -1,6 +1,7 @@
 'use strict';
 console.log('roleta.js carregado');
 
+// Variáveis de estado da roleta
 let startAngle = 0;
 let isSpinning = false;
 let spinSpeed = 0;
@@ -8,6 +9,7 @@ let spinTimeTotal = 0;
 let spinTimeCount = 0;
 let lastSoundAngle = 0;
 
+// ========================== DESENHO DA ROLETA ==========================
 window.drawRoulette = function() {
     const canvas = document.getElementById('rouletteCanvas');
     if (!canvas) return;
@@ -16,7 +18,7 @@ window.drawRoulette = function() {
     const height = canvas.height;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.46;
+    const radius = Math.min(width, height) * 0.46; 
 
     ctx.clearRect(0, 0, width, height);
 
@@ -27,14 +29,11 @@ window.drawRoulette = function() {
     const numSegments = items.length;
 
     if (numSegments === 0) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ccc';
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ccc'; ctx.fill();
         ctx.fillStyle = '#333';
         ctx.font = `bold ${radius * 0.12}px Inter`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText('Adicione comidas!', centerX, centerY);
         return;
     }
@@ -42,85 +41,61 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
-    // Borda externa
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = 'var(--wheel-border)';
-    ctx.shadowColor = 'rgba(0,0,0,0.25)';
-    ctx.shadowBlur = 12;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
+    ctx.fillStyle = 'var(--wheel-border)'; ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
 
-    // Pontinhos
-    const numDots = 20;
-    for (let b = 0; b < numDots; b++) {
-        const bAngle = (b * 2 * Math.PI) / numDots;
+    for (let b = 0; b < 20; b++) {
+        const bAngle = (b * 2 * Math.PI) / 20;
         const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
         const by = centerY + (radius + borderWidth * 0.6) * Math.sin(bAngle);
-        ctx.beginPath();
-        ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
     }
 
-    // Segmentos
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
         ctx.beginPath();
         ctx.fillStyle = themeData.colors[i % themeData.colors.length];
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
 
-        // Texto - agora mais afastado do centro para não ficar sob o botão
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        const fontSize = Math.min(radius * 0.14, 40);
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        
+        // 🔥 CORREÇÃO: Aumentei a distância do centro e ajustei o tamanho da fonte
+        const textRadius = radius * 0.88; // Antes era 0.78, agora ficou bem mais distante do centro
+        const fontSize = Math.min(radius * 0.15, 40);
+        
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.6)';
-        ctx.shadowBlur = 8;
-        // Novo: posição do texto a 70% do raio para deixar espaço central
-        ctx.fillText(items[i], radius * 0.70, 0);
+        ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8;
+        ctx.fillText(items[i], textRadius, 0);
         ctx.shadowBlur = 0;
         ctx.restore();
     }
 
-    // Centro da roleta (menor, para não cobrir o texto)
-    const centerRadius = radius * 0.13;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = 'var(--wheel-center)';
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = centerRadius * 0.15;
-    ctx.fill();
-    ctx.stroke();
+    const centerRadius = radius * 0.16;
+    ctx.beginPath(); ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = 'var(--wheel-center)'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = centerRadius * 0.15; ctx.fill(); ctx.stroke();
 };
 
+// ========================== LÓGICA DE GIRO ==========================
 window.spinRoulette = function() {
-    // Verifica se já está girando ou se há comidas
     if (isSpinning || window.appState.foods.length === 0) return;
-
-    // Verifica moedas
+    
+    // 🔥 CORREÇÃO: Custo de 1 moeda por rodada
     if (window.appState.coins < 1) {
-        alert("Você precisa de pelo menos 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
+        alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
         return;
     }
-
-    // Desabilita o botão e subtrai moeda
-    const btnSpin = document.getElementById('btnSpin');
-    if (btnSpin) btnSpin.disabled = true;
-    
     window.appState.coins -= 1;
     window.saveData();
-    updateCoinsDisplay(); // precisa ser global ou chamar a função do app.js
+    if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+
+    // 🔥 CORREÇÃO: Bloqueia o botão visualmente
+    const btn = document.getElementById('btnSpin');
+    if (btn) btn.disabled = true;
 
     const ctx = getAudioContext();
     if (ctx && ctx.state === 'suspended') ctx.resume();
@@ -137,9 +112,6 @@ function animateSpin() {
     if (spinTimeCount >= spinTimeTotal) {
         isSpinning = false;
         finalizeSpin();
-        // Reabilita o botão
-        const btnSpin = document.getElementById('btnSpin');
-        if (btnSpin) btnSpin.disabled = false;
         return;
     }
     const progress = spinTimeCount / spinTimeTotal;
@@ -187,5 +159,9 @@ function finalizeSpin() {
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
             overlay.style.display = 'flex';
         }
+
+        // 🔥 CORREÇÃO: Libera o botão apenas após o suspense e vitória
+        const btn = document.getElementById('btnSpin');
+        if (btn) btn.disabled = false;
     }, 1500);
 }
