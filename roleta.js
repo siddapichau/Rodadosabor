@@ -63,7 +63,6 @@ window.drawRoulette = function() {
         ctx.rotate(currentArc + arcSize / 2);
         ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
         
-        // Auto-ajuste da fonte e distância do centro
         const textRadius = radius * 0.78; 
         let fontSize = Math.min(radius * 0.13, 28); 
         
@@ -137,13 +136,27 @@ function animateSpin() {
 function finalizeSpin() {
     const numSegments = window.appState.foods.length;
     if (numSegments === 0) return;
-
-    // 🔥 CORREÇÃO MATEMÁTICA DO ÍNDICE (100% precisa)
     const arcSize = (2 * Math.PI) / numSegments;
-    // Calcula o ângulo normalizado do marcador (topo = -PI/2) em relação ao startAngle
-    let normalizedAngle = ((-startAngle + Math.PI / 2) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-    let index = Math.floor(normalizedAngle / arcSize);
-    if (index >= numSegments) index = numSegments - 1;
+
+    // 🔥 CORREÇÃO GEOMÉTRICA DEFINITIVA PARA O ÍNDICE
+    // O marcador está no topo (12 horas), que no Canvas corresponde a -PI/2 radianos.
+    // Precisamos encontrar qual segmento cobre esse ângulo no sistema de coordenadas da roleta.
+    
+    // 1. Normaliza o startAngle para o intervalo [0, 2PI)
+    let normalizedAngle = startAngle % (2 * Math.PI);
+    if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+    
+    // 2. Subtrai o ângulo do marcador (-PI/2) do ângulo atual da roleta
+    // Isso nos dá o ângulo "apontado" pelo marcador em relação ao início da roleta.
+    let relativeAngle = (normalizedAngle - (Math.PI / 2)) % (2 * Math.PI);
+    if (relativeAngle < 0) relativeAngle += 2 * Math.PI;
+    
+    // 3. Converte o ângulo em índice (qual fatia o marcador está intersectando)
+    let index = Math.floor(relativeAngle / arcSize);
+    
+    // 4. Segurança extra contra erros de precisão de borda
+    if (index >= numSegments) index = 0;
+    if (index < 0) index = numSegments - 1;
 
     const winningFood = window.appState.foods[index];
 

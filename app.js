@@ -56,8 +56,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.getElementById('btnSaveFoodSelection')?.addEventListener('click', () => {
-        if (comidasSelecionadasTemporarias.length < 2) {
+        const count = comidasSelecionadasTemporarias.length;
+        if (count < 2) {
             alert("Selecione pelo menos 2 comidas!"); return;
+        }
+        if (count > 6) {
+            alert("Máximo permitido é 6 comidas na roleta!"); return;
         }
         window.appState.foods = [...comidasSelecionadasTemporarias];
         window.saveData();
@@ -69,7 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('resultOverlay').style.display = 'none';
     });
 
-    // 🔥 MELHORIA: Adicionando o placeholder do Emoji e garantindo o padrão
     const emojiInput = document.getElementById('newFoodEmoji');
     if (emojiInput) {
         emojiInput.placeholder = '🍽️ (ou digite outro)';
@@ -77,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('btnAddCustomFood')?.addEventListener('click', () => {
         const nome = document.getElementById('newFoodName').value.trim();
-        const emoji = emojiInput.value.trim() || '🍽️'; // Se vazio, usa o prato como padrão
+        const emoji = emojiInput.value.trim() || '🍽️';
         if (!nome) { alert('Digite o nome da comida.'); return; }
         
         const itemString = `${nome} ${emoji}`;
@@ -138,6 +141,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     comidasSelecionadasTemporarias.splice(idx, 1);
                     card.classList.remove('selected');
                 } else {
+                    // 🔥 CORREÇÃO: Limite máximo de 6 itens
+                    if (comidasSelecionadasTemporarias.length >= 6) {
+                        alert("Máximo de 6 itens permitidos na roleta!");
+                        return;
+                    }
                     comidasSelecionadasTemporarias.push(itemString);
                     card.classList.add('selected');
                 }
@@ -259,5 +267,5 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCoinsDisplay();
 });
 
-// 🔥 Expondo a função para o roleta.js conseguir atualizar o saldo
+// Expondo a função para o roleta.js conseguir atualizar o saldo
 window.updateCoinsDisplay = updateCoinsDisplay;
