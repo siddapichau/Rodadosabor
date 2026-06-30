@@ -1,6 +1,7 @@
 'use strict';
 console.log('core.js carregado');
 
+// ========================== ESTADO GLOBAL ==========================
 window.appState = {
     coins: 20,
     darkMode: false,
@@ -19,13 +20,14 @@ window.loadData = function() {
         if (saved) {
             window.appState = { ...window.appState, ...JSON.parse(saved) };
             if (!window.appState.unlockedEndSounds) {
-                window.appState.unlockedEndSounds = ["end-1"]; window.appState.currentEndSound = "end-1";
+                window.appState.unlockedEndSounds = ["end-1"];
+                window.appState.currentEndSound = "end-1";
             }
         }
         if (!window.appState.foods || window.appState.foods.length === 0) {
             window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
         }
-    } catch(e) {}
+    } catch (e) {}
 };
 
 window.saveData = function() {
@@ -33,7 +35,7 @@ window.saveData = function() {
         localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = window.appState.coins;
-    } catch(e) {}
+    } catch (e) {}
 };
 
 window.loadData();
@@ -57,14 +59,12 @@ window.playSynthesizedSound = function(soundType) {
             case 'motor': oscSquare(ctx, now, 100, 50, 0.08, 0.2); break;
             case 'whoosh': osc(ctx, now, 60, 350, 0.15, 'sawtooth', 0.15); break;
             case 'digital': oscSquare(ctx, now, 500, 1200, 0.05, 0.1); break;
-            
             // Fim da Roleta (Quando para)
             case 'end-chord': [392, 493, 587].forEach((f, i) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
             case 'end-bell': osc(ctx, now, 987.77, 987.77, 0.6, 'triangle', 0.4); break;
             case 'end-coin': [987.77, 1318.51].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.2, 0.15)); break;
             case 'end-thud': osc(ctx, now, 150, 40, 0.2, 'square', 0.4); break;
             case 'end-zap': oscSquare(ctx, now, 800, 100, 0.3, 0.2); break;
-
             // Vitória Real (Com Confetes)
             case 'win-tada': 
                 [523.25, 659.25, 783.99].forEach((f) => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); 
@@ -103,6 +103,7 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
     o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
 }
 
+// ========================== APLICAÇÃO DE TEMAS ==========================
 window.applyThemes = function() {
     const pageTheme = window.listTemas.find(t => t.id === window.appState.currentPageTheme) || window.listTemas[0];
     const rouletteTheme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
@@ -120,103 +121,9 @@ window.applyThemes = function() {
     root.style.setProperty('--wheel-border', rouletteData.colors[0]);
     root.style.setProperty('--wheel-center', rouletteData.colors[2] || '#f5d742');
 
-    window.saveData(); window.drawRoulette();
+    window.saveData();
+    // Redesenha a roleta se ela já estiver desenhada
+    if (typeof window.drawRoulette === 'function') {
+        window.drawRoulette();
+    }
 };
-
-let startAngle = 0; let isSpinning = false;
-let spinSpeed = 0; let spinTimeTotal = 0; let spinTimeCount = 0; let lastSoundAngle = 0;
-
-window.drawRoulette = function() {
-    const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const center = canvas.width / 2;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
-    const mode = window.appState.darkMode ? 'dark' : 'light';
-    const themeData = theme[mode];
-    const items = window.appState.foods;
-    const numSegments = items.length;
-
-    if (numSegments === 0) {
-        ctx.beginPath(); ctx.arc(center, center, 280, 0, 2 * Math.PI); ctx.fillStyle = '#ccc'; ctx.fill();
-        ctx.fillStyle = '#333'; ctx.font = 'bold 24px Inter'; ctx.textAlign = 'center'; ctx.fillText('Adicione comidas!', center, center + 8);
-        return;
-    }
-
-    const arcSize = (2 * Math.PI) / numSegments;
-    ctx.beginPath(); ctx.arc(center, center, 286, 0, 2 * Math.PI); ctx.fillStyle = 'var(--wheel-border)'; ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
-
-    for (let b = 0; b < 20; b++) {
-        const bAngle = (b * (2 * Math.PI) / 20); const bx = center + 274 * Math.cos(bAngle); const by = center + 274 * Math.sin(bAngle);
-        ctx.beginPath(); ctx.arc(bx, by, 6, 0, 2 * Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
-    }
-
-    for (let i = 0; i < numSegments; i++) {
-        const currentArc = startAngle + (i * arcSize);
-        ctx.beginPath(); ctx.fillStyle = themeData.colors[i % themeData.colors.length];
-        ctx.moveTo(center, center); ctx.arc(center, center, 260, currentArc, currentArc + arcSize); ctx.lineTo(center, center); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
-        ctx.save(); ctx.translate(center, center); ctx.rotate(currentArc + arcSize / 2);
-        ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.font = "bold 40px 'Inter', sans-serif"; ctx.fillStyle = "#ffffff";
-        ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8; ctx.fillText(items[i], 235, 0); ctx.shadowBlur = 0; ctx.restore();
-    }
-    ctx.beginPath(); ctx.arc(center, center, 60, 0, 2 * Math.PI); ctx.fillStyle = 'var(--wheel-center)'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.fill(); ctx.stroke();
-};
-
-window.spinRoulette = function() {
-    if (isSpinning || window.appState.foods.length === 0) return;
-    const ctx = getAudioContext(); if (ctx.state === 'suspended') ctx.resume();
-    isSpinning = true; spinTimeCount = 0; spinTimeTotal = Math.random() * 1000 + 4000; 
-    spinSpeed = Math.random() * 0.3 + 0.4; lastSoundAngle = startAngle; 
-    animateSpin();
-};
-
-function animateSpin() {
-    spinTimeCount += 20;
-    if (spinTimeCount >= spinTimeTotal) { isSpinning = false; finalizeSpin(); return; }
-    let progress = spinTimeCount / spinTimeTotal; 
-    let currentVelocity = spinSpeed * Math.pow(1 - progress, 2); 
-    startAngle += currentVelocity; 
-    window.drawRoulette();
-    
-    const arcSize = (2 * Math.PI) / window.appState.foods.length;
-    if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
-        window.playSynthesizedSound(activeSpinSound.type); 
-        lastSoundAngle = startAngle;
-    }
-    requestAnimationFrame(animateSpin);
-}
-
-function finalizeSpin() {
-    const numSegments = window.appState.foods.length;
-    let degrees = (startAngle * 180 / Math.PI) % 360;
-    let index = Math.floor((360 - (degrees - 90)) % 360 / (360 / numSegments));
-    if (index < 0) index = numSegments + index;
-    const winningFood = window.appState.foods[index];
-
-    // 1. Toca SOM DE FIM IMEDIATAMENTE (avisa que parou)
-    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
-    window.playSynthesizedSound(activeEndSound.type); 
-
-    // 2. Espera 2 Segundos (SUSPENSE)
-    setTimeout(() => {
-        // 3. Toca SOM DE VITÓRIA REAL e Lança Confete
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
-        window.playSynthesizedSound(activeWinSound.type); 
-        window.launchConfetti(); 
-
-        const nameEl = document.getElementById('modalFoodName'); 
-        const emojiEl = document.getElementById('modalEmoji'); 
-        const overlay = document.getElementById('resultOverlay');
-        
-        if (nameEl && emojiEl && overlay) { 
-            nameEl.textContent = winningFood; 
-            const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u); 
-            emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; 
-            overlay.style.display = 'flex'; 
-        }
-    }, 1000); // Exatos 1.5 segundos de pausa (ajustado para melhor experiência)
-}
