@@ -1,0 +1,11 @@
+@media(max-width:768px){
+    header{justify-content:center;text-align:center}
+    main{padding:10px}
+}
+@media(max-width:480px){
+    .container-roleta{width:90vw}
+    .item-opcao{flex:1 1 40%;text-align:center}
+}
+@media(max-width:320px){
+    .container-roleta{width:92vw}
+}
