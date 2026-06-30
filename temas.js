@@ -1,21 +1,16 @@
-const TEMAS=[
-    {id:"amarelo",nome:"Amarelo+Verde",preco:0,cor1:"#ffcc00",cor2:"#22c55e",ativo:true},
-    {id:"roxo",nome:"Roxo+Azul",preco:0,cor1:"#8b5cf6",cor2:"#3b82f6"},
-    {id:"neon",nome:"Neon",preco:0,cor1:"#06ffa5",cor2:"#ff2bd6"},
-    {id:"sol",nome:"Pôr do Sol",preco:20,cor1:"#ff7a00",cor2:"#d62828"},
-    {id:"floresta",nome:"Floresta",preco:20,cor1:"#14532d",cor2:"#84cc16"}
+var TEMAS=[
+{id:"am",nome:"Amarelo+Verde",c1:"#ffcc00",c2:"#22c55e",ativo:true},
+{id:"rz",nome:"Roxo+Azul",c1:"#8b5cf6",c2:"#3b82f6"},
+{id:"ne",nome:"Neon",c1:"#06ffa5",c2:"#ff2bd6"},
+{id:"ps",nome:"Por do Sol",c1:"#ff7a00",c2:"#d62828",preco:20},
+{id:"fl",nome:"Floresta",c1:"#14532d",c2:"#84cc16",preco:20}
 ];
-function carregarTemas(){
-    ["temas-pagina","temas-roleta"].forEach(id=>{
-        const el=document.getElementById(id);el.innerHTML="";
-        TEMAS.forEach(t=>{
-            const d=document.createElement("div");
-            d.className="item-opcao"+(t.ativo?" ativo":"");
-            d.style.background=`linear-gradient(135deg,${t.cor1},${t.cor2})`;
-            d.style.color="#fff";
-            d.textContent=t.nome+(t.preco>0?" - "+t.preco+"💰":"");
-            el.appendChild(d);
-        });
-    });
-}
-carregarTemas();
+var box=document.getElementById("temas");
+TEMAS.forEach(function(t){
+ var d=document.createElement("div");
+ d.className="op"+(t.ativo?" ativo":"");
+ d.style.background="linear-gradient(135deg,"+t.c1+","+t.c2+")";
+ d.style.color="#fff";
+ d.textContent=t.nome+(t.preco?" 💰"+t.preco:"");
+ box.appendChild(d);
+});
