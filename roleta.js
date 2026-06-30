@@ -63,11 +63,20 @@ window.drawRoulette = function() {
         ctx.rotate(currentArc + arcSize / 2);
         ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
         
-        // 🔥 CORREÇÃO: Aumentei a distância do centro e ajustei o tamanho da fonte
-        const textRadius = radius * 0.88; // Antes era 0.78, agora ficou bem mais distante do centro
-        const fontSize = Math.min(radius * 0.15, 40);
+        // 🔥 CORREÇÃO: Distância segura do centro e auto-ajuste da fonte
+        const textRadius = radius * 0.78; // Mais distante do botão central
+        let fontSize = Math.min(radius * 0.13, 28); // Limite máximo de 28px
         
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
+        
+        // Se o nome for muito longo, diminui a fonte automaticamente
+        const textWidth = ctx.measureText(items[i]).width;
+        const maxWidth = (2 * Math.PI * textRadius) / numSegments * 0.85;
+        if (textWidth > maxWidth) {
+            fontSize = fontSize * (maxWidth / textWidth);
+            ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
+        }
+
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8;
         ctx.fillText(items[i], textRadius, 0);
@@ -84,7 +93,7 @@ window.drawRoulette = function() {
 window.spinRoulette = function() {
     if (isSpinning || window.appState.foods.length === 0) return;
     
-    // 🔥 CORREÇÃO: Custo de 1 moeda por rodada
+    // 🔥 Custo de 1 moeda por rodada
     if (window.appState.coins < 1) {
         alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
         return;
@@ -93,7 +102,7 @@ window.spinRoulette = function() {
     window.saveData();
     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
 
-    // 🔥 CORREÇÃO: Bloqueia o botão visualmente
+    // 🔥 Bloqueia o botão visualmente
     const btn = document.getElementById('btnSpin');
     if (btn) btn.disabled = true;
 
@@ -160,7 +169,7 @@ function finalizeSpin() {
             overlay.style.display = 'flex';
         }
 
-        // 🔥 CORREÇÃO: Libera o botão apenas após o suspense e vitória
+        // 🔥 Libera o botão apenas após o suspense e vitória
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
     }, 1500);

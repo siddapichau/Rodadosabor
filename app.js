@@ -69,9 +69,15 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('resultOverlay').style.display = 'none';
     });
 
+    // 🔥 MELHORIA: Adicionando o placeholder do Emoji e garantindo o padrão
+    const emojiInput = document.getElementById('newFoodEmoji');
+    if (emojiInput) {
+        emojiInput.placeholder = '🍽️ (ou digite outro)';
+    }
+
     document.getElementById('btnAddCustomFood')?.addEventListener('click', () => {
         const nome = document.getElementById('newFoodName').value.trim();
-        const emoji = document.getElementById('newFoodEmoji').value.trim() || '🍽️';
+        const emoji = emojiInput.value.trim() || '🍽️'; // Se vazio, usa o prato como padrão
         if (!nome) { alert('Digite o nome da comida.'); return; }
         
         const itemString = `${nome} ${emoji}`;
@@ -80,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.saveData();
             renderModalFoodOptions(document.getElementById('searchFoodInput')?.value || '');
             document.getElementById('newFoodName').value = '';
-            document.getElementById('newFoodEmoji').value = '';
+            emojiInput.value = '';
         } else {
             alert('Esta comida já foi adicionada.');
         }
@@ -253,5 +259,5 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCoinsDisplay();
 });
 
-// 🔥 CORREÇÃO: Expondo a função para o roleta.js conseguir atualizar o saldo
+// 🔥 Expondo a função para o roleta.js conseguir atualizar o saldo
 window.updateCoinsDisplay = updateCoinsDisplay;
