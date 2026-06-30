@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- LOJA DE SONS (Três categorias agora) ----
+    // ---- LOJA DE SONS ----
     function renderSounds() {
         const spinGrid = document.getElementById('spinSoundsGrid');
         const endGrid = document.getElementById('endSoundsGrid');
@@ -148,7 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!spinGrid || !winGrid || !endGrid) return;
         spinGrid.innerHTML = ''; endGrid.innerHTML = ''; winGrid.innerHTML = '';
         
-        // Categoria 1: Giro
         (window.SONS_GIRO || []).forEach(sound => {
             const isUnlocked = window.appState.unlockedSpinSounds.includes(sound.id);
             const isActive = window.appState.currentSpinSound === sound.id;
@@ -159,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
             spinGrid.appendChild(card);
         });
 
-        // Categoria 2: Fim da Roleta
         (window.SONS_FIM || []).forEach(sound => {
             const isUnlocked = window.appState.unlockedEndSounds.includes(sound.id);
             const isActive = window.appState.currentEndSound === sound.id;
@@ -170,7 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
             endGrid.appendChild(card);
         });
 
-        // Categoria 3: Vitória Real
         (window.SONS_VITORIA || []).forEach(sound => {
             const isUnlocked = window.appState.unlockedWinSounds.includes(sound.id);
             const isActive = window.appState.currentWinSound === sound.id;
@@ -251,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     renderFoodList();
-    renderThemes();       // AGORA VEM DO temas.js
+    renderThemes();
     renderSounds();
     renderRecipes();
     window.applyThemes();
