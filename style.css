@@ -1,53 +1,31 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
 html,body{width:100%;min-height:100vh;overflow-x:hidden;background:#fef9e7;color:#222}
 header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#ffcc00;box-shadow:0 2px 6px #0003}
-h1{font-size:clamp(18px,5vw,28px)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:clamp(18px,5.5vw,28px)}
+.logo img{height:44px;width:auto}
 .moedas{font-weight:700;font-size:clamp(14px,4vw,20px)}
 .btn-anuncio{background:#25d366;color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:700}
-main{max-width:1100px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:24px}
+main{max-width:1100px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:20px}
 
-/* ✅ ROLETA 100% RESPONSIVA — NUNCA CORTAR, SE AJUSTA SOZINHA */
 .area-roleta{display:flex;flex-direction:column;align-items:center;gap:14px}
 .container-roleta{
     position:relative;
-    width:min(88vw, 460px);  /* Largura máxima = 88% da tela OU 460px */
-    aspect-ratio: 1 / 1;     /* ✅ SEMPRE QUADRADA, MESMO EM QUALQUER TELA */
+    width:min(88vw, 460px);
+    aspect-ratio:1/1;
     border-radius:50%;
     border:6px solid #333;
     box-shadow:0 0 20px #0004;
-    overflow:hidden;
-    background:#fff
+    overflow:hidden;background:#fff
 }
-.roleta{
-    position:absolute;inset:0;
-    width:100%;height:100%;
-    border-radius:50%;
-    transition: transform 4.5s cubic-bezier(.17,.67,.16,.99);
-    will-change:transform
-}
-.marcador{
-    position:relative;z-index:10;
-    font-size:clamp(22px,6vw,34px);
-    color:#e11d48;
-    text-shadow:0 2px 3px #0005;
-    margin-bottom:-14px
-}
-.btn-girar{
-    background:linear-gradient(#ff4d4d,#c81e1e);
-    color:#fff;border:0;font-weight:900;
-    padding:12px 36px;border-radius:30px;
-    font-size:clamp(16px,4.5vw,22px);
-    cursor:pointer;box-shadow:0 4px 0 #7a0f0f
-}
-.btn-girar:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.resultado{
-    min-height:40px;font-size:clamp(16px,4.5vw,22px);
-    font-weight:800;text-align:center
-}
-.controles-efeito{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.roleta{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;transition:transform 4.5s cubic-bezier(.17,.67,.16,.99);will-change:transform}
+.marcador{position:relative;z-index:10;font-size:clamp(22px,6vw,34px);color:#e11d48;text-shadow:0 2px 3px #0005;margin-bottom:-14px}
+.btn-girar{background:linear-gradient(#ff4d4d,#c81e1e);color:#fff;border:0;font-weight:900;padding:12px 36px;border-radius:30px;font-size:clamp(16px,4.5vw,22px);cursor:pointer;box-shadow:0 4px 0 #7a0f0f}
+.btn-girar:disabled{opacity:.5;cursor:not-allowed}
+.resultado{min-height:40px;font-size:clamp(16px,4.5vw,22px);font-weight:800;text-align:center}
+.controles-efeito{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .controles-efeito select{padding:6px 10px;border-radius:8px;border:1px solid #bbb}
 
-.lista-temas,.sons-grupo div,#lista-itens,#lista-receitas{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
+.lista-temas,.item-opcao-wrap,#lista-itens,#lista-receitas,#sons-giro,#sons-parada,#sons-vitoria{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}
 .item-opcao{padding:8px 14px;border:2px solid #bbb;border-radius:10px;cursor:pointer;background:#fff}
 .item-opcao.ativo{border-color:#16a34a;background:#dcfce7;font-weight:700}
 .item-opcao.bloqueado{opacity:.6}
@@ -55,3 +33,7 @@ main{max-width:1100px;margin:0 auto;padding:16px;display:flex;flex-direction:col
 .camada-efeitos{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
 .particula{position:absolute;font-size:22px;animation:cair 2.4s ease-out forwards}
 @keyframes cair{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--mx),var(--my)) rotate(720deg);opacity:0}}
+
+section{padding:10px;background:#fff8;border-radius:12px;box-shadow:0 1px 4px #0002}
+h3{margin-bottom:6px}
+           
