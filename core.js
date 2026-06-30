@@ -1,265 +1,74 @@
-'use strict';
-console.log('core.js carregado');
+const roleta = document.getElementById("roleta");
+const btnGirar = document.getElementById("btn-girar");
+const elResultado = document.getElementById("resultado");
+let girando = false;
+let rotacaoAtual = 0;
+let saldo = 20;
 
-window.listTemas = [
-    { id: "theme-1", name: "Amarelo + Verde", price: 0, light: { colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'], style: { bg: '#f3e7da', card: 'rgba(255,255,255,0.88)', text: '#1e2a3a', accent: '#7b9e5a' } }, dark: { colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'], style: { bg: '#1a1a1a', card: 'rgba(40,40,40,0.9)', text: '#f1f5f9', accent: '#7b9e5a' } } },
-    { id: "theme-2", name: "Roxo + Azul", price: 0, light: { colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'], style: { bg: '#eef2ff', card: 'rgba(255,255,255,0.9)', text: '#1e1b4b', accent: '#6366f1' } }, dark: { colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'], style: { bg: '#0f0f23', card: 'rgba(30,30,60,0.9)', text: '#e0e7ff', accent: '#818cf8' } } },
-    { id: "theme-3", name: "Neon Vibrante", price: 0, light: { colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'], style: { bg: '#f0e6f0', card: 'rgba(255,240,255,0.9)', text: '#1a0a1a', accent: '#7000ff' } }, dark: { colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'], style: { bg: '#0a0010', card: 'rgba(30,10,40,0.9)', text: '#f0e6f0', accent: '#ff00aa' } } },
-    { id: "theme-4", name: "Pôr do Sol", price: 20, light: { colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'], style: { bg: '#fde9e0', card: 'rgba(255,245,235,0.9)', text: '#3d1a0e', accent: '#e64a19' } }, dark: { colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'], style: { bg: '#1a0e0a', card: 'rgba(50,25,15,0.9)', text: '#f5e0d0', accent: '#ff6e40' } } },
-    { id: "theme-5", name: "Floresta", price: 20, light: { colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'], style: { bg: '#e8f5e9', card: 'rgba(240,255,240,0.9)', text: '#1b3a1b', accent: '#2e7d32' } }, dark: { colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'], style: { bg: '#0f1a0f', card: 'rgba(20,40,20,0.9)', text: '#d0e8d0', accent: '#66bb6a' } } }
-];
-
-window.appState = {
-    coins: 20,
-    darkMode: false,
-    foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
-    unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
-    unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
-    unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1",
-    unlockedEndSounds: ["end-1"], currentEndSound: "end-1",
-    unlockedWinSounds: ["win-1"], currentWinSound: "win-1",
-    unlockedRecipes: [], customFoods: []
-};
-
-window.loadData = function() {
-    try {
-        const saved = localStorage.getItem('rodaDoSaborState');
-        if (saved) {
-            window.appState = { ...window.appState, ...JSON.parse(saved) };
-            if (!window.appState.unlockedEndSounds) {
-                window.appState.unlockedEndSounds = ["end-1"]; window.appState.currentEndSound = "end-1";
-            }
-        }
-        if (!window.appState.foods || window.appState.foods.length === 0) {
-            window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
-        }
-    } catch(e) {}
-};
-
-window.saveData = function() {
-    try {
-        localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
-        const coinEl = document.getElementById('coin-balance');
-        if (coinEl) coinEl.textContent = window.appState.coins;
-    } catch(e) {}
-};
-
-window.loadData();
-
-// ========================== SINTETIZADOR DE ÁUDIO ==========================
-let audioCtx = null;
-function getAudioContext() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    return audioCtx;
+async function carregarSaldo(){
+    saldo = await Banco.pegar("moedas",20);
+    document.getElementById("saldo-moedas").textContent = saldo;
+}
+async function alterarSaldo(valor){
+    saldo += valor;
+    if(saldo<0) saldo=0;
+    await Banco.salvar("moedas",saldo);
+    document.getElementById("saldo-moedas").textContent = saldo;
 }
 
-window.playSynthesizedSound = function(soundType) {
-    try {
-        const ctx = getAudioContext();
-        const now = ctx.currentTime;
-        switch (soundType) {
-            // Giro
-            case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
-            case 'swoosh': osc(ctx, now, 80, 250, 0.08, 'triangle', 0.2); break;
-            case 'arcade': oscSquare(ctx, now, 600, 900, 0.06, 0.15); break;
-            case 'motor': oscSquare(ctx, now, 100, 50, 0.08, 0.2); break;
-            case 'whoosh': osc(ctx, now, 60, 350, 0.15, 'sawtooth', 0.15); break;
-            case 'digital': oscSquare(ctx, now, 500, 1200, 0.05, 0.1); break;
-            
-            // Fim da Roleta (Quando para)
-            case 'end-chord': [392, 493, 587].forEach((f, i) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
-            case 'end-bell': osc(ctx, now, 987.77, 987.77, 0.6, 'triangle', 0.4); break;
-            case 'end-coin': [987.77, 1318.51].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.2, 0.15)); break;
-            case 'end-thud': osc(ctx, now, 150, 40, 0.2, 'square', 0.4); break;
-            case 'end-zap': oscSquare(ctx, now, 800, 100, 0.3, 0.2); break;
-
-            // Vitória Real (Com Confetes)
-            case 'win-tada': 
-                [523.25, 659.25, 783.99].forEach((f) => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); 
-                [523.25, 659.25, 783.99, 1046.50].forEach((f) => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); 
-                break;
-            case 'win-applause': playNoise(ctx, now, 2.5, 0.3); break;
-            case 'win-arcade': [261.63, 329.63, 392.00, 523.25, 659.25, 783.99].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.15, 0.15)); break;
-            case 'win-epic': [261.63, 392, 523.25, 783.99].forEach((f, i) => osc(ctx, now + i * 0.2, f, f, 1.2, 'triangle', 0.2)); break;
-            case 'win-party': [440, 440, 440, 554, 659, 554, 659, 880].forEach((f, i) => osc(ctx, now + i * 0.12, f, f, 0.1, 'square', 0.15)); break;
-        }
-    } catch (e) {}
-};
-
-function playNoise(ctx, start, duration, gainValue) {
-    const bufferSize = ctx.sampleRate * duration;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-    const noise = ctx.createBufferSource(); noise.buffer = buffer;
-    const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1000;
-    const g = ctx.createGain(); g.gain.setValueAtTime(gainValue, start); g.gain.exponentialRampToValueAtTime(0.01, start + duration);
-    noise.connect(filter); filter.connect(g); g.connect(ctx.destination);
-    noise.start(start);
+function desenharRoleta(){
+    const itens = itensAtivos.map(id=>COMIDAS.find(c=>c.id===id)).filter(Boolean);
+    const total = itens.length;
+    if(total<2){ roleta.innerHTML=""; return }
+    const fatia = 360/total;
+    const cores = ["#ffb703","#fb8500","#ef476f","#06d6a0","#118ab2","#8338ec","#ff006e","#3a86ff"];
+    let svg = `<svg viewBox="0 0 100 100" width="100%" height="100%">`;
+    itens.forEach((item,i)=>{
+        const a1 = (i*fatia -90) * Math.PI/180;
+        const a2 = ((i+1)*fatia -90) * Math.PI/180;
+        const x1=50+50*Math.cos(a1), y1=50+50*Math.sin(a1);
+        const x2=50+50*Math.cos(a2), y2=50+50*Math.sin(a2);
+        const meio = ((i*fatia)+(fatia/2)-90) * Math.PI/180;
+        const tx=50+32*Math.cos(meio), ty=50+32*Math.sin(meio);
+        const grande = fatia>180?1:0;
+        svg += `<path d="M50,50 L${x1},${y1} A50,50 0 ${grande},1 ${x2},${y2} Z" fill="${cores[i%cores.length]}" stroke="#fff" stroke-width="0.3"/>`;
+        svg += `<text x="${tx}" y="${ty}" font-size="6" text-anchor="middle" dominant-baseline="middle" transform="rotate(${(i*fatia+fatia/2)},${tx},${ty})">${item.emoji}</text>`;
+    });
+    svg += `<circle cx="50" cy="50" r="7" fill="#fff" stroke="#333" stroke-width="1.2"/></svg>`;
+    roleta.innerHTML = svg;
 }
 
-function osc(ctx, start, freqStart, freqEnd, duration, type, gain) {
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.type = type; o.frequency.setValueAtTime(freqStart, start); o.frequency.exponentialRampToValueAtTime(freqEnd, start + duration);
-    g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
-    o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
-}
-function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.type = 'square'; o.frequency.setValueAtTime(freqStart, start); o.frequency.exponentialRampToValueAtTime(freqEnd, start + duration);
-    g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
-    o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
-}
+// ✅ AQUI ACABA O ERRO DO PRÊMIO DIFERENTE: CÁLCULO EXATO
+function girarRoleta(){
+    const itens = itensAtivos.map(id=>COMIDAS.find(c=>c.id===id)).filter(Boolean);
+    const total = itens.length;
+    if(total<2 || girando) return;
+    girando = true; btnGirar.disabled = true;
+    elResultado.textContent = "";
 
-window.applyThemes = function() {
-    const pageTheme = window.listTemas.find(t => t.id === window.appState.currentPageTheme) || window.listTemas[0];
-    const rouletteTheme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
-    const mode = window.appState.darkMode ? 'dark' : 'light';
-    
-    const pageData = pageTheme[mode];
-    const root = document.documentElement;
-    root.style.setProperty('--bg-body', pageData.style.bg);
-    root.style.setProperty('--bg-card', pageData.style.card);
-    root.style.setProperty('--text-primary', pageData.style.text);
-    root.style.setProperty('--accent', pageData.style.accent);
-    root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${pageData.colors[0]}, ${pageData.colors[1]})`);
-    
-    const rouletteData = rouletteTheme[mode];
-    root.style.setProperty('--wheel-border', rouletteData.colors[0]);
-    root.style.setProperty('--wheel-center', rouletteData.colors[2] || '#f5d742');
+    const indiceSorteado = Math.floor(Math.random()*total);
+    const grausPorItem = 360/total;
+    const centroItem = indiceSorteado * grausPorItem + (grausPorItem/2);
+    const voltas = 5 + Math.floor(Math.random()*3);
+    const novaRot = rotacaoAtual + (voltas*360) + (360 - centroItem) - (rotacaoAtual%360);
+    rotacaoAtual = novaRot;
 
-    window.saveData(); window.drawRoulette();
-};
+    iniciarSomGiro();
+    roleta.style.transform = `rotate(${novaRot}deg)`;
 
-let startAngle = 0; let isSpinning = false;
-let spinSpeed = 0; let spinTimeTotal = 0; let spinTimeCount = 0; let lastSoundAngle = 0;
+    // som de parada um pouco antes de terminar
+    setTimeout(tocarSomParada, 3600);
 
-window.drawRoulette = function() {
-    const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const center = canvas.width / 2;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
-    const mode = window.appState.darkMode ? 'dark' : 'light';
-    const themeData = theme[mode];
-    const items = window.appState.foods;
-    const numSegments = items.length;
-
-    if (numSegments === 0) {
-        ctx.beginPath(); ctx.arc(center, center, 280, 0, 2 * Math.PI); ctx.fillStyle = '#ccc'; ctx.fill();
-        ctx.fillStyle = '#333'; ctx.font = 'bold 24px Inter'; ctx.textAlign = 'center'; ctx.fillText('Adicione comidas!', center, center + 8);
-        return;
-    }
-
-    const arcSize = (2 * Math.PI) / numSegments;
-    ctx.beginPath(); ctx.arc(center, center, 286, 0, 2 * Math.PI); ctx.fillStyle = 'var(--wheel-border)'; ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
-
-    for (let b = 0; b < 20; b++) {
-        const bAngle = (b * (2 * Math.PI) / 20); const bx = center + 274 * Math.cos(bAngle); const by = center + 274 * Math.sin(bAngle);
-        ctx.beginPath(); ctx.arc(bx, by, 6, 0, 2 * Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
-    }
-
-    for (let i = 0; i < numSegments; i++) {
-        const currentArc = startAngle + (i * arcSize);
-        ctx.beginPath(); ctx.fillStyle = themeData.colors[i % themeData.colors.length];
-        ctx.moveTo(center, center); ctx.arc(center, center, 260, currentArc, currentArc + arcSize); ctx.lineTo(center, center); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
-        ctx.save(); ctx.translate(center, center); ctx.rotate(currentArc + arcSize / 2);
-        ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.font = "bold 40px 'Inter', sans-serif"; ctx.fillStyle = "#ffffff";
-        ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8; ctx.fillText(items[i], 235, 0); ctx.shadowBlur = 0; ctx.restore();
-    }
-    ctx.beginPath(); ctx.arc(center, center, 60, 0, 2 * Math.PI); ctx.fillStyle = 'var(--wheel-center)'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.fill(); ctx.stroke();
-};
-
-window.spinRoulette = function() {
-    if (isSpinning || window.appState.foods.length === 0) return;
-    const ctx = getAudioContext(); if (ctx.state === 'suspended') ctx.resume();
-    isSpinning = true; spinTimeCount = 0; spinTimeTotal = Math.random() * 1000 + 4000; 
-    spinSpeed = Math.random() * 0.3 + 0.4; lastSoundAngle = startAngle; 
-    animateSpin();
-};
-
-function animateSpin() {
-    spinTimeCount += 20;
-    if (spinTimeCount >= spinTimeTotal) { isSpinning = false; finalizeSpin(); return; }
-    let progress = spinTimeCount / spinTimeTotal; 
-    let currentVelocity = spinSpeed * Math.pow(1 - progress, 2); 
-    startAngle += currentVelocity; 
-    window.drawRoulette();
-    
-    const arcSize = (2 * Math.PI) / window.appState.foods.length;
-    if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
-        window.playSynthesizedSound(activeSpinSound.type); 
-        lastSoundAngle = startAngle;
-    }
-    requestAnimationFrame(animateSpin);
+    setTimeout(()=>{
+        girando = false; btnGirar.disabled = false;
+        pararSomGiro();
+        const ganhador = itens[indiceSorteado];
+        elResultado.textContent = `🎯 ${ganhador.emoji} ${ganhador.nome}!`;
+        tocarSomVitoria();
+        lancarEfeito();
+    },4600);
 }
 
-function finalizeSpin() {
-    const numSegments = window.appState.foods.length;
-    let degrees = (startAngle * 180 / Math.PI) % 360;
-    let index = Math.floor((360 - (degrees - 90)) % 360 / (360 / numSegments));
-    if (index < 0) index = numSegments + index;
-    const winningFood = window.appState.foods[index];
-
-    // 1. Toca SOM DE FIM IMEDIATAMENTE (avisa que parou)
-    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
-    window.playSynthesizedSound(activeEndSound.type); 
-
-    // 2. Espera 2 Segundos (SUSPENSE)
-    setTimeout(() => {
-        // 3. Toca SOM DE VITÓRIA REAL e Lança Confete
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
-        window.playSynthesizedSound(activeWinSound.type); 
-        window.launchConfetti(); 
-
-        const nameEl = document.getElementById('modalFoodName'); 
-        const emojiEl = document.getElementById('modalEmoji'); 
-        const overlay = document.getElementById('resultOverlay');
-        
-        if (nameEl && emojiEl && overlay) { 
-            nameEl.textContent = winningFood; 
-            const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u); 
-            emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; 
-            overlay.style.display = 'flex'; 
-        }
-    }, 1500); // Exatos 2 segundos de pausa
-}
-
-// ========================== CONFETES ==========================
-let confettiPieces = []; let confettiRunning = false;
-window.launchConfetti = function() {
-    const confettiCanvas = document.getElementById('confettiCanvas');
-    if (!confettiCanvas) return;
-    confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight;
-    
-    if (confettiRunning) return;
-    confettiRunning = true; confettiPieces = [];
-    const colors = ['#ff0', '#f0f', '#0ff', '#f44', '#4f4', '#44f', '#ffa500', '#ff69b4', '#adff2f', '#ff4500', '#9400d3', '#00ffff'];
-    const shapes = ['circle', 'square', 'diamond', 'triangle'];
-    for (let i = 0; i < 180; i++) {
-        confettiPieces.push({ x: Math.random() * confettiCanvas.width, y: Math.random() * confettiCanvas.height - confettiCanvas.height, w: Math.random() * 14 + 6, h: Math.random() * 14 + 6, color: colors[Math.floor(Math.random() * colors.length)], shape: shapes[Math.floor(Math.random() * shapes.length)], vx: (Math.random() - 0.5) * 7, vy: Math.random() * 5 + 3, rot: Math.random() * 360, rotSpeed: (Math.random() - 0.5) * 12 });
-    }
-    animateConfetti(confettiCanvas, confettiCanvas.getContext('2d'));
-};
-
-function animateConfetti(canvas, ctx) {
-    if (confettiPieces.length === 0) { confettiRunning = false; ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = confettiPieces.length - 1; i >= 0; i--) {
-        const p = confettiPieces[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.rot += p.rotSpeed;
-        if (p.y > canvas.height + 50) { confettiPieces.splice(i, 1); continue; }
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate((p.rot * Math.PI) / 180); ctx.globalAlpha = Math.max(0, 1 - (p.y / canvas.height) * 0.8); ctx.fillStyle = p.color;
-        switch (p.shape) {
-            case 'circle': ctx.beginPath(); ctx.arc(0, 0, p.w / 2, 0, 2 * Math.PI); ctx.fill(); break;
-            case 'square': ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); break;
-            case 'diamond': ctx.beginPath(); ctx.moveTo(0, -p.h / 2); ctx.lineTo(p.w / 2, 0); ctx.lineTo(0, p.h / 2); ctx.lineTo(-p.w / 2, 0); ctx.closePath(); ctx.fill(); break;
-            case 'triangle': ctx.beginPath(); ctx.moveTo(0, -p.h / 2); ctx.lineTo(p.w / 2, p.h / 2); ctx.lineTo(-p.w / 2, p.h / 2); ctx.closePath(); ctx.fill(); break;
-        }
-        ctx.restore();
-    }
-    requestAnimationFrame(() => animateConfetti(canvas, ctx));
-}
+btnGirar.addEventListener("click",girarRoleta);
+carregarSaldo();
+desenharRoleta();
