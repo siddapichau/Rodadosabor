@@ -1,14 +1,6 @@
 'use strict';
 console.log('core.js carregado');
 
-window.listTemas = [
-    { id: "theme-1", name: "Amarelo + Verde", price: 0, light: { colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'], style: { bg: '#f3e7da', card: 'rgba(255,255,255,0.88)', text: '#1e2a3a', accent: '#7b9e5a' } }, dark: { colors: ['#F5B342', '#7B9E5A', '#E94B3C', '#2A75D3', '#8E44AD', '#2ECC71', '#1A5276', '#E91E63'], style: { bg: '#1a1a1a', card: 'rgba(40,40,40,0.9)', text: '#f1f5f9', accent: '#7b9e5a' } } },
-    { id: "theme-2", name: "Roxo + Azul", price: 0, light: { colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'], style: { bg: '#eef2ff', card: 'rgba(255,255,255,0.9)', text: '#1e1b4b', accent: '#6366f1' } }, dark: { colors: ['#6366F1', '#4F46E5', '#A78BFA', '#7C6AD4', '#3B82F6', '#1D4ED8', '#818CF8', '#4338CA'], style: { bg: '#0f0f23', card: 'rgba(30,30,60,0.9)', text: '#e0e7ff', accent: '#818cf8' } } },
-    { id: "theme-3", name: "Neon Vibrante", price: 0, light: { colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'], style: { bg: '#f0e6f0', card: 'rgba(255,240,255,0.9)', text: '#1a0a1a', accent: '#7000ff' } }, dark: { colors: ['#FF007F', '#00F0FF', '#7000FF', '#FF00F0', '#00FF66', '#9900FF', '#0033FF', '#FFFF00'], style: { bg: '#0a0010', card: 'rgba(30,10,40,0.9)', text: '#f0e6f0', accent: '#ff00aa' } } },
-    { id: "theme-4", name: "Pôr do Sol", price: 20, light: { colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'], style: { bg: '#fde9e0', card: 'rgba(255,245,235,0.9)', text: '#3d1a0e', accent: '#e64a19' } }, dark: { colors: ['#FF5E36', '#FFAE34', '#FF2C7D', '#E0115F', '#FF7F50', '#DE3163', '#D2143A', '#FF4500'], style: { bg: '#1a0e0a', card: 'rgba(50,25,15,0.9)', text: '#f5e0d0', accent: '#ff6e40' } } },
-    { id: "theme-5", name: "Floresta", price: 20, light: { colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'], style: { bg: '#e8f5e9', card: 'rgba(240,255,240,0.9)', text: '#1b3a1b', accent: '#2e7d32' } }, dark: { colors: ['#2E8B57', '#3CB371', '#228B22', '#006400', '#8FBC8F', '#ADFF2F', '#556B2F', '#6B8E23'], style: { bg: '#0f1a0f', card: 'rgba(20,40,20,0.9)', text: '#d0e8d0', accent: '#66bb6a' } } }
-];
-
 window.appState = {
     coins: 20,
     darkMode: false,
@@ -226,40 +218,5 @@ function finalizeSpin() {
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : "🍽️"; 
             overlay.style.display = 'flex'; 
         }
-    }, 1500); // Exatos 2 segundos de pausa
-}
-
-// ========================== CONFETES ==========================
-let confettiPieces = []; let confettiRunning = false;
-window.launchConfetti = function() {
-    const confettiCanvas = document.getElementById('confettiCanvas');
-    if (!confettiCanvas) return;
-    confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight;
-    
-    if (confettiRunning) return;
-    confettiRunning = true; confettiPieces = [];
-    const colors = ['#ff0', '#f0f', '#0ff', '#f44', '#4f4', '#44f', '#ffa500', '#ff69b4', '#adff2f', '#ff4500', '#9400d3', '#00ffff'];
-    const shapes = ['circle', 'square', 'diamond', 'triangle'];
-    for (let i = 0; i < 180; i++) {
-        confettiPieces.push({ x: Math.random() * confettiCanvas.width, y: Math.random() * confettiCanvas.height - confettiCanvas.height, w: Math.random() * 14 + 6, h: Math.random() * 14 + 6, color: colors[Math.floor(Math.random() * colors.length)], shape: shapes[Math.floor(Math.random() * shapes.length)], vx: (Math.random() - 0.5) * 7, vy: Math.random() * 5 + 3, rot: Math.random() * 360, rotSpeed: (Math.random() - 0.5) * 12 });
-    }
-    animateConfetti(confettiCanvas, confettiCanvas.getContext('2d'));
-};
-
-function animateConfetti(canvas, ctx) {
-    if (confettiPieces.length === 0) { confettiRunning = false; ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = confettiPieces.length - 1; i >= 0; i--) {
-        const p = confettiPieces[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.rot += p.rotSpeed;
-        if (p.y > canvas.height + 50) { confettiPieces.splice(i, 1); continue; }
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate((p.rot * Math.PI) / 180); ctx.globalAlpha = Math.max(0, 1 - (p.y / canvas.height) * 0.8); ctx.fillStyle = p.color;
-        switch (p.shape) {
-            case 'circle': ctx.beginPath(); ctx.arc(0, 0, p.w / 2, 0, 2 * Math.PI); ctx.fill(); break;
-            case 'square': ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); break;
-            case 'diamond': ctx.beginPath(); ctx.moveTo(0, -p.h / 2); ctx.lineTo(p.w / 2, 0); ctx.lineTo(0, p.h / 2); ctx.lineTo(-p.w / 2, 0); ctx.closePath(); ctx.fill(); break;
-            case 'triangle': ctx.beginPath(); ctx.moveTo(0, -p.h / 2); ctx.lineTo(p.w / 2, p.h / 2); ctx.lineTo(-p.w / 2, p.h / 2); ctx.closePath(); ctx.fill(); break;
-        }
-        ctx.restore();
-    }
-    requestAnimationFrame(() => animateConfetti(canvas, ctx));
+    }, 1500); // Exatos 1.5 segundos de pausa (ajustado para melhor experiência)
 }
