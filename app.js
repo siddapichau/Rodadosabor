@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('adFrame').src = 'about:blank';
                     window.appState.coins += 3;
                     window.saveData();
-                    window.updateCoinsDisplay();
+                    updateCoinsDisplay();
                     alert("🎉 Você ganhou 3 moedas! Use na loja.");
                 }
             }, 1000);
@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- LOJA DE SONS ----
     function renderSounds() {
         const spinGrid = document.getElementById('spinSoundsGrid');
         const endGrid = document.getElementById('endSoundsGrid');
@@ -188,7 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.buyWinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedWinSounds.push(id); window.useWinSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useWinSound = (id) => { window.appState.currentWinSound = id; window.saveData(); renderSounds(); };
 
-    // ---- LOJA DE RECEITAS ----
     function renderRecipes() {
         const grid = document.getElementById('recipesGrid');
         if (!grid) return;
@@ -219,11 +217,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Função global para atualizar moedas
-    window.updateCoinsDisplay = function() {
+    function updateCoinsDisplay() {
         const coinBalance = document.getElementById('coin-balance');
         if (coinBalance) coinBalance.textContent = window.appState.coins;
-    };
+    }
 
     // PWA E INICIALIZAÇÃO
     let deferredPrompt;
@@ -253,5 +250,8 @@ document.addEventListener('DOMContentLoaded', function() {
     renderSounds();
     renderRecipes();
     window.applyThemes();
-    window.updateCoinsDisplay();
+    updateCoinsDisplay();
 });
+
+// 🔥 CORREÇÃO: Expondo a função para o roleta.js conseguir atualizar o saldo
+window.updateCoinsDisplay = updateCoinsDisplay;

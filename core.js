@@ -52,20 +52,17 @@ window.playSynthesizedSound = function(soundType) {
         const ctx = getAudioContext();
         const now = ctx.currentTime;
         switch (soundType) {
-            // Giro
             case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
             case 'swoosh': osc(ctx, now, 80, 250, 0.08, 'triangle', 0.2); break;
             case 'arcade': oscSquare(ctx, now, 600, 900, 0.06, 0.15); break;
             case 'motor': oscSquare(ctx, now, 100, 50, 0.08, 0.2); break;
             case 'whoosh': osc(ctx, now, 60, 350, 0.15, 'sawtooth', 0.15); break;
             case 'digital': oscSquare(ctx, now, 500, 1200, 0.05, 0.1); break;
-            // Fim da Roleta (Quando para)
             case 'end-chord': [392, 493, 587].forEach((f, i) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
             case 'end-bell': osc(ctx, now, 987.77, 987.77, 0.6, 'triangle', 0.4); break;
             case 'end-coin': [987.77, 1318.51].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.2, 0.15)); break;
             case 'end-thud': osc(ctx, now, 150, 40, 0.2, 'square', 0.4); break;
             case 'end-zap': oscSquare(ctx, now, 800, 100, 0.3, 0.2); break;
-            // Vitória Real (Com Confetes)
             case 'win-tada': 
                 [523.25, 659.25, 783.99].forEach((f) => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); 
                 [523.25, 659.25, 783.99, 1046.50].forEach((f) => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); 
@@ -122,7 +119,6 @@ window.applyThemes = function() {
     root.style.setProperty('--wheel-center', rouletteData.colors[2] || '#f5d742');
 
     window.saveData();
-    // Redesenha a roleta se ela já estiver desenhada
     if (typeof window.drawRoulette === 'function') {
         window.drawRoulette();
     }
