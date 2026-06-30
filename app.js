@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('adFrame').src = 'about:blank';
                     window.appState.coins += 3;
                     window.saveData();
-                    updateCoinsDisplay();
+                    window.updateCoinsDisplay();
                     alert("🎉 Você ganhou 3 moedas! Use na loja.");
                 }
             }, 1000);
@@ -219,10 +219,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function updateCoinsDisplay() {
+    // Função global para atualizar moedas
+    window.updateCoinsDisplay = function() {
         const coinBalance = document.getElementById('coin-balance');
         if (coinBalance) coinBalance.textContent = window.appState.coins;
-    }
+    };
 
     // PWA E INICIALIZAÇÃO
     let deferredPrompt;
@@ -252,5 +253,5 @@ document.addEventListener('DOMContentLoaded', function() {
     renderSounds();
     renderRecipes();
     window.applyThemes();
-    updateCoinsDisplay();
+    window.updateCoinsDisplay();
 });
