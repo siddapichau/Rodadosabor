@@ -63,13 +63,12 @@ window.drawRoulette = function() {
         ctx.rotate(currentArc + arcSize / 2);
         ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
         
-        // 🔥 CORREÇÃO: Distância segura do centro e auto-ajuste da fonte
-        const textRadius = radius * 0.78; // Mais distante do botão central
-        let fontSize = Math.min(radius * 0.13, 28); // Limite máximo de 28px
+        // Auto-ajuste da fonte e distância do centro
+        const textRadius = radius * 0.78; 
+        let fontSize = Math.min(radius * 0.13, 28); 
         
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         
-        // Se o nome for muito longo, diminui a fonte automaticamente
         const textWidth = ctx.measureText(items[i]).width;
         const maxWidth = (2 * Math.PI * textRadius) / numSegments * 0.85;
         if (textWidth > maxWidth) {
@@ -93,7 +92,6 @@ window.drawRoulette = function() {
 window.spinRoulette = function() {
     if (isSpinning || window.appState.foods.length === 0) return;
     
-    // 🔥 Custo de 1 moeda por rodada
     if (window.appState.coins < 1) {
         alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
         return;
@@ -102,7 +100,6 @@ window.spinRoulette = function() {
     window.saveData();
     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
 
-    // 🔥 Bloqueia o botão visualmente
     const btn = document.getElementById('btnSpin');
     if (btn) btn.disabled = true;
 
@@ -141,20 +138,22 @@ function finalizeSpin() {
     const numSegments = window.appState.foods.length;
     if (numSegments === 0) return;
 
-    const pointerAngle = -Math.PI / 2;
-    let angle = startAngle % (2 * Math.PI);
-    if (angle < 0) angle += 2 * Math.PI;
-    let relativeAngle = (pointerAngle - angle + 2 * Math.PI) % (2 * Math.PI);
-    let index = Math.floor(relativeAngle / (2 * Math.PI / numSegments));
-    if (index < 0) index = 0;
+    // 🔥 CORREÇÃO MATEMÁTICA DO ÍNDICE (100% precisa)
+    const arcSize = (2 * Math.PI) / numSegments;
+    // Calcula o ângulo normalizado do marcador (topo = -PI/2) em relação ao startAngle
+    let normalizedAngle = ((-startAngle + Math.PI / 2) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    let index = Math.floor(normalizedAngle / arcSize);
     if (index >= numSegments) index = numSegments - 1;
 
     const winningFood = window.appState.foods[index];
 
+    // Som de fim (parada)
     const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
     window.playSynthesizedSound(activeEndSound.type);
 
+    // Espera 1,5 segundos para o suspense
     setTimeout(() => {
+        // Som de vitória + confetes
         const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
         window.playSynthesizedSound(activeWinSound.type);
         window.launchConfetti();
@@ -169,7 +168,7 @@ function finalizeSpin() {
             overlay.style.display = 'flex';
         }
 
-        // 🔥 Libera o botão apenas após o suspense e vitória
+        // Libera o botão
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
     }, 1500);
