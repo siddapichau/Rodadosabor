@@ -140,39 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- LOJA DE TEMAS ----
-    function renderThemes() {
-        const pageGrid = document.getElementById('pageThemesGrid');
-        const rouletteGrid = document.getElementById('rouletteThemesGrid');
-        if (!pageGrid || !rouletteGrid) return;
-        pageGrid.innerHTML = ''; rouletteGrid.innerHTML = '';
-        
-        (window.listTemas || []).forEach(tema => {
-            const coresPreview = tema.light.colors.slice(0, 4).map(c => `<span style="display:inline-block; width:16px; height:16px; border-radius:4px; background:${c};"></span>`).join('');
-            
-            const isPageUnlocked = window.appState.unlockedPageThemes.includes(tema.id);
-            const isPageActive = window.appState.currentPageTheme === tema.id;
-            const pageCard = document.createElement('div');
-            pageCard.className = `item-card ${isPageActive ? 'active' : ''}`;
-            let btnPage = isPageActive ? `<button class="btn-action btn-active">Ativo</button>` : isPageUnlocked ? `<button class="btn-action btn-use" onclick="usePageTheme('${tema.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyPageTheme('${tema.id}', ${tema.price})"><i class="fas fa-coins"></i> ${tema.price}</button>`;
-            pageCard.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p><div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div></div>${btnPage}`;
-            pageGrid.appendChild(pageCard);
-
-            const isRouletteUnlocked = window.appState.unlockedRouletteThemes.includes(tema.id);
-            const isRouletteActive = window.appState.currentRouletteTheme === tema.id;
-            const rouletteCard = document.createElement('div');
-            rouletteCard.className = `item-card ${isRouletteActive ? 'active' : ''}`;
-            let btnRoulette = isRouletteActive ? `<button class="btn-action btn-active">Ativo</button>` : isRouletteUnlocked ? `<button class="btn-action btn-use" onclick="useRouletteTheme('${tema.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyRouletteTheme('${tema.id}', ${tema.price})"><i class="fas fa-coins"></i> ${tema.price}</button>`;
-            rouletteCard.innerHTML = `<div class="item-info"><h4>${tema.name}</h4><p>${tema.price === 0 ? 'Grátis' : `${tema.price} moedas`}</p><div style="display:flex; gap:3px; margin-top:4px;">${coresPreview}</div></div>${btnRoulette}`;
-            rouletteGrid.appendChild(rouletteCard);
-        });
-    }
-
-    window.buyPageTheme = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedPageThemes.push(id); window.usePageTheme(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
-    window.usePageTheme = (id) => { window.appState.currentPageTheme = id; window.applyThemes(); renderThemes(); };
-    window.buyRouletteTheme = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedRouletteThemes.push(id); window.useRouletteTheme(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
-    window.useRouletteTheme = (id) => { window.appState.currentRouletteTheme = id; window.applyThemes(); renderThemes(); };
-
     // ---- LOJA DE SONS (Três categorias agora) ----
     function renderSounds() {
         const spinGrid = document.getElementById('spinSoundsGrid');
@@ -284,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     renderFoodList();
-    renderThemes();
+    renderThemes();       // AGORA VEM DO temas.js
     renderSounds();
     renderRecipes();
     window.applyThemes();
