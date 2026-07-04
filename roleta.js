@@ -138,38 +138,15 @@ function finalizeSpin() {
     if (numSegments === 0) return;
     const arcSize = (2 * Math.PI) / numSegments;
 
-    // --- CORREÇÃO DEFINITIVA PARA O ÍNDICE VENCEDOR ---
-    // O marcador está no topo (12 horas), que no Canvas corresponde ao ângulo -PI/2 (ou 3*PI/2).
-    // Precisamos descobrir qual segmento contém esse ângulo, considerando o deslocamento startAngle.
-    // Cada segmento i ocupa o intervalo [startAngle + i*arcSize, startAngle + (i+1)*arcSize).
-    // Queremos o i tal que o ângulo do marcador (topo) esteja dentro desse intervalo.
-    // Ângulo do marcador em relação ao centro: -PI/2 (ou 3*PI/2). Vamos normalizar para [0, 2PI).
-    const markerAngle = (3 * Math.PI) / 2; // 270 graus, equivalente a -PI/2
-    // O ângulo relativo ao início da roleta: (markerAngle - startAngle) mod 2PI
-    let relativeAngle = (markerAngle - startAngle) % (2 * Math.PI);
+    let normalizedAngle = startAngle % (2 * Math.PI);
+    if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+    
+    let relativeAngle = (normalizedAngle - (Math.PI / 2)) % (2 * Math.PI);
     if (relativeAngle < 0) relativeAngle += 2 * Math.PI;
-    // Agora dividimos pelo tamanho do arco para achar o índice
-    let index = Math.floor(relativeAngle / arcSize);
-    // Proteção contra bordas (se o ângulo estiver exatamente no limite)
+    
+    let index = Math.floor(relativeAngle / arcSize + 0.0001);
     if (index >= numSegments) index = 0;
-    // Caso o ângulo seja exatamente o começo de um segmento, o floor pode dar o anterior, mas queremos o seguinte? 
-    // Vamos usar arredondamento para o mais próximo:
-    // Para maior precisão, podemos calcular a distância ao centro de cada segmento.
-    // Mas o método acima é o padrão. Vamos testar com um caso: se startAngle = 0, markerAngle = 3PI/2,
-    // relativeAngle = 3PI/2. Supondo 4 segmentos, arcSize = PI/2. relativeAngle/arcSize = 3, index=3 (último segmento).
-    // Isso significa que o marcador está no limite entre o segmento 3 e 0? Na verdade, segmento 3 vai de 3PI/2 a 2PI, então está correto.
-    // Se estiver exatamente na borda, podemos ajustar:
-    // Se o ângulo estiver muito próximo do início do próximo segmento, podemos arredondar.
-    const remainder = relativeAngle % arcSize;
-    if (remainder < 0.01) {
-        // Está no limite, pegar o segmento anterior? Mas isso é raro.
-        // Vamos manter como está.
-    }
-
-    // Verificação adicional: se index for -1 (nunca deve ocorrer)
     if (index < 0) index = numSegments - 1;
-
-    console.log('startAngle:', startAngle, 'relativeAngle:', relativeAngle, 'index:', index);
 
     const winningFood = window.appState.foods[index];
 
@@ -177,25 +154,29 @@ function finalizeSpin() {
     const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
     window.playSynthesizedSound(activeEndSound.type);
 
-    // Reduzido para 1000ms (1 segundo)
     setTimeout(() => {
-        // Som de vitória + confetes
+        // Som de vitória
         const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
         window.playSynthesizedSound(activeWinSound.type);
-        window.launchConfetti();
+        
+        // 🔥 Efeito visual ativo (substitui launchConfetti fixo)
+        if (typeof window.launchCurrentEffect === 'function') {
+            window.launchCurrentEffect();
+        } else {
+            window.launchConfetti(); // fallback
+        }
 
         const nameEl = document.getElementById('modalFoodName');
         const emojiEl = document.getElementById('modalEmoji');
         const overlay = document.getElementById('resultOverlay');
         if (nameEl && emojiEl && overlay) {
             nameEl.textContent = winningFood;
-            const emojiMatch = winningFood.match(/[\p{Emoji_Presentation}\p{Emoji}☀-➿]/u);
+            const emojiMatch = winningFood.match(/\p{Emoji}/u);
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
             overlay.style.display = 'flex';
         }
 
-        // Libera o botão
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
-    }, 1000); // alterado de 1500 para 1000
+    }, 1000);
 }

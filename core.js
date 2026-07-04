@@ -11,6 +11,7 @@ window.appState = {
     unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1",
     unlockedEndSounds: ["end-1"], currentEndSound: "end-1",
     unlockedWinSounds: ["win-1"], currentWinSound: "win-1",
+    unlockedEffects: ["effect-1"], currentEffect: "effect-1",
     unlockedRecipes: [], customFoods: []
 };
 
@@ -19,31 +20,45 @@ window.loadData = function() {
         const saved = localStorage.getItem('rodaDoSaborState');
         if (saved) {
             const parsed = JSON.parse(saved);
-            // Mescla, garantindo que arrays existam
+            // Mescla mantendo as chaves padrão para as que faltarem
             window.appState = { ...window.appState, ...parsed };
-            // Garantir que todas as propriedades de arrays estejam definidas
-            if (!window.appState.unlockedWinSounds) window.appState.unlockedWinSounds = ["win-1"];
-            if (!window.appState.unlockedEndSounds) window.appState.unlockedEndSounds = ["end-1"];
-            if (!window.appState.unlockedSpinSounds) window.appState.unlockedSpinSounds = ["spin-1"];
-            if (!window.appState.unlockedPageThemes) window.appState.unlockedPageThemes = ["theme-1"];
-            if (!window.appState.unlockedRouletteThemes) window.appState.unlockedRouletteThemes = ["theme-1"];
-            if (!window.appState.unlockedRecipes) window.appState.unlockedRecipes = [];
-            if (!window.appState.customFoods) window.appState.customFoods = [];
         }
-        if (!window.appState.foods || window.appState.foods.length === 0) {
+        // Garantia de que arrays essenciais existam
+        if (!Array.isArray(window.appState.unlockedEffects)) {
+            window.appState.unlockedEffects = ["effect-1"];
+        }
+        if (!window.appState.currentEffect) {
+            window.appState.currentEffect = "effect-1";
+        }
+        if (!Array.isArray(window.appState.unlockedEndSounds)) {
+            window.appState.unlockedEndSounds = ["end-1"];
+            window.appState.currentEndSound = "end-1";
+        }
+        if (!Array.isArray(window.appState.unlockedWinSounds)) {
+            window.appState.unlockedWinSounds = ["win-1"];
+            window.appState.currentWinSound = "win-1";
+        }
+        if (!Array.isArray(window.appState.foods) || window.appState.foods.length === 0) {
             window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
         }
-    } catch (e) {}
+        console.log('📦 Estado carregado:', window.appState);
+    } catch (e) {
+        console.warn('Erro ao carregar estado, usando padrão:', e);
+    }
 };
 
 window.saveData = function() {
     try {
         localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
+        // Atualiza o display de moedas se o elemento existir
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = window.appState.coins;
-    } catch (e) {}
+    } catch (e) {
+        console.warn('Erro ao salvar estado:', e);
+    }
 };
 
+// Carrega imediatamente
 window.loadData();
 
 // ========================== SINTETIZADOR DE ÁUDIO ==========================
