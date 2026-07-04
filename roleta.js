@@ -10,9 +10,26 @@ let lastSoundAngle = 0;
 
 // ========================== DESENHO ==========================
 window.drawRoulette = function() {
+    console.log('🎯 drawRoulette iniciada');
     const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) return;
+    if (!canvas) {
+        console.error('❌ Canvas não encontrado!');
+        return;
+    }
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('❌ Contexto 2D não suportado');
+        return;
+    }
+
+    // Define o tamanho do canvas para corresponder ao CSS
+    const rect = canvas.getBoundingClientRect();
+    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+        canvas.width = rect.width || 600;
+        canvas.height = rect.height || 600;
+        console.log('Canvas redimensionado para:', canvas.width, canvas.height);
+    }
+
     const width = canvas.width;
     const height = canvas.height;
     const centerX = width / 2;
@@ -21,41 +38,41 @@ window.drawRoulette = function() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // --- TEMA COM FALLBACK ---
-    let theme, themeData, mode;
+    // ----- CORES DE FALLBACK (caso temas não carreguem) -----
+    const fallbackColors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
+    let colors = fallbackColors;
+    let wheelBorder = '#f5b342';
+    let wheelCenter = '#f5d742';
+
     try {
-        // Verifica se listTemas existe
-        if (!window.listTemas || window.listTemas.length === 0) {
-            throw new Error('Temas não disponíveis');
-        }
-        theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
-        mode = window.appState.darkMode ? 'dark' : 'light';
-        themeData = theme[mode];
-        if (!themeData || !themeData.colors) {
-            throw new Error('Dados do tema inválidos');
+        if (window.listTemas && window.listTemas.length > 0) {
+            const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
+            const mode = window.appState.darkMode ? 'dark' : 'light';
+            const themeData = theme[mode];
+            if (themeData && themeData.colors) {
+                colors = themeData.colors;
+                wheelBorder = themeData.colors[0] || '#f5b342';
+                wheelCenter = themeData.colors[2] || '#f5d742';
+            }
         }
     } catch (e) {
-        console.warn('Erro ao carregar tema da roleta, usando fallback:', e);
-        // Cores padrão (modo claro)
-        themeData = {
-            colors: ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12']
-        };
-        // Se darkMode estiver ativo, usamos cores escuras
-        if (window.appState.darkMode) {
-            themeData.colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12']; // manter as mesmas
-        }
+        console.warn('Erro ao carregar tema, usando fallback:', e);
     }
 
-    const items = window.appState.foods;
+    const items = window.appState?.foods || [];
     const numSegments = items.length;
 
     if (numSegments === 0) {
-        ctx.beginPath(); ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ccc'; ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ccc';
+        ctx.fill();
         ctx.fillStyle = '#333';
-        ctx.font = `bold ${radius * 0.12}px Inter`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = `bold ${radius * 0.12}px Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText('Adicione comidas!', centerX, centerY);
+        console.log('Nenhuma comida para desenhar.');
         return;
     }
 
@@ -63,41 +80,56 @@ window.drawRoulette = function() {
     const borderWidth = radius * 0.045;
 
     // Borda externa
-    ctx.beginPath(); ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = 'var(--wheel-border)'; ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
+    ctx.fillStyle = wheelBorder;
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
 
     // Bolinhas decorativas
     for (let b = 0; b < 20; b++) {
         const bAngle = (b * 2 * Math.PI) / 20;
         const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
         const by = centerY + (radius + borderWidth * 0.6) * Math.sin(bAngle);
-        ctx.beginPath(); ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
+        ctx.beginPath();
+        ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
     }
 
     // Segmentos
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
         ctx.beginPath();
-        ctx.fillStyle = themeData.colors[i % themeData.colors.length];
-        ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize); ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
         // Texto
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
-        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
         const textRadius = radius * 0.78;
         let fontSize = Math.min(radius * 0.13, 28);
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         const textWidth = ctx.measureText(items[i]).width;
         const maxWidth = (2 * Math.PI * textRadius) / numSegments * 0.85;
-        if (textWidth > maxWidth) {
-            fontSize = fontSize * (maxWidth / textWidth);
-            ctx.font = `bold ${fontSize}px 'Inter', sans-serif';
+        if (textWidth > maxWidth && fontSize > 10) {
+            fontSize = Math.max(10, fontSize * (maxWidth / textWidth));
+            ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         }
         ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 8;
         ctx.fillText(items[i], textRadius, 0);
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -105,14 +137,20 @@ window.drawRoulette = function() {
 
     // Centro
     const centerRadius = radius * 0.16;
-    ctx.beginPath(); ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = 'var(--wheel-center)'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = centerRadius * 0.15; ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = wheelCenter;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = centerRadius * 0.15;
+    ctx.fill();
+    ctx.stroke();
+
+    console.log('✅ Roleta desenhada com', numSegments, 'segmentos');
 };
 
-// ========================== GIRO ==========================
+// ========================== GIRO (igual à versão anterior, mantido) ==========================
 window.spinRoulette = function() {
     if (isSpinning || window.appState.foods.length === 0) return;
-    
     if (window.appState.coins < 1) {
         alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
         return;
@@ -159,8 +197,6 @@ function finalizeSpin() {
     const numSegments = window.appState.foods.length;
     if (numSegments === 0) return;
     const arcSize = (2 * Math.PI) / numSegments;
-
-    // Cálculo correto do setor sob a seta
     let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
     if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
     let index = Math.floor(angleFromStart / arcSize);
@@ -169,21 +205,17 @@ function finalizeSpin() {
 
     const winningFood = window.appState.foods[index];
 
-    // Som de fim
     const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
     window.playSynthesizedSound(activeEndSound.type);
 
-    // Após 1 segundo, toca vitória e mostra resultado
     setTimeout(() => {
         const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
         window.playSynthesizedSound(activeWinSound.type);
-        
         if (typeof window.launchCurrentEffect === 'function') {
             window.launchCurrentEffect();
         } else {
             window.launchConfetti();
         }
-
         const nameEl = document.getElementById('modalFoodName');
         const emojiEl = document.getElementById('modalEmoji');
         const overlay = document.getElementById('resultOverlay');
@@ -193,8 +225,13 @@ function finalizeSpin() {
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
             overlay.style.display = 'flex';
         }
-
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
     }, 1000);
 }
+
+// Forçar redesenho quando a página for carregada ou redimensionada
+window.addEventListener('load', function() {
+    setTimeout(window.drawRoulette, 100);
+});
+window.addEventListener('resize', window.drawRoulette);
