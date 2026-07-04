@@ -22,15 +22,20 @@ class EffectsManager {
     }
 
     launch(type, options = {}) {
-        this.stop(); // Para qualquer efeito anterior
+        this.stop();
         this.particles = [];
         this.running = true;
         this.type = type;
+        this.extra = options;
 
         switch (type) {
-            case 'confetti': this._generateConfetti(options); break;
-            case 'fireworks': this._generateFireworks(options); break;
-            case 'stars': this._generateStars(options); break;
+            case 'confetti': this._generateConfetti(); break;
+            case 'fireworks': this._generateFireworks(); break;
+            case 'stars': this._generateStars(); break;
+            case 'neon_lights': this._generateNeonLights(); break;
+            case 'laser': this._generateLaser(); break;
+            case 'glitter': this._generateGlitter(); break;
+            case 'rainbow': this._generateRainbow(); break;
             default: this.running = false; return;
         }
         this.animate();
@@ -67,7 +72,6 @@ class EffectsManager {
             }
         }
 
-        // Remove mortos (de trás para frente)
         for (let i = toRemove.length - 1; i >= 0; i--) {
             this.particles.splice(toRemove[i], 1);
         }
@@ -133,46 +137,164 @@ class EffectsManager {
         }
     }
 
-    // ---------- ATUALIZAÇÃO E DESENHO ----------
+    // ========== NOVOS EFEITOS ==========
+
+    // ---- NEON LIGHTS ----
+    _generateNeonLights() {
+        const neonColors = ['#ff00ff', '#00ffff', '#ff0040', '#40ff00', '#ffaa00', '#aa00ff', '#ff0066', '#00ffcc'];
+        for (let i = 0; i < 60; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 3 + 1;
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 0.5,
+                color: neonColors[Math.floor(Math.random() * neonColors.length)],
+                size: Math.random() * 8 + 4,
+                life: 1.0,
+                decay: 0.008 + Math.random() * 0.012,
+                glow: true,
+                shape: 'circle'
+            });
+        }
+    }
+
+    // ---- LASER SHOW ----
+    _generateLaser() {
+        const laserColors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+        for (let i = 0; i < 30; i++) {
+            const cx = Math.random() * this.canvas.width;
+            const cy = Math.random() * this.canvas.height * 0.3 + 10;
+            const angle = (Math.random() - 0.5) * Math.PI * 0.8;
+            const speed = Math.random() * 8 + 4;
+            this.particles.push({
+                x: cx,
+                y: cy,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed * 0.3,
+                color: laserColors[Math.floor(Math.random() * laserColors.length)],
+                size: Math.random() * 4 + 2,
+                life: 1.0,
+                decay: 0.01 + Math.random() * 0.015,
+                shape: 'line',
+                glow: true,
+                length: Math.random() * 80 + 40
+            });
+        }
+    }
+
+    // ---- GLITTER RAIN ----
+    _generateGlitter() {
+        const metallicColors = ['#ffd700', '#c0c0c0', '#ff6347', '#00ced1', '#ff1493', '#7b68ee', '#ffa500', '#40e0d0'];
+        for (let i = 0; i < 120; i++) {
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height - this.canvas.height,
+                w: Math.random() * 6 + 2,
+                h: Math.random() * 6 + 2,
+                color: metallicColors[Math.floor(Math.random() * metallicColors.length)],
+                shape: ['circle', 'square', 'diamond'][Math.floor(Math.random() * 3)],
+                vx: (Math.random() - 0.5) * 2,
+                vy: Math.random() * 3 + 1,
+                rot: Math.random() * 360,
+                rotSpeed: (Math.random() - 0.5) * 8,
+                life: 1,
+                decay: 0.004 + Math.random() * 0.008,
+                sparkle: true
+            });
+        }
+    }
+
+    // ---- RAINBOW ----
+    _generateRainbow() {
+        const rainbowColors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3'];
+        for (let i = 0; i < 100; i++) {
+            const startY = Math.random() * this.canvas.height * 0.4;
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: startY,
+                vx: (Math.random() - 0.5) * 2,
+                vy: Math.random() * 2 + 0.5,
+                color: rainbowColors[i % rainbowColors.length],
+                size: Math.random() * 10 + 5,
+                life: 1,
+                decay: 0.005 + Math.random() * 0.01,
+                shape: 'circle',
+                glow: true,
+                pulse: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    // ---------- ATUALIZAÇÃO ----------
     _updateParticle(p) {
         p.x += p.vx || 0;
         p.y += p.vy || 0;
-        p.vy = (p.vy || 0) + 0.08;
+        p.vy = (p.vy || 0) + 0.05;
         p.rot = (p.rot || 0) + (p.rotSpeed || 0);
         p.life -= (p.decay || 0.01);
+        if (p.pulse !== undefined) p.pulse += 0.05;
     }
 
+    // ---------- DESENHO ----------
     _drawParticle(p) {
         const ctx = this.ctx;
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(((p.rot || 0) * Math.PI) / 180);
         ctx.globalAlpha = Math.max(0, p.life);
-        ctx.fillStyle = p.color;
 
-        if (this.type === 'fireworks' || this.type === 'stars') {
-            // Desenha como círculo ou estrela
-            if (this.type === 'stars') {
-                ctx.beginPath();
-                for (let j = 0; j < 8; j++) {
-                    const angle = (j * Math.PI) / 4 - Math.PI / 2;
-                    const radius = j % 2 === 0 ? p.size : p.size * 0.4;
-                    const x = radius * Math.cos(angle);
-                    const y = radius * Math.sin(angle);
-                    if (j === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.closePath();
-                ctx.fill();
-            } else {
-                ctx.beginPath();
-                ctx.arc(0, 0, (p.size || 3) * p.life, 0, 2 * Math.PI);
-                ctx.fill();
-            }
+        // Efeito de brilho (glow)
+        if (p.glow) {
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 20;
+        }
+
+        // Desenho específico por tipo
+        if (this.type === 'laser' && p.shape === 'line') {
+            // Linha de laser
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = p.size;
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = p.color;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(p.length || 80, 0);
+            ctx.stroke();
+        } else if (this.type === 'glitter' && p.sparkle) {
+            // Brilho metálico com reflexo
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, p.w * 0.8);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.3, p.color);
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.w * 0.8, 0, 2 * Math.PI);
+            ctx.fill();
+            // centro branco
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, p.w * 0.2, 0, 2 * Math.PI);
+            ctx.fill();
+        } else if (this.type === 'rainbow' && p.pulse !== undefined) {
+            // Onda pulsante
+            const r = p.size * (0.6 + 0.4 * Math.sin(p.pulse));
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 25;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, 2 * Math.PI);
+            ctx.fill();
         } else {
-            // Confetti: formas variadas
+            // Fallback: formas padrão
             const w = p.w || 10;
             const h = p.h || 10;
+            ctx.fillStyle = p.color;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = p.glow ? 20 : 0;
+
             switch (p.shape) {
                 case 'circle':
                     ctx.beginPath();
@@ -199,8 +321,13 @@ class EffectsManager {
                     ctx.closePath();
                     ctx.fill();
                     break;
+                default:
+                    ctx.beginPath();
+                    ctx.arc(0, 0, (p.size || 5), 0, 2 * Math.PI);
+                    ctx.fill();
             }
         }
+
         ctx.restore();
     }
 }
@@ -215,7 +342,7 @@ function getEffectsManager() {
     return effectsManager;
 }
 
-// ========================== FUNÇÕES LEGACY (mantêm compatibilidade) ==========================
+// ========================== FUNÇÕES LEGACY ==========================
 window.launchConfetti = function() {
     getEffectsManager().launch('confetti');
 };
@@ -228,7 +355,24 @@ window.launchStars = function() {
     getEffectsManager().launch('stars');
 };
 
-// Limpeza opcional ao fechar a página
+// ========================== FUNÇÕES PARA NOVOS EFEITOS ==========================
+window.launchNeonLights = function() {
+    getEffectsManager().launch('neon_lights');
+};
+
+window.launchLaser = function() {
+    getEffectsManager().launch('laser');
+};
+
+window.launchGlitter = function() {
+    getEffectsManager().launch('glitter');
+};
+
+window.launchRainbow = function() {
+    getEffectsManager().launch('rainbow');
+};
+
+// Limpeza
 window.addEventListener('beforeunload', () => {
     if (effectsManager) effectsManager.stop();
 });
