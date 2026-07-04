@@ -18,11 +18,17 @@ window.loadData = function() {
     try {
         const saved = localStorage.getItem('rodaDoSaborState');
         if (saved) {
-            window.appState = { ...window.appState, ...JSON.parse(saved) };
-            if (!window.appState.unlockedEndSounds) {
-                window.appState.unlockedEndSounds = ["end-1"];
-                window.appState.currentEndSound = "end-1";
-            }
+            const parsed = JSON.parse(saved);
+            // Mescla, garantindo que arrays existam
+            window.appState = { ...window.appState, ...parsed };
+            // Garantir que todas as propriedades de arrays estejam definidas
+            if (!window.appState.unlockedWinSounds) window.appState.unlockedWinSounds = ["win-1"];
+            if (!window.appState.unlockedEndSounds) window.appState.unlockedEndSounds = ["end-1"];
+            if (!window.appState.unlockedSpinSounds) window.appState.unlockedSpinSounds = ["spin-1"];
+            if (!window.appState.unlockedPageThemes) window.appState.unlockedPageThemes = ["theme-1"];
+            if (!window.appState.unlockedRouletteThemes) window.appState.unlockedRouletteThemes = ["theme-1"];
+            if (!window.appState.unlockedRecipes) window.appState.unlockedRecipes = [];
+            if (!window.appState.customFoods) window.appState.customFoods = [];
         }
         if (!window.appState.foods || window.appState.foods.length === 0) {
             window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];

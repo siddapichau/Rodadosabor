@@ -8,7 +8,10 @@ const urlsToCache = [
   '/logo.png',
   '/manifest.json',
   '/sons.js',
-  '/comidas.js'
+  '/comidas.js',
+  '/temas.js',
+  '/efeitos.js',
+  '/roleta.js'
 ];
 
 self.addEventListener('install', event => {

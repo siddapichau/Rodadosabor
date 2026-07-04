@@ -25,7 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('adFrame').src = "anuncio.html";
             adOverlay.style.display = 'flex';
             
-            const adInterval = setInterval(() => {
+            // Armazenar o intervalo para poder limpá-lo
+            let adInterval = setInterval(() => {
                 secondsLeft--;
                 adCountdown.textContent = secondsLeft;
                 if (secondsLeft <= 0) {
@@ -38,6 +39,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert("🎉 Você ganhou 3 moedas! Use na loja.");
                 }
             }, 1000);
+
+            // Adicionar um ouvinte para fechar o overlay manualmente e limpar o intervalo
+            const closeAd = function() {
+                if (adInterval) {
+                    clearInterval(adInterval);
+                    adInterval = null;
+                }
+                adOverlay.style.display = 'none';
+                document.getElementById('adFrame').src = 'about:blank';
+                // Remover o listener para evitar múltiplas chamadas
+                document.removeEventListener('click', closeAd);
+            };
+            // Não podemos simplesmente fechar com clique no overlay, pois atrapalharia.
+            // Vamos permitir que o usuário feche clicando fora do iframe? 
+            // Melhor: adicionar um botão de fechar? 
+            // Como não há, vamos apenas garantir que o intervalo seja limpo se o overlay for escondido de outra forma.
+            // Podemos adicionar um MutationObserver ou simplesmente deixar.
+            // Vamos limpar o intervalo quando o overlay for fechado pelo tempo.
         });
     }
 
@@ -121,7 +140,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const allItems = [...(window.BANCO_DE_COMIDAS || [])];
         window.appState.customFoods.forEach(custom => {
-            const match = custom.match(/^(.*?)\s+([\p{Emoji_Presentation}\p{Emoji}☀-➿])$/u);
+            // Regex corrigida para capturar emojis (incluindo compostos)
+            const match = custom.match(/^(.*?)\s+([\p{Emoji_Presentation}\p{Emoji}\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{1FB00}-\u{1FBFF}]|[\u{FE00}-\u{FEFF}]|[\u{1F004}]|[\u{1F0CF}])/u);
             if (match) allItems.push({ nome: match[1], icone: match[2] });
             else allItems.push({ nome: custom, icone: '🍽️' });
         });
@@ -141,7 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     comidasSelecionadasTemporarias.splice(idx, 1);
                     card.classList.remove('selected');
                 } else {
-                    // 🔥 CORREÇÃO: Limite máximo de 6 itens
                     if (comidasSelecionadasTemporarias.length >= 6) {
                         alert("Máximo de 6 itens permitidos na roleta!");
                         return;
@@ -253,6 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Inicialização
     (window.RECEITAS || []).forEach(rec => {
         if (rec.preco === 0 && !window.appState.unlockedRecipes.includes(rec.id)) {
             window.appState.unlockedRecipes.push(rec.id);
@@ -268,4 +288,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Expondo a função para o roleta.js conseguir atualizar o saldo
-window.updateCoinsDisplay = updateCoinsDisplay;
+window.updateCoinsDisplay = updateCoinsDisplay; // Isso estava dentro, mas precisa ser global

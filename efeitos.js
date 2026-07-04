@@ -1,7 +1,7 @@
 'use strict';
 console.log('efeitos.js carregado');
 
-// ========================== CONFETES (existente) ==========================
+// ========================== CONFETES ==========================
 let confettiPieces = [];
 let confettiRunning = false;
 
@@ -11,7 +11,13 @@ window.launchConfetti = function() {
     confettiCanvas.width = window.innerWidth;
     confettiCanvas.height = window.innerHeight;
     
+    // Se outro efeito estiver rodando, paramos e limpamos
     if (confettiRunning) return;
+    // Se fireworkRunning ou starRunning, podemos parar também? Para simplicidade, vamos apenas permitir.
+    // Mas como usam o mesmo canvas, melhor parar os outros.
+    if (window.fireworkRunning) { window.fireworkRunning = false; fireworkPieces = []; }
+    if (window.starRunning) { window.starRunning = false; starPieces = []; }
+    
     confettiRunning = true;
     confettiPieces = [];
     const colors = ['#ff0', '#f0f', '#0ff', '#f44', '#4f4', '#44f', '#ffa500', '#ff69b4', '#adff2f', '#ff4500', '#9400d3', '#00ffff'];
@@ -34,7 +40,7 @@ window.launchConfetti = function() {
 };
 
 function animateConfetti(canvas, ctx) {
-    if (confettiPieces.length === 0) {
+    if (confettiPieces.length === 0 || !confettiRunning) {
         confettiRunning = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
@@ -76,10 +82,13 @@ window.launchFireworks = function() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     if (fireworkRunning) return;
+    // Parar outros efeitos
+    if (confettiRunning) { confettiRunning = false; confettiPieces = []; }
+    if (window.starRunning) { window.starRunning = false; starPieces = []; }
+    
     fireworkRunning = true;
     fireworkParticles = [];
     const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff8800', '#ff0088'];
-    // Cria 3 fogos em posições aleatórias
     for (let f = 0; f < 3; f++) {
         const cx = Math.random() * canvas.width;
         const cy = Math.random() * canvas.height * 0.6 + 50;
@@ -101,7 +110,7 @@ window.launchFireworks = function() {
 };
 
 function animateFireworks(canvas, ctx) {
-    if (fireworkParticles.length === 0) {
+    if (fireworkParticles.length === 0 || !fireworkRunning) {
         fireworkRunning = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
@@ -136,9 +145,11 @@ window.launchStars = function() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     if (starRunning) return;
+    if (confettiRunning) { confettiRunning = false; confettiPieces = []; }
+    if (fireworkRunning) { fireworkRunning = false; fireworkParticles = []; }
+    
     starRunning = true;
     starPieces = [];
-    // Cria 20 estrelas caindo aleatoriamente
     for (let i = 0; i < 20; i++) {
         starPieces.push({
             x: Math.random() * canvas.width,
@@ -155,7 +166,7 @@ window.launchStars = function() {
 };
 
 function animateStars(canvas, ctx) {
-    if (starPieces.length === 0) {
+    if (starPieces.length === 0 || !starRunning) {
         starRunning = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
@@ -172,7 +183,6 @@ function animateStars(canvas, ctx) {
         }
         ctx.globalAlpha = p.life;
         ctx.fillStyle = p.color;
-        // Desenha uma estrela (4 pontas)
         ctx.beginPath();
         for (let j = 0; j < 8; j++) {
             const angle = (j * Math.PI) / 4 - Math.PI / 2;
