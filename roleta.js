@@ -1,3 +1,14 @@
+'use strict';
+console.log('roleta.js carregado');
+
+let startAngle = 0;
+let isSpinning = false;
+let spinSpeed = 0;
+let spinTimeTotal = 0;
+let spinTimeCount = 0;
+let lastSoundAngle = 0;
+
+// ========================== DESENHO ==========================
 window.drawRoulette = function() {
     console.log('🎯 drawRoulette iniciada');
     const canvas = document.getElementById('rouletteCanvas');
@@ -27,7 +38,11 @@ window.drawRoulette = function() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Cores (fallback)
+    // ----- OBTÉM AS COMIDAS -----
+    const items = window.appState?.foods || [];
+    console.log('🍽️ Comidas a desenhar:', items);
+
+    // ----- CORES (fallback) -----
     const fallbackColors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
     let colors = fallbackColors;
     let wheelBorder = '#f5b342';
@@ -38,7 +53,7 @@ window.drawRoulette = function() {
             const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
             const mode = window.appState.darkMode ? 'dark' : 'light';
             const themeData = theme[mode];
-            if (themeData && themeData.colors) {
+            if (themeData && themeData.colors && themeData.colors.length > 0) {
                 colors = themeData.colors;
                 wheelBorder = themeData.colors[0] || '#f5b342';
                 wheelCenter = themeData.colors[2] || '#f5d742';
@@ -48,7 +63,6 @@ window.drawRoulette = function() {
         console.warn('Erro ao carregar tema, usando fallback:', e);
     }
 
-    const items = window.appState?.foods || [];
     const numSegments = items.length;
 
     if (numSegments === 0) {
@@ -88,11 +102,13 @@ window.drawRoulette = function() {
         ctx.fill();
     }
 
-    // Segmentos
+    // Desenha os segmentos e textos
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
+        const color = colors[i % colors.length];
+        // Segmento
         ctx.beginPath();
-        ctx.fillStyle = colors[i % colors.length];
+        ctx.fillStyle = color;
         ctx.moveTo(centerX, centerY);
         ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
         ctx.closePath();
@@ -101,33 +117,34 @@ window.drawRoulette = function() {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // ---- TEXTO AJUSTADO ----
+        // Texto
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        // Distância do centro: 85% do raio (mais próximo da borda)
+
+        // Raio onde o texto será desenhado (85% do raio, próximo à borda)
         const textRadius = radius * 0.85;
-        // Calcula o tamanho máximo da fonte baseado no espaço disponível no arco
-        const maxTextWidth = (2 * Math.PI * textRadius) / numSegments * 0.85;
-        let fontSize = Math.min(radius * 0.14, 28);
+        // Tamanho da fonte: tenta ocupar o máximo possível sem estourar
+        let fontSize = Math.min(radius * 0.13, 26);
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
+        // Verifica se o texto cabe no arco
+        const maxWidth = (2 * Math.PI * textRadius) / numSegments * 0.8;
         let textWidth = ctx.measureText(items[i]).width;
-        if (textWidth > maxTextWidth && fontSize > 10) {
-            fontSize = Math.max(10, fontSize * (maxTextWidth / textWidth));
+        if (textWidth > maxWidth && fontSize > 8) {
+            fontSize = Math.max(8, fontSize * (maxWidth / textWidth));
             ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         }
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.6)';
         ctx.shadowBlur = 8;
-        // Posiciona o texto no raio calculado, centralizado no segmento
         ctx.fillText(items[i], textRadius, 0);
         ctx.shadowBlur = 0;
         ctx.restore();
     }
 
-    // Centro da roleta (por baixo do botão)
+    // Centro da roleta
     const centerRadius = radius * 0.16;
     ctx.beginPath();
     ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
@@ -139,3 +156,99 @@ window.drawRoulette = function() {
 
     console.log('✅ Roleta desenhada com', numSegments, 'segmentos');
 };
+
+// ========================== GIRO ==========================
+window.spinRoulette = function() {
+    if (isSpinning || window.appState.foods.length === 0) return;
+    if (window.appState.coins < 1) {
+        alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
+        return;
+    }
+    window.appState.coins -= 1;
+    window.saveData();
+    window.updateCoinsDisplay();
+
+    const btn = document.getElementById('btnSpin');
+    if (btn) btn.disabled = true;
+
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    isSpinning = true;
+    spinTimeCount = 0;
+    spinTimeTotal = Math.random() * 1000 + 4000;
+    spinSpeed = Math.random() * 0.3 + 0.4;
+    lastSoundAngle = startAngle;
+    animateSpin();
+};
+
+function animateSpin() {
+    spinTimeCount += 20;
+    if (spinTimeCount >= spinTimeTotal) {
+        isSpinning = false;
+        finalizeSpin();
+        return;
+    }
+    const progress = spinTimeCount / spinTimeTotal;
+    const currentVelocity = spinSpeed * Math.pow(1 - progress, 2);
+    startAngle += currentVelocity;
+    window.drawRoulette();
+
+    const arcSize = (2 * Math.PI) / window.appState.foods.length;
+    if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
+        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
+        window.playSynthesizedSound(activeSpinSound.type);
+        lastSoundAngle = startAngle;
+    }
+    requestAnimationFrame(animateSpin);
+}
+
+function finalizeSpin() {
+    const numSegments = window.appState.foods.length;
+    if (numSegments === 0) return;
+    const arcSize = (2 * Math.PI) / numSegments;
+
+    // ===== CORREÇÃO: cálculo correto do setor sob a seta =====
+    let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
+    if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
+    let index = Math.floor(angleFromStart / arcSize);
+    if (index >= numSegments) index = 0;
+    if (index < 0) index = numSegments - 1;
+
+    const winningFood = window.appState.foods[index];
+
+    // Som de fim (roleta parou)
+    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
+    window.playSynthesizedSound(activeEndSound.type);
+
+    // Após 1 segundo, toca o som de vitória e mostra o resultado
+    setTimeout(() => {
+        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
+        window.playSynthesizedSound(activeWinSound.type);
+
+        // Lança o efeito visual atual (fallback para confetes)
+        if (typeof window.launchCurrentEffect === 'function') {
+            window.launchCurrentEffect();
+        } else {
+            window.launchConfetti();
+        }
+
+        const nameEl = document.getElementById('modalFoodName');
+        const emojiEl = document.getElementById('modalEmoji');
+        const overlay = document.getElementById('resultOverlay');
+        if (nameEl && emojiEl && overlay) {
+            nameEl.textContent = winningFood;
+            const emojiMatch = winningFood.match(/\p{Emoji}/u);
+            emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
+            overlay.style.display = 'flex';
+        }
+
+        const btn = document.getElementById('btnSpin');
+        if (btn) btn.disabled = false;
+    }, 1000);
+}
+
+// ========================== EVENTOS DE REDIMENSIONAMENTO ==========================
+window.addEventListener('load', function() {
+    setTimeout(window.drawRoulette, 100);
+});
+window.addEventListener('resize', window.drawRoulette);
