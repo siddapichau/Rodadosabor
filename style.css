@@ -1,5 +1,5 @@
 /* ============================================================
-   ESTILOS GLOBAIS E VARIÁVEIS CSS (gradiente moderno)
+   ESTILOS GLOBAIS E VARIÁVEIS CSS (sem blur, sem lente)
    ============================================================ */
 * {
     margin: 0;
@@ -23,19 +23,19 @@ body {
     margin: 0 auto;
 }
 
-/* ===== CARDS – visual moderno, destacado e profissional ===== */
+/* ===== CARDS – sem blur, com sombra moderna ===== */
 .card {
     background: var(--bg-card);
     border-radius: 1.8rem;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.02);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04);
     border: 1px solid var(--border-color);
     transition: transform 0.3s ease, background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
 }
 .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.10);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.12);
 }
 
 /* ===== HEADER ===== */
@@ -80,6 +80,8 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* Garante que o gradiente seja dinâmico conforme o tema */
+    transition: background 0.4s ease;
 }
 
 .logo-title p {
@@ -103,7 +105,7 @@ body {
     gap: 0.4rem;
     font-weight: 700;
     font-size: 0.9rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .stat-badge i.fa-coins {
@@ -121,7 +123,7 @@ body {
     align-items: center;
     justify-content: center;
     color: var(--text-primary);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     transition: all 0.2s;
 }
 .btn-toggle-mode:hover {
@@ -129,7 +131,7 @@ body {
     border-color: var(--accent);
 }
 
-/* ===== ROLETA – borda moderna com cor diferente do centro ===== */
+/* ===== ROLETA ===== */
 .roulette-wrapper {
     display: flex;
     flex-direction: column;
@@ -154,7 +156,6 @@ canvas {
     box-shadow: 0 4px 24px rgba(0,0,0,0.10);
     transition: box-shadow 0.3s ease;
 }
-/* A cor da borda e do centro são definidas via JS (variáveis CSS) */
 
 .roulette-arrow {
     position: absolute;
@@ -278,7 +279,7 @@ canvas {
     transform: scale(1.15);
 }
 
-/* ===== LOJAS – cards destacados ===== */
+/* ===== LOJAS – cards com sombra destacada ===== */
 .store-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -296,17 +297,17 @@ canvas {
     flex-wrap: wrap;
     gap: 0.5rem;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 .item-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
     border-color: var(--accent);
 }
 .item-card.active {
     border-color: var(--gold);
     background: rgba(245, 179, 66, 0.08);
-    box-shadow: 0 2px 12px rgba(245, 179, 66, 0.08);
+    box-shadow: 0 4px 16px rgba(245, 179, 66, 0.10);
 }
 .item-card.active .item-info h4 {
     color: var(--gold);
@@ -382,12 +383,12 @@ canvas {
 }
 .recipe-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
 }
 .recipe-icon { font-size: 2rem; }
 .recipe-name { font-weight: 600; font-size: 0.85rem; }
 
-/* ===== MODAIS ===== */
+/* ===== MODAIS – sem blur ===== */
 .result-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -396,7 +397,6 @@ canvas {
     align-items: center;
     justify-content: center;
     z-index: 100;
-    backdrop-filter: blur(4px);
 }
 .modal-content-box {
     background: var(--bg-card);
@@ -407,7 +407,7 @@ canvas {
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 48px rgba(0,0,0,0.15);
+    box-shadow: 0 20px 48px rgba(0,0,0,0.20);
     border: 1px solid var(--border-color);
 }
 .modal-header-container {
@@ -499,7 +499,7 @@ canvas {
     margin-bottom: 0.2rem;
 }
 
-/* ===== MODAL DE RESULTADO ===== */
+/* ===== MODAL DE RESULTADO (sem blur) ===== */
 .result-modal {
     background: var(--bg-card);
     border-radius: 2rem;
@@ -507,7 +507,7 @@ canvas {
     text-align: center;
     max-width: 400px;
     width: 90%;
-    box-shadow: 0 20px 48px rgba(0,0,0,0.15);
+    box-shadow: 0 20px 48px rgba(0,0,0,0.20);
     border: 1px solid var(--border-color);
 }
 .result-modal h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
