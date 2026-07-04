@@ -6,47 +6,57 @@ window.appState = {
     coins: 20,
     darkMode: false,
     foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
-    unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
-    unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
-    unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1",
-    unlockedEndSounds: ["end-1"], currentEndSound: "end-1",
-    unlockedWinSounds: ["win-1"], currentWinSound: "win-1",
-    unlockedEffects: ["effect-1"], currentEffect: "effect-1",
-    unlockedRecipes: [], customFoods: []
+    unlockedPageThemes: ["theme-1"],
+    currentPageTheme: "theme-1",
+    unlockedRouletteThemes: ["theme-1"],
+    currentRouletteTheme: "theme-1",
+    unlockedSpinSounds: ["spin-1"],
+    currentSpinSound: "spin-1",
+    unlockedEndSounds: ["end-1"],
+    currentEndSound: "end-1",
+    unlockedWinSounds: ["win-1"],
+    currentWinSound: "win-1",
+    unlockedEffects: ["effect-1"],
+    currentEffect: "effect-1",
+    unlockedRecipes: [],
+    customFoods: []
 };
 
-// Carrega o estado do localStorage, se existir
 window.loadData = function() {
     try {
         const saved = localStorage.getItem('rodaDoSaborState');
         if (saved) {
             const parsed = JSON.parse(saved);
-            // Mescla com o padrão, mantendo os defaults para chaves faltantes
+            // Mescla mantendo as chaves padrão para as que faltarem
             window.appState = { ...window.appState, ...parsed };
         }
-        // Garantia de que arrays essenciais existam (evita undefined)
-        const ensureArray = (key, defaultVal) => {
-            if (!Array.isArray(window.appState[key]) || window.appState[key].length === 0) {
-                window.appState[key] = defaultVal;
-            }
-        };
-        ensureArray('unlockedEffects', ['effect-1']);
-        ensureArray('unlockedSpinSounds', ['spin-1']);
-        ensureArray('unlockedEndSounds', ['end-1']);
-        ensureArray('unlockedWinSounds', ['win-1']);
-        ensureArray('unlockedPageThemes', ['theme-1']);
-        ensureArray('unlockedRouletteThemes', ['theme-1']);
-        ensureArray('unlockedRecipes', []);
-        ensureArray('customFoods', []);
-        // Garante que os current* existam
-        if (!window.appState.currentEffect) window.appState.currentEffect = 'effect-1';
-        if (!window.appState.currentSpinSound) window.appState.currentSpinSound = 'spin-1';
-        if (!window.appState.currentEndSound) window.appState.currentEndSound = 'end-1';
-        if (!window.appState.currentWinSound) window.appState.currentWinSound = 'win-1';
-        if (!window.appState.currentPageTheme) window.appState.currentPageTheme = 'theme-1';
-        if (!window.appState.currentRouletteTheme) window.appState.currentRouletteTheme = 'theme-1';
+        // Garantia de que arrays essenciais existam
+        if (!Array.isArray(window.appState.unlockedEffects) || window.appState.unlockedEffects.length === 0) {
+            window.appState.unlockedEffects = ["effect-1"];
+        }
+        if (!window.appState.currentEffect) {
+            window.appState.currentEffect = "effect-1";
+        }
+        if (!Array.isArray(window.appState.unlockedEndSounds) || window.appState.unlockedEndSounds.length === 0) {
+            window.appState.unlockedEndSounds = ["end-1"];
+            window.appState.currentEndSound = "end-1";
+        }
+        if (!Array.isArray(window.appState.unlockedWinSounds) || window.appState.unlockedWinSounds.length === 0) {
+            window.appState.unlockedWinSounds = ["win-1"];
+            window.appState.currentWinSound = "win-1";
+        }
+        if (!Array.isArray(window.appState.unlockedSpinSounds) || window.appState.unlockedSpinSounds.length === 0) {
+            window.appState.unlockedSpinSounds = ["spin-1"];
+            window.appState.currentSpinSound = "spin-1";
+        }
         if (!Array.isArray(window.appState.foods) || window.appState.foods.length === 0) {
             window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
+        }
+        if (!Array.isArray(window.appState.unlockedPageThemes) || window.appState.unlockedPageThemes.length === 0) {
+            window.appState.unlockedPageThemes = ["theme-1"];
+        }
+        if (!Array.isArray(window.appState.unlockedRouletteThemes) || window.appState.unlockedRouletteThemes.length === 0) {
+            window.appState.unlockedRouletteThemes = ["theme-1"];
         }
         console.log('📦 Estado carregado:', window.appState);
     } catch (e) {
@@ -54,7 +64,6 @@ window.loadData = function() {
     }
 };
 
-// Salva o estado no localStorage e atualiza o display de moedas
 window.saveData = function() {
     try {
         localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
@@ -66,33 +75,20 @@ window.saveData = function() {
     }
 };
 
-// Carrega imediatamente ao iniciar
+// Carrega imediatamente
 window.loadData();
 
 // ========================== SINTETIZADOR DE ÁUDIO ==========================
 let audioCtx = null;
 function getAudioContext() {
-    if (!audioCtx) {
-        try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) {
-            console.warn('Web Audio não suportado');
-            return null;
-        }
-    }
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return audioCtx;
 }
-window.getAudioContext = getAudioContext;
+window.getAudioContext = getAudioContext; // Exporta para uso global
 
-// Função principal para tocar sons sintetizados
 window.playSynthesizedSound = function(soundType) {
     try {
         const ctx = getAudioContext();
-        if (!ctx) return;
-        // Se o contexto estiver suspenso, tenta retomar (por política de autoplay)
-        if (ctx.state === 'suspended') {
-            ctx.resume();
-        }
         const now = ctx.currentTime;
         switch (soundType) {
             case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
@@ -101,7 +97,7 @@ window.playSynthesizedSound = function(soundType) {
             case 'motor': oscSquare(ctx, now, 100, 50, 0.08, 0.2); break;
             case 'whoosh': osc(ctx, now, 60, 350, 0.15, 'sawtooth', 0.15); break;
             case 'digital': oscSquare(ctx, now, 500, 1200, 0.05, 0.1); break;
-            case 'end-chord': [392, 493, 587].forEach((f, i) => osc(ctx, now + i*0.05, f, f, 0.3, 'sine', 0.2)); break;
+            case 'end-chord': [392, 493, 587].forEach((f, i) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
             case 'end-bell': osc(ctx, now, 987.77, 987.77, 0.6, 'triangle', 0.4); break;
             case 'end-coin': [987.77, 1318.51].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.2, 0.15)); break;
             case 'end-thud': osc(ctx, now, 150, 40, 0.2, 'square', 0.4); break;
@@ -114,14 +110,12 @@ window.playSynthesizedSound = function(soundType) {
             case 'win-arcade': [261.63, 329.63, 392.00, 523.25, 659.25, 783.99].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.15, 0.15)); break;
             case 'win-epic': [261.63, 392, 523.25, 783.99].forEach((f, i) => osc(ctx, now + i * 0.2, f, f, 1.2, 'triangle', 0.2)); break;
             case 'win-party': [440, 440, 440, 554, 659, 554, 659, 880].forEach((f, i) => osc(ctx, now + i * 0.12, f, f, 0.1, 'square', 0.15)); break;
-            default: console.warn('Tipo de som desconhecido:', soundType);
         }
     } catch (e) {
         console.warn('Erro ao tocar som:', e);
     }
 };
 
-// Funções auxiliares (privadas)
 function playNoise(ctx, start, duration, gainValue) {
     const bufferSize = ctx.sampleRate * duration;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -151,44 +145,29 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
 window.applyThemes = function() {
     // Verifica se a lista de temas existe
     if (!window.listTemas || window.listTemas.length === 0) {
-        console.warn('Nenhum tema definido em window.listTemas');
+        console.warn('Lista de temas não carregada!');
         return;
     }
-
     const pageTheme = window.listTemas.find(t => t.id === window.appState.currentPageTheme) || window.listTemas[0];
     const rouletteTheme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
     const mode = window.appState.darkMode ? 'dark' : 'light';
     
-    // Tema da página (cores do fundo, texto, etc.)
     const pageData = pageTheme[mode];
-    if (pageData && pageData.style) {
-        const root = document.documentElement;
-        root.style.setProperty('--bg-body', pageData.style.bg);
-        root.style.setProperty('--bg-card', pageData.style.card);
-        root.style.setProperty('--text-primary', pageData.style.text);
-        root.style.setProperty('--accent', pageData.style.accent);
-        root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${pageData.colors[0]}, ${pageData.colors[1]})`);
-    }
-
-    // Tema da roleta (cores das fatias)
+    const root = document.documentElement;
+    root.style.setProperty('--bg-body', pageData.style.bg);
+    root.style.setProperty('--bg-card', pageData.style.card);
+    root.style.setProperty('--text-primary', pageData.style.text);
+    root.style.setProperty('--accent', pageData.style.accent);
+    root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${pageData.colors[0]}, ${pageData.colors[1]})`);
+    
     const rouletteData = rouletteTheme[mode];
-    if (rouletteData) {
-        const root = document.documentElement;
-        root.style.setProperty('--wheel-border', rouletteData.colors[0]);
-        root.style.setProperty('--wheel-center', rouletteData.colors[2] || '#f5d742');
-    }
+    root.style.setProperty('--wheel-border', rouletteData.colors[0]);
+    root.style.setProperty('--wheel-center', rouletteData.colors[2] || '#f5d742');
 
-    // Salva e redesenha a roleta
+    // Salva o estado (opcional)
     window.saveData();
+    // Redesenha a roleta se a função existir
     if (typeof window.drawRoulette === 'function') {
         window.drawRoulette();
     }
 };
-
-// Garante que a função de aplicação de temas seja chamada após o carregamento do DOM
-document.addEventListener('DOMContentLoaded', function() {
-    // Se o appState já estiver carregado, aplica os temas
-    if (window.appState) {
-        window.applyThemes();
-    }
-});
