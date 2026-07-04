@@ -1,12 +1,20 @@
 'use strict';
 console.log('app.js carregado');
 
+// ========== FUNÇÃO GLOBAL DE ATUALIZAÇÃO DE MOEDAS ==========
+window.updateCoinsDisplay = function() {
+    const coinBalance = document.getElementById('coin-balance');
+    if (coinBalance) coinBalance.textContent = window.appState.coins;
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     let comidasSelecionadasTemporarias = [];
 
+    // ---------- BOTÃO GIRO ----------
     const btnSpinEl = document.getElementById('btnSpin');
     if (btnSpinEl) btnSpinEl.addEventListener('click', window.spinRoulette);
 
+    // ---------- MODO CLARO/ESCURO ----------
     const btnModeToggle = document.getElementById('btnModeToggle');
     if (btnModeToggle) {
         btnModeToggle.addEventListener('click', () => {
@@ -15,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ---------- ANÚNCIO (com cancelamento seguro) ----------
     const btnWatchAd = document.getElementById('btnWatchAd');
     if (btnWatchAd) {
         btnWatchAd.addEventListener('click', function() {
@@ -25,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('adFrame').src = "anuncio.html";
             adOverlay.style.display = 'flex';
             
-            // Armazenar o intervalo para poder limpá-lo
             let adInterval = setInterval(() => {
                 secondsLeft--;
                 adCountdown.textContent = secondsLeft;
@@ -35,39 +43,48 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('adFrame').src = 'about:blank';
                     window.appState.coins += 3;
                     window.saveData();
-                    updateCoinsDisplay();
+                    window.updateCoinsDisplay();
                     alert("🎉 Você ganhou 3 moedas! Use na loja.");
                 }
             }, 1000);
 
-            // Adicionar um ouvinte para fechar o overlay manualmente e limpar o intervalo
-            const closeAd = function() {
-                if (adInterval) {
-                    clearInterval(adInterval);
-                    adInterval = null;
-                }
+            // Função para fechar manualmente (cancela o timer)
+            const closeAd = () => {
+                clearInterval(adInterval);
                 adOverlay.style.display = 'none';
                 document.getElementById('adFrame').src = 'about:blank';
-                // Remover o listener para evitar múltiplas chamadas
-                document.removeEventListener('click', closeAd);
             };
-            // Não podemos simplesmente fechar com clique no overlay, pois atrapalharia.
-            // Vamos permitir que o usuário feche clicando fora do iframe? 
-            // Melhor: adicionar um botão de fechar? 
-            // Como não há, vamos apenas garantir que o intervalo seja limpo se o overlay for escondido de outra forma.
-            // Podemos adicionar um MutationObserver ou simplesmente deixar.
-            // Vamos limpar o intervalo quando o overlay for fechado pelo tempo.
+
+            // Fecha se clicar no backdrop
+            adOverlay.addEventListener('click', function handler(e) {
+                if (e.target === adOverlay) {
+                    closeAd();
+                    adOverlay.removeEventListener('click', handler);
+                }
+            });
+
+            // Guarda referência para uso futuro (ex: fechar via tecla ESC)
+            adOverlay._closeAd = closeAd;
         });
     }
 
+    // ---------- MODAL DE SELEÇÃO DE COMIDAS ----------
+    const foodModal = document.getElementById('foodSelectionModal');
     document.getElementById('btnOpenFoodModal')?.addEventListener('click', () => {
         comidasSelecionadasTemporarias = [...window.appState.foods];
-        document.getElementById('foodSelectionModal').style.display = 'flex';
+        foodModal.style.display = 'flex';
         renderModalFoodOptions();
     });
 
     document.getElementById('btnCloseFoodModal')?.addEventListener('click', () => {
-        document.getElementById('foodSelectionModal').style.display = 'none';
+        foodModal.style.display = 'none';
+    });
+
+    // Fecha o modal de comidas se clicar no fundo
+    foodModal?.addEventListener('click', function(e) {
+        if (e.target === foodModal) {
+            foodModal.style.display = 'none';
+        }
     });
 
     document.getElementById('searchFoodInput')?.addEventListener('input', e => {
@@ -85,13 +102,23 @@ document.addEventListener('DOMContentLoaded', function() {
         window.appState.foods = [...comidasSelecionadasTemporarias];
         window.saveData();
         renderFoodList();
-        document.getElementById('foodSelectionModal').style.display = 'none';
+        foodModal.style.display = 'none';
     });
 
+    // ---------- MODAL DE RESULTADO ----------
+    const resultOverlay = document.getElementById('resultOverlay');
     document.getElementById('btnCloseModal')?.addEventListener('click', () => {
-        document.getElementById('resultOverlay').style.display = 'none';
+        resultOverlay.style.display = 'none';
     });
 
+    // Fecha o resultado se clicar no fundo
+    resultOverlay?.addEventListener('click', function(e) {
+        if (e.target === resultOverlay) {
+            resultOverlay.style.display = 'none';
+        }
+    });
+
+    // ---------- ADIÇÃO DE COMIDA PERSONALIZADA ----------
     const emojiInput = document.getElementById('newFoodEmoji');
     if (emojiInput) {
         emojiInput.placeholder = '🍽️ (ou digite outro)';
@@ -114,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // ---------- RENDERIZAÇÃO DA LISTA DE COMIDAS ----------
     function renderFoodList() {
         const container = document.getElementById('foodListContainer');
         if (!container) return;
@@ -133,6 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderFoodList();
     };
 
+    // ---------- RENDERIZAÇÃO DO MODAL DE COMIDAS ----------
     function renderModalFoodOptions(filterText = '') {
         const modalGrid = document.getElementById('modalFoodOptionsGrid');
         if (!modalGrid) return;
@@ -140,10 +169,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const allItems = [...(window.BANCO_DE_COMIDAS || [])];
         window.appState.customFoods.forEach(custom => {
-            // Regex corrigida para capturar emojis (incluindo compostos)
-            const match = custom.match(/^(.*?)\s+([\p{Emoji_Presentation}\p{Emoji}\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{1FB00}-\u{1FBFF}]|[\u{FE00}-\u{FEFF}]|[\u{1F004}]|[\u{1F0CF}])/u);
-            if (match) allItems.push({ nome: match[1], icone: match[2] });
-            else allItems.push({ nome: custom, icone: '🍽️' });
+            const match = custom.match(/\p{Emoji}/u);
+            if (match) {
+                const nome = custom.replace(/\p{Emoji}/u, '').trim();
+                allItems.push({ nome: nome, icone: match[0] });
+            } else {
+                allItems.push({ nome: custom, icone: '🍽️' });
+            }
         });
 
         const filtradas = allItems.filter(item => item.nome.toLowerCase().includes(filterText.toLowerCase()));
@@ -173,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ---------- LOJA DE SONS ----------
     function renderSounds() {
         const spinGrid = document.getElementById('spinSoundsGrid');
         const endGrid = document.getElementById('endSoundsGrid');
@@ -211,15 +244,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    window.buySpinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedSpinSounds.push(id); window.useSpinSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+    window.buySpinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedSpinSounds.push(id); window.useSpinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useSpinSound = (id) => { window.appState.currentSpinSound = id; window.saveData(); renderSounds(); };
     
-    window.buyEndSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedEndSounds.push(id); window.useEndSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+    window.buyEndSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedEndSounds.push(id); window.useEndSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useEndSound = (id) => { window.appState.currentEndSound = id; window.saveData(); renderSounds(); };
 
-    window.buyWinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedWinSounds.push(id); window.useWinSound(id); updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+    window.buyWinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedWinSounds.push(id); window.useWinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useWinSound = (id) => { window.appState.currentWinSound = id; window.saveData(); renderSounds(); };
 
+    // ---------- LOJA DE RECEITAS ----------
     function renderRecipes() {
         const grid = document.getElementById('recipesGrid');
         if (!grid) return;
@@ -240,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (window.appState.coins >= rec.preco) {
                         window.appState.coins -= rec.preco;
                         window.appState.unlockedRecipes.push(rec.id);
-                        window.saveData(); renderRecipes(); updateCoinsDisplay();
+                        window.saveData(); renderRecipes(); window.updateCoinsDisplay();
                         alert(`🎉 Receita "${rec.nome}" desbloqueada!`);
                     } else alert("Moedas insuficientes!");
                 };
@@ -250,12 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function updateCoinsDisplay() {
-        const coinBalance = document.getElementById('coin-balance');
-        if (coinBalance) coinBalance.textContent = window.appState.coins;
-    }
-
-    // PWA E INICIALIZAÇÃO
+    // ---------- PWA ----------
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault(); deferredPrompt = e;
@@ -272,7 +301,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Inicialização
+    // ---------- INICIALIZAÇÃO ----------
+    // Receitas gratuitas
     (window.RECEITAS || []).forEach(rec => {
         if (rec.preco === 0 && !window.appState.unlockedRecipes.includes(rec.id)) {
             window.appState.unlockedRecipes.push(rec.id);
@@ -284,8 +314,5 @@ document.addEventListener('DOMContentLoaded', function() {
     renderSounds();
     renderRecipes();
     window.applyThemes();
-    updateCoinsDisplay();
+    window.updateCoinsDisplay();
 });
-
-// Expondo a função para o roleta.js conseguir atualizar o saldo
-window.updateCoinsDisplay = updateCoinsDisplay; // Isso estava dentro, mas precisa ser global
