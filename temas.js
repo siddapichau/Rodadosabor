@@ -2,7 +2,7 @@
 console.log('temas.js carregado');
 
 window.listTemas = [
-    // ==================== TEMA 1: Padrão (Claro/escuro) ====================
+    // ==================== TEMA 1: Clássico ====================
     {
         id: "theme-1",
         nome: "Clássico",
@@ -56,6 +56,62 @@ window.listTemas = [
         dark: {
             style: { bg: '#2a1a0a', card: 'rgba(50,30,10,0.9)', text: '#ffcc80', accent: '#ff9800' },
             colors: ['#e65100', '#ff9800', '#ffc107', '#ffd54f', '#ffb300', '#f57c00']
+        }
+    },
+    // ==================== TEMA 5: Frutas (NOVO) ====================
+    {
+        id: "theme-5",
+        nome: "Frutas",
+        price: 12,
+        light: {
+            style: { bg: '#fce4ec', card: 'rgba(255,255,255,0.9)', text: '#4a1a2a', accent: '#d81b60' },
+            colors: ['#f44336', '#e91e63', '#ff9800', '#ffeb3b', '#4caf50', '#2196f3']
+        },
+        dark: {
+            style: { bg: '#1a0a0e', card: 'rgba(40,20,30,0.9)', text: '#f8bbd0', accent: '#f06292' },
+            colors: ['#f44336', '#e91e63', '#ff9800', '#ffeb3b', '#4caf50', '#2196f3']
+        }
+    },
+    // ==================== TEMA 6: Crepúsculo (NOVO) ====================
+    {
+        id: "theme-6",
+        nome: "Crepúsculo",
+        price: 18,
+        light: {
+            style: { bg: '#fff8e1', card: 'rgba(255,248,225,0.9)', text: '#3e2723', accent: '#ff6f00' },
+            colors: ['#ff6f00', '#ff8f00', '#ffb300', '#ffca28', '#ffd54f', '#ffe082']
+        },
+        dark: {
+            style: { bg: '#1e1a0a', card: 'rgba(30,26,10,0.9)', text: '#ffecb3', accent: '#ffb300' },
+            colors: ['#ff6f00', '#ff8f00', '#ffb300', '#ffca28', '#ffd54f', '#ffe082']
+        }
+    },
+    // ==================== TEMA 7: Neon (NOVO) ====================
+    {
+        id: "theme-7",
+        nome: "Neon",
+        price: 25,
+        light: {
+            style: { bg: '#0a0a0a', card: 'rgba(20,20,30,0.95)', text: '#00ffff', accent: '#ff00ff' },
+            colors: ['#ff00ff', '#00ffff', '#ff0040', '#40ff00', '#ffaa00', '#aa00ff']
+        },
+        dark: {
+            style: { bg: '#050505', card: 'rgba(10,10,20,0.98)', text: '#00ffff', accent: '#ff00ff' },
+            colors: ['#ff00ff', '#00ffff', '#ff0040', '#40ff00', '#ffaa00', '#aa00ff']
+        }
+    },
+    // ==================== TEMA 8: Pastel (NOVO) ====================
+    {
+        id: "theme-8",
+        nome: "Pastel",
+        price: 10,
+        light: {
+            style: { bg: '#f9f0f0', card: 'rgba(255,255,255,0.9)', text: '#4a3a4a', accent: '#b39ddb' },
+            colors: ['#f8bbd0', '#b39ddb', '#81d4fa', '#a5d6a7', '#ffe082', '#ffccbc']
+        },
+        dark: {
+            style: { bg: '#1a1520', card: 'rgba(30,20,35,0.9)', text: '#e1bee7', accent: '#ce93d8' },
+            colors: ['#f8bbd0', '#b39ddb', '#81d4fa', '#a5d6a7', '#ffe082', '#ffccbc']
         }
     }
 ];
