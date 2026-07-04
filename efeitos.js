@@ -22,7 +22,7 @@ class EffectsManager {
     }
 
     launch(type, options = {}) {
-        this.stop();
+        this.stop(); // Para qualquer efeito anterior
         this.particles = [];
         this.running = true;
         this.type = type;
@@ -32,10 +32,6 @@ class EffectsManager {
             case 'fireworks': this._generateFireworks(options); break;
             case 'stars': this._generateStars(options); break;
             default: this.running = false; return;
-        }
-        if (this.particles.length === 0) {
-            this.running = false;
-            return;
         }
         this.animate();
     }
@@ -71,6 +67,7 @@ class EffectsManager {
             }
         }
 
+        // Remove mortos (de trás para frente)
         for (let i = toRemove.length - 1; i >= 0; i--) {
             this.particles.splice(toRemove[i], 1);
         }
@@ -154,6 +151,7 @@ class EffectsManager {
         ctx.fillStyle = p.color;
 
         if (this.type === 'fireworks' || this.type === 'stars') {
+            // Desenha como círculo ou estrela
             if (this.type === 'stars') {
                 ctx.beginPath();
                 for (let j = 0; j < 8; j++) {
@@ -172,6 +170,7 @@ class EffectsManager {
                 ctx.fill();
             }
         } else {
+            // Confetti: formas variadas
             const w = p.w || 10;
             const h = p.h || 10;
             switch (p.shape) {
@@ -216,24 +215,20 @@ function getEffectsManager() {
     return effectsManager;
 }
 
-// ========================== FUNÇÃO PARA LANÇAR EFEITO ATIVO ==========================
-window.launchCurrentEffect = function() {
-    const effectId = window.appState.currentEffect || 'effect-1';
-    const effect = (window.EFEITOS_VISUAIS || []).find(e => e.id === effectId) || { type: 'confetti' };
-    getEffectsManager().launch(effect.type);
-};
-
-// ========================== FUNÇÕES LEGACY ==========================
+// ========================== FUNÇÕES LEGACY (mantêm compatibilidade) ==========================
 window.launchConfetti = function() {
     getEffectsManager().launch('confetti');
 };
+
 window.launchFireworks = function() {
     getEffectsManager().launch('fireworks');
 };
+
 window.launchStars = function() {
     getEffectsManager().launch('stars');
 };
 
+// Limpeza opcional ao fechar a página
 window.addEventListener('beforeunload', () => {
     if (effectsManager) effectsManager.stop();
 });
