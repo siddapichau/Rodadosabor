@@ -27,55 +27,38 @@ window.loadData = function() {
         const saved = localStorage.getItem('rodaDoSaborState');
         if (saved) {
             const parsed = JSON.parse(saved);
-            // Mescla mantendo as chaves padrão para as que faltarem
             window.appState = { ...window.appState, ...parsed };
         }
-        // Garantia de que arrays essenciais existam e estejam com valores padrão
+        // Garantias de arrays
         if (!Array.isArray(window.appState.unlockedEffects) || window.appState.unlockedEffects.length === 0) {
             window.appState.unlockedEffects = ["effect-1"];
         }
-        if (!window.appState.currentEffect) {
-            window.appState.currentEffect = "effect-1";
-        }
+        if (!window.appState.currentEffect) window.appState.currentEffect = "effect-1";
         if (!Array.isArray(window.appState.unlockedSpinSounds) || window.appState.unlockedSpinSounds.length === 0) {
             window.appState.unlockedSpinSounds = ["spin-1"];
         }
-        if (!window.appState.currentSpinSound) {
-            window.appState.currentSpinSound = "spin-1";
-        }
+        if (!window.appState.currentSpinSound) window.appState.currentSpinSound = "spin-1";
         if (!Array.isArray(window.appState.unlockedEndSounds) || window.appState.unlockedEndSounds.length === 0) {
             window.appState.unlockedEndSounds = ["end-1"];
         }
-        if (!window.appState.currentEndSound) {
-            window.appState.currentEndSound = "end-1";
-        }
+        if (!window.appState.currentEndSound) window.appState.currentEndSound = "end-1";
         if (!Array.isArray(window.appState.unlockedWinSounds) || window.appState.unlockedWinSounds.length === 0) {
             window.appState.unlockedWinSounds = ["win-1"];
         }
-        if (!window.appState.currentWinSound) {
-            window.appState.currentWinSound = "win-1";
-        }
+        if (!window.appState.currentWinSound) window.appState.currentWinSound = "win-1";
         if (!Array.isArray(window.appState.unlockedPageThemes) || window.appState.unlockedPageThemes.length === 0) {
             window.appState.unlockedPageThemes = ["theme-1"];
         }
-        if (!window.appState.currentPageTheme) {
-            window.appState.currentPageTheme = "theme-1";
-        }
+        if (!window.appState.currentPageTheme) window.appState.currentPageTheme = "theme-1";
         if (!Array.isArray(window.appState.unlockedRouletteThemes) || window.appState.unlockedRouletteThemes.length === 0) {
             window.appState.unlockedRouletteThemes = ["theme-1"];
         }
-        if (!window.appState.currentRouletteTheme) {
-            window.appState.currentRouletteTheme = "theme-1";
-        }
+        if (!window.appState.currentRouletteTheme) window.appState.currentRouletteTheme = "theme-1";
         if (!Array.isArray(window.appState.foods) || window.appState.foods.length === 0) {
             window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
         }
-        if (!Array.isArray(window.appState.customFoods)) {
-            window.appState.customFoods = [];
-        }
-        if (!Array.isArray(window.appState.unlockedRecipes)) {
-            window.appState.unlockedRecipes = [];
-        }
+        if (!Array.isArray(window.appState.customFoods)) window.appState.customFoods = [];
+        if (!Array.isArray(window.appState.unlockedRecipes)) window.appState.unlockedRecipes = [];
         console.log('📦 Estado carregado:', window.appState);
     } catch (e) {
         console.warn('Erro ao carregar estado, usando padrão:', e);
@@ -85,7 +68,6 @@ window.loadData = function() {
 window.saveData = function() {
     try {
         localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
-        // Atualiza o display de moedas se o elemento existir
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = window.appState.coins;
     } catch (e) {
@@ -93,7 +75,6 @@ window.saveData = function() {
     }
 };
 
-// Carrega imediatamente
 window.loadData();
 
 // ========================== SINTETIZADOR DE ÁUDIO ==========================
@@ -102,6 +83,8 @@ function getAudioContext() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return audioCtx;
 }
+// ⬅️ EXPORTA PARA O ESCOPO GLOBAL (correção)
+window.getAudioContext = getAudioContext;
 
 window.playSynthesizedSound = function(soundType) {
     try {
@@ -127,9 +110,7 @@ window.playSynthesizedSound = function(soundType) {
             case 'win-arcade': [261.63, 329.63, 392.00, 523.25, 659.25, 783.99].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.15, 0.15)); break;
             case 'win-epic': [261.63, 392, 523.25, 783.99].forEach((f, i) => osc(ctx, now + i * 0.2, f, f, 1.2, 'triangle', 0.2)); break;
             case 'win-party': [440, 440, 440, 554, 659, 554, 659, 880].forEach((f, i) => osc(ctx, now + i * 0.12, f, f, 0.1, 'square', 0.15)); break;
-            default: // fallback para tipo desconhecido
-                osc(ctx, now, 400, 400, 0.1, 'sine', 0.2);
-                break;
+            default: osc(ctx, now, 400, 400, 0.1, 'sine', 0.2); break;
         }
     } catch (e) {
         console.warn('Erro ao reproduzir som:', e);
@@ -163,11 +144,9 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
 
 // ========================== APLICAÇÃO DE TEMAS ==========================
 window.applyThemes = function() {
-    // Verifica se listTemas existe, senão usa um fallback
     const themes = window.listTemas || [];
     if (themes.length === 0) {
         console.warn('Nenhum tema definido. Usando valores padrão.');
-        // Define cores padrão (modo claro)
         const root = document.documentElement;
         root.style.setProperty('--bg-body', '#f3e7da');
         root.style.setProperty('--bg-card', 'rgba(255,255,255,0.88)');
@@ -183,7 +162,6 @@ window.applyThemes = function() {
     const rouletteTheme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
     const mode = window.appState.darkMode ? 'dark' : 'light';
     
-    // Aplica tema da página
     const pageData = pageTheme[mode];
     if (pageData && pageData.style) {
         const root = document.documentElement;
@@ -194,7 +172,6 @@ window.applyThemes = function() {
         root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${pageData.colors[0]}, ${pageData.colors[1]})`);
     }
 
-    // Aplica tema da roleta
     const rouletteData = rouletteTheme[mode];
     if (rouletteData && rouletteData.colors) {
         const root = document.documentElement;

@@ -21,9 +21,31 @@ window.drawRoulette = function() {
 
     ctx.clearRect(0, 0, width, height);
 
-    const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
-    const mode = window.appState.darkMode ? 'dark' : 'light';
-    const themeData = theme[mode];
+    // --- TEMA COM FALLBACK ---
+    let theme, themeData, mode;
+    try {
+        // Verifica se listTemas existe
+        if (!window.listTemas || window.listTemas.length === 0) {
+            throw new Error('Temas não disponíveis');
+        }
+        theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
+        mode = window.appState.darkMode ? 'dark' : 'light';
+        themeData = theme[mode];
+        if (!themeData || !themeData.colors) {
+            throw new Error('Dados do tema inválidos');
+        }
+    } catch (e) {
+        console.warn('Erro ao carregar tema da roleta, usando fallback:', e);
+        // Cores padrão (modo claro)
+        themeData = {
+            colors: ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12']
+        };
+        // Se darkMode estiver ativo, usamos cores escuras
+        if (window.appState.darkMode) {
+            themeData.colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12']; // manter as mesmas
+        }
+    }
+
     const items = window.appState.foods;
     const numSegments = items.length;
 
@@ -40,9 +62,11 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
+    // Borda externa
     ctx.beginPath(); ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
     ctx.fillStyle = 'var(--wheel-border)'; ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 12; ctx.fill(); ctx.shadowBlur = 0;
 
+    // Bolinhas decorativas
     for (let b = 0; b < 20; b++) {
         const bAngle = (b * 2 * Math.PI) / 20;
         const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
@@ -50,6 +74,7 @@ window.drawRoulette = function() {
         ctx.beginPath(); ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
     }
 
+    // Segmentos
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
         ctx.beginPath();
@@ -57,6 +82,7 @@ window.drawRoulette = function() {
         ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize); ctx.closePath(); ctx.fill();
         ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
 
+        // Texto
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
@@ -77,6 +103,7 @@ window.drawRoulette = function() {
         ctx.restore();
     }
 
+    // Centro
     const centerRadius = radius * 0.16;
     ctx.beginPath(); ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
     ctx.fillStyle = 'var(--wheel-center)'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = centerRadius * 0.15; ctx.fill(); ctx.stroke();
@@ -133,29 +160,24 @@ function finalizeSpin() {
     if (numSegments === 0) return;
     const arcSize = (2 * Math.PI) / numSegments;
 
-    // ===== CORREÇÃO: cálculo correto do setor sob a seta =====
-    // Ângulo da seta (topo, -π/2) em relação ao início da roleta (startAngle)
+    // Cálculo correto do setor sob a seta
     let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
     if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
     let index = Math.floor(angleFromStart / arcSize);
-    // ===== FIM DA CORREÇÃO =====
-
-    // Garantia de índice válido
     if (index >= numSegments) index = 0;
     if (index < 0) index = numSegments - 1;
 
     const winningFood = window.appState.foods[index];
 
-    // Som de fim (roleta parou)
+    // Som de fim
     const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
     window.playSynthesizedSound(activeEndSound.type);
 
-    // Após 1 segundo, toca o som de vitória e mostra o resultado
+    // Após 1 segundo, toca vitória e mostra resultado
     setTimeout(() => {
         const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
         window.playSynthesizedSound(activeWinSound.type);
         
-        // Lança o efeito visual atual (fallback para confetes)
         if (typeof window.launchCurrentEffect === 'function') {
             window.launchCurrentEffect();
         } else {
