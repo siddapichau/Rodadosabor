@@ -10,24 +10,16 @@ let lastSoundAngle = 0;
 
 // ========================== DESENHO ==========================
 window.drawRoulette = function() {
-    console.log('🎯 drawRoulette iniciada');
     const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) {
-        console.error('❌ Canvas não encontrado!');
-        return;
-    }
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error('❌ Contexto 2D não suportado');
-        return;
-    }
+    if (!ctx) return;
 
     // Ajusta o tamanho do canvas para corresponder ao CSS
     const rect = canvas.getBoundingClientRect();
     if (canvas.width !== rect.width || canvas.height !== rect.height) {
         canvas.width = rect.width || 600;
         canvas.height = rect.height || 600;
-        console.log('Canvas redimensionado para:', canvas.width, canvas.height);
     }
 
     const width = canvas.width;
@@ -40,7 +32,7 @@ window.drawRoulette = function() {
 
     // ----- OBTÉM AS COMIDAS -----
     const items = window.appState?.foods || [];
-    console.log('🍽️ Comidas a desenhar:', items);
+    const numSegments = items.length;
 
     // ----- CORES (fallback) -----
     const fallbackColors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
@@ -53,7 +45,7 @@ window.drawRoulette = function() {
             const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
             const mode = window.appState.darkMode ? 'dark' : 'light';
             const themeData = theme[mode];
-            if (themeData && themeData.colors && themeData.colors.length > 0) {
+            if (themeData && themeData.colors) {
                 colors = themeData.colors;
                 wheelBorder = themeData.colors[0] || '#f5b342';
                 wheelCenter = themeData.colors[2] || '#f5d742';
@@ -62,8 +54,6 @@ window.drawRoulette = function() {
     } catch (e) {
         console.warn('Erro ao carregar tema, usando fallback:', e);
     }
-
-    const numSegments = items.length;
 
     if (numSegments === 0) {
         ctx.beginPath();
@@ -75,7 +65,6 @@ window.drawRoulette = function() {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('Adicione comidas!', centerX, centerY);
-        console.log('Nenhuma comida para desenhar.');
         return;
     }
 
@@ -106,6 +95,7 @@ window.drawRoulette = function() {
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
         const color = colors[i % colors.length];
+
         // Segmento
         ctx.beginPath();
         ctx.fillStyle = color;
@@ -117,28 +107,33 @@ window.drawRoulette = function() {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Texto
+        // ---------- TEXTO AJUSTADO (sem vazamento) ----------
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
-        ctx.textAlign = 'center';
+
+        // Alinha o texto à direita para que a extremidade final toque a borda
+        ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
 
-        // Raio onde o texto será desenhado (85% do raio, próximo à borda)
-        const textRadius = radius * 0.85;
-        // Tamanho da fonte: tenta ocupar o máximo possível sem estourar
+        // Posiciona o texto no raio **com uma pequena margem** para não encostar na borda
+        const textRadius = radius * 0.82; // 82% do raio, dá folga
+
+        // Calcula o tamanho máximo da fonte
+        const maxTextWidth = (2 * Math.PI * textRadius) / numSegments * 0.75;
         let fontSize = Math.min(radius * 0.13, 26);
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
-        // Verifica se o texto cabe no arco
-        const maxWidth = (2 * Math.PI * textRadius) / numSegments * 0.8;
+
         let textWidth = ctx.measureText(items[i]).width;
-        if (textWidth > maxWidth && fontSize > 8) {
-            fontSize = Math.max(8, fontSize * (maxWidth / textWidth));
+        if (textWidth > maxTextWidth && fontSize > 6) {
+            fontSize = Math.max(6, fontSize * (maxTextWidth / textWidth));
             ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         }
+
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.6)';
         ctx.shadowBlur = 8;
+        // Desenha o texto: a coordenada X é o raio, e como textAlign é 'right', o texto termina nesse ponto
         ctx.fillText(items[i], textRadius, 0);
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -153,8 +148,6 @@ window.drawRoulette = function() {
     ctx.lineWidth = centerRadius * 0.15;
     ctx.fill();
     ctx.stroke();
-
-    console.log('✅ Roleta desenhada com', numSegments, 'segmentos');
 };
 
 // ========================== GIRO ==========================
@@ -207,7 +200,6 @@ function finalizeSpin() {
     if (numSegments === 0) return;
     const arcSize = (2 * Math.PI) / numSegments;
 
-    // ===== CORREÇÃO: cálculo correto do setor sob a seta =====
     let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
     if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
     let index = Math.floor(angleFromStart / arcSize);
@@ -216,16 +208,13 @@ function finalizeSpin() {
 
     const winningFood = window.appState.foods[index];
 
-    // Som de fim (roleta parou)
     const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
     window.playSynthesizedSound(activeEndSound.type);
 
-    // Após 1 segundo, toca o som de vitória e mostra o resultado
     setTimeout(() => {
         const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
         window.playSynthesizedSound(activeWinSound.type);
 
-        // Lança o efeito visual atual (fallback para confetes)
         if (typeof window.launchCurrentEffect === 'function') {
             window.launchCurrentEffect();
         } else {
@@ -247,7 +236,7 @@ function finalizeSpin() {
     }, 1000);
 }
 
-// ========================== EVENTOS DE REDIMENSIONAMENTO ==========================
+// ========================== EVENTOS ==========================
 window.addEventListener('load', function() {
     setTimeout(window.drawRoulette, 100);
 });
