@@ -1,7 +1,6 @@
 'use strict';
 console.log('roleta.js carregado');
 
-// Variáveis de estado da roleta
 let startAngle = 0;
 let isSpinning = false;
 let spinSpeed = 0;
@@ -9,7 +8,7 @@ let spinTimeTotal = 0;
 let spinTimeCount = 0;
 let lastSoundAngle = 0;
 
-// ========================== DESENHO DA ROLETA ==========================
+// ========================== DESENHO ==========================
 window.drawRoulette = function() {
     const canvas = document.getElementById('rouletteCanvas');
     if (!canvas) return;
@@ -18,7 +17,7 @@ window.drawRoulette = function() {
     const height = canvas.height;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.46; 
+    const radius = Math.min(width, height) * 0.46;
 
     ctx.clearRect(0, 0, width, height);
 
@@ -62,19 +61,15 @@ window.drawRoulette = function() {
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
         ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-        
-        const textRadius = radius * 0.78; 
-        let fontSize = Math.min(radius * 0.13, 28); 
-        
+        const textRadius = radius * 0.78;
+        let fontSize = Math.min(radius * 0.13, 28);
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
-        
         const textWidth = ctx.measureText(items[i]).width;
         const maxWidth = (2 * Math.PI * textRadius) / numSegments * 0.85;
         if (textWidth > maxWidth) {
             fontSize = fontSize * (maxWidth / textWidth);
             ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         }
-
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8;
         ctx.fillText(items[i], textRadius, 0);
@@ -87,7 +82,7 @@ window.drawRoulette = function() {
     ctx.fillStyle = 'var(--wheel-center)'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = centerRadius * 0.15; ctx.fill(); ctx.stroke();
 };
 
-// ========================== LÓGICA DE GIRO ==========================
+// ========================== GIRO ==========================
 window.spinRoulette = function() {
     if (isSpinning || window.appState.foods.length === 0) return;
     
@@ -97,7 +92,7 @@ window.spinRoulette = function() {
     }
     window.appState.coins -= 1;
     window.saveData();
-    if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+    window.updateCoinsDisplay();
 
     const btn = document.getElementById('btnSpin');
     if (btn) btn.disabled = true;
@@ -140,30 +135,25 @@ function finalizeSpin() {
 
     let normalizedAngle = startAngle % (2 * Math.PI);
     if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
-    
     let relativeAngle = (normalizedAngle - (Math.PI / 2)) % (2 * Math.PI);
     if (relativeAngle < 0) relativeAngle += 2 * Math.PI;
-    
     let index = Math.floor(relativeAngle / arcSize + 0.0001);
     if (index >= numSegments) index = 0;
     if (index < 0) index = numSegments - 1;
 
     const winningFood = window.appState.foods[index];
 
-    // Som de fim (parada)
     const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
     window.playSynthesizedSound(activeEndSound.type);
 
     setTimeout(() => {
-        // Som de vitória
         const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
         window.playSynthesizedSound(activeWinSound.type);
         
-        // 🔥 Efeito visual ativo (substitui launchConfetti fixo)
         if (typeof window.launchCurrentEffect === 'function') {
             window.launchCurrentEffect();
         } else {
-            window.launchConfetti(); // fallback
+            window.launchConfetti();
         }
 
         const nameEl = document.getElementById('modalFoodName');

@@ -247,13 +247,22 @@ document.addEventListener('DOMContentLoaded', function() {
     window.buyWinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedWinSounds.push(id); window.useWinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useWinSound = (id) => { window.appState.currentWinSound = id; window.saveData(); renderSounds(); };
 
-    // ---------- LOJA DE EFEITOS VISUAIS (NOVO) ----------
+    // ---------- LOJA DE EFEITOS VISUAIS ----------
     function renderEffects() {
         const grid = document.getElementById('effectsGrid');
-        if (!grid) return;
+        if (!grid) {
+            console.warn('Elemento #effectsGrid não encontrado');
+            return;
+        }
         grid.innerHTML = '';
 
-        (window.EFEITOS_VISUAIS || []).forEach(effect => {
+        const effects = window.EFEITOS_VISUAIS || [];
+        if (effects.length === 0) {
+            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--text-muted);">Nenhum efeito disponível.</p>';
+            return;
+        }
+
+        effects.forEach(effect => {
             const isUnlocked = window.appState.unlockedEffects.includes(effect.id);
             const isActive = window.appState.currentEffect === effect.id;
             const card = document.createElement('div');
@@ -282,7 +291,9 @@ document.addEventListener('DOMContentLoaded', function() {
     window.buyEffect = (id, price) => {
         if (window.appState.coins >= price) {
             window.appState.coins -= price;
-            window.appState.unlockedEffects.push(id);
+            if (!window.appState.unlockedEffects.includes(id)) {
+                window.appState.unlockedEffects.push(id);
+            }
             window.useEffect(id);
             window.updateCoinsDisplay();
         } else {
@@ -344,18 +355,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ---------- INICIALIZAÇÃO ----------
-    // Receitas gratuitas
+    // Garantir que as receitas gratuitas estejam desbloqueadas
     (window.RECEITAS || []).forEach(rec => {
         if (rec.preco === 0 && !window.appState.unlockedRecipes.includes(rec.id)) {
             window.appState.unlockedRecipes.push(rec.id);
         }
     });
 
+    // Força a exibição do saldo
+    window.updateCoinsDisplay();
+
+    // Renderiza todos os componentes
     renderFoodList();
     renderThemes();
     renderSounds();
-    renderEffects();   // <-- NOVO
+    renderEffects();
     renderRecipes();
+
+    // Aplica temas e desenha a roleta
     window.applyThemes();
-    window.updateCoinsDisplay();
+    window.drawRoulette();
+
+    console.log('✅ Aplicação inicializada com sucesso!');
 });

@@ -9,9 +9,10 @@ const urlsToCache = [
   '/manifest.json',
   '/sons.js',
   '/comidas.js',
-  '/temas.js',
+  '/efeitos-lista.js',
   '/efeitos.js',
-  '/roleta.js'
+  '/roleta.js',
+  '/temas.js'
 ];
 
 self.addEventListener('install', event => {
