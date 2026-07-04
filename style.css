@@ -1,5 +1,5 @@
 /* ============================================================
-   ESTILOS GLOBAIS E VARIÁVEIS CSS
+   ESTILOS GLOBAIS E VARIÁVEIS CSS (temas com gradiente)
    ============================================================ */
 * {
     margin: 0;
@@ -14,7 +14,8 @@ body {
     min-height: 100vh;
     padding: 1rem;
     line-height: 1.5;
-    transition: background 0.4s ease, color 0.4s ease;
+    transition: background 0.6s ease, color 0.4s ease;
+    background-attachment: fixed;
 }
 
 .container {
@@ -29,14 +30,13 @@ body {
     border-radius: 2rem;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-    transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: transform 0.3s ease, background 0.4s ease, box-shadow 0.4s ease;
 }
-
 .card:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
 
 /* ===== HEADER ===== */
@@ -81,7 +81,6 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-shadow: none;
 }
 
 .logo-title p {
@@ -108,7 +107,9 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.stat-badge i.fa-coins { color: var(--gold); }
+.stat-badge i.fa-coins {
+    color: var(--gold);
+}
 
 .btn-toggle-mode {
     background: var(--bg-card);
@@ -121,7 +122,7 @@ body {
     align-items: center;
     justify-content: center;
     color: var(--text-primary);
-    box-shadow: var(--shadow);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     transition: all 0.2s;
 }
 .btn-toggle-mode:hover {
@@ -151,12 +152,8 @@ canvas {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    box-shadow: 0 0 40px rgba(245, 179, 66, 0.2), 0 0 80px rgba(245, 179, 66, 0.1);
+    box-shadow: 0 0 40px rgba(245, 179, 66, 0.15), 0 0 80px rgba(245, 179, 66, 0.05);
     transition: box-shadow 0.3s ease;
-}
-
-canvas:hover {
-    box-shadow: 0 0 60px rgba(245, 179, 66, 0.3), 0 0 120px rgba(245, 179, 66, 0.15);
 }
 
 .roulette-arrow {
@@ -183,7 +180,7 @@ canvas:hover {
     border-radius: 50%;
     background: radial-gradient(circle, #f5d742 0%, #f5b342 100%);
     border: 5px solid #ffffff;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.6), 0 0 40px rgba(245, 179, 66, 0.3);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.6), 0 0 40px rgba(245, 179, 66, 0.2);
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -194,7 +191,7 @@ canvas:hover {
 }
 .center-spin-button:hover {
     transform: translate(-50%, -50%) scale(1.06);
-    box-shadow: 0 8px 32px rgba(245, 179, 66, 0.5), 0 0 60px rgba(245, 179, 66, 0.4);
+    box-shadow: 0 8px 32px rgba(245, 179, 66, 0.4), 0 0 60px rgba(245, 179, 66, 0.25);
 }
 .center-spin-button:active {
     transform: translate(-50%, -50%) scale(0.94);
@@ -208,19 +205,7 @@ canvas:hover {
 .center-spin-button .txt-top { font-size: 0.7rem; font-weight: 900; }
 .center-spin-button .txt-bottom { font-size: 0.45rem; font-weight: 700; margin-top: -2px; }
 
-/* ===== SEÇÕES ===== */
-h2 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 0.4rem;
-}
-h2 i { color: var(--gold); }
-
+/* ===== BOTÕES DE AÇÃO (gradiente moderno) ===== */
 .action-row-buttons {
     display: flex;
     gap: 0.8rem;
@@ -231,7 +216,7 @@ h2 i { color: var(--gold); }
 .btn-gradient-action {
     flex: 1 1 auto;
     border: none;
-    padding: 0.8rem 1rem;
+    padding: 0.8rem 1.2rem;
     border-radius: 16px;
     font-size: 0.9rem;
     font-weight: 700;
@@ -241,24 +226,31 @@ h2 i { color: var(--gold); }
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     transition: transform 0.2s, filter 0.2s, box-shadow 0.3s;
     min-width: 140px;
+    background-size: 200% 200%;
+    animation: gradient-shift 4s ease infinite alternate;
 }
 .btn-gradient-action:hover {
-    filter: brightness(1.1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+    filter: brightness(1.08);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
 }
 .btn-gradient-action:active {
     transform: translateY(0);
 }
 
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
 .btn-gradient-action.dynamic-blue {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8, #2563eb);
 }
 .btn-gradient-action.dynamic-green {
-    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    background: linear-gradient(135deg, #10b981, #047857, #059669);
 }
 
 /* ===== LISTA DE COMIDAS ===== */
@@ -302,7 +294,7 @@ h2 i { color: var(--gold); }
 }
 
 .item-card {
-    background: rgba(128,128,128,0.05);
+    background: rgba(255,255,255,0.05);
     border: 1px solid var(--border-color);
     border-radius: 16px;
     padding: 0.8rem;
@@ -315,12 +307,12 @@ h2 i { color: var(--gold); }
 }
 .item-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 .item-card.active {
     border-color: var(--gold);
     background: rgba(245, 179, 66, 0.12);
-    box-shadow: 0 0 20px rgba(245, 179, 66, 0.15);
+    box-shadow: 0 0 25px rgba(245, 179, 66, 0.15);
 }
 .item-card.active .item-info h4 {
     color: var(--gold);
@@ -353,7 +345,7 @@ h2 i { color: var(--gold); }
 }
 .btn-buy:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(245, 179, 66, 0.4);
+    box-shadow: 0 0 20px rgba(245, 179, 66, 0.4);
 }
 .btn-use {
     background: var(--accent);
@@ -397,7 +389,7 @@ h2 i { color: var(--gold); }
 }
 .recipe-card:hover {
     transform: translateY(-3px);
-    box-shadow: var(--shadow);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
 .recipe-icon { font-size: 2rem; }
 .recipe-name { font-weight: 600; font-size: 0.85rem; }
@@ -594,15 +586,13 @@ h2 i { color: var(--gold); }
 
 /* ===== VARIÁVEIS CSS (FALLBACK) ===== */
 :root {
-    --bg-body: #f3e7da;
+    --bg-body: linear-gradient(145deg, #fdf6f0 0%, #f3e7da 100%);
     --bg-card: rgba(255,255,255,0.88);
-    --bg-card-hover: rgba(255,255,255,0.95);
     --text-primary: #1e2a3a;
     --text-secondary: #2c3e50;
     --text-muted: #5a6a7a;
     --border-color: rgba(0,0,0,0.08);
     --shadow: 0 12px 32px -8px rgba(0,0,0,0.12);
-    --shadow-hover: 0 20px 40px -8px rgba(0,0,0,0.18);
     --gold: #f5b342;
     --accent: #7b9e5a;
     --accent-gradient: linear-gradient(135deg, #f5d742, #7b9e5a);
@@ -643,16 +633,13 @@ h2 i { color: var(--gold); }
     .food-list { max-height: 120px; }
 }
 
-/* ============================================================
-   ANIMAÇÕES E EFEITOS ESPECIAIS (NEON)
-   ============================================================ */
-/* Brilho pulsante no botão de girar */
+/* ===== ANIMAÇÃO DE PULSO NO BOTÃO (NEON) ===== */
 @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 8px 24px rgba(245, 179, 66, 0.3), 0 0 40px rgba(245, 179, 66, 0.2); }
-    50% { box-shadow: 0 8px 32px rgba(245, 179, 66, 0.5), 0 0 80px rgba(245, 179, 66, 0.4); }
+    0%, 100% { box-shadow: 0 8px 24px rgba(245, 179, 66, 0.25), 0 0 40px rgba(245, 179, 66, 0.1); }
+    50% { box-shadow: 0 8px 32px rgba(245, 179, 66, 0.45), 0 0 80px rgba(245, 179, 66, 0.2); }
 }
 .center-spin-button:not(:disabled) {
-    animation: pulse-glow 2s ease-in-out infinite;
+    animation: pulse-glow 2.5s ease-in-out infinite;
 }
 .center-spin-button:disabled {
     opacity: 0.5;
@@ -660,47 +647,7 @@ h2 i { color: var(--gold); }
     animation: none;
 }
 
-/* Transição suave para temas */
+/* Transições suaves */
 body, .card, .item-card, .btn-action, .food-tag {
     transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }
-
-/* Efeito hover nos cards da loja */
-.item-card {
-    position: relative;
-    overflow: hidden;
-}
-.item-card::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.5s;
-    pointer-events: none;
-}
-.item-card:hover::after {
-    opacity: 1;
-}
-
-/* Animação de entrada suave para os cards */
-@keyframes fade-in-up {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-.item-card, .recipe-card, .food-option-card {
-    animation: fade-in-up 0.4s ease forwards;
-}
-.item-card:nth-child(2) { animation-delay: 0.05s; }
-.item-card:nth-child(3) { animation-delay: 0.10s; }
-.item-card:nth-child(4) { animation-delay: 0.15s; }
-.item-card:nth-child(5) { animation-delay: 0.20s; }
