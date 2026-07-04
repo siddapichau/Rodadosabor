@@ -1,14 +1,3 @@
-'use strict';
-console.log('roleta.js carregado');
-
-let startAngle = 0;
-let isSpinning = false;
-let spinSpeed = 0;
-let spinTimeTotal = 0;
-let spinTimeCount = 0;
-let lastSoundAngle = 0;
-
-// ========================== DESENHO ==========================
 window.drawRoulette = function() {
     console.log('🎯 drawRoulette iniciada');
     const canvas = document.getElementById('rouletteCanvas');
@@ -22,7 +11,7 @@ window.drawRoulette = function() {
         return;
     }
 
-    // Define o tamanho do canvas para corresponder ao CSS
+    // Ajusta o tamanho do canvas para corresponder ao CSS
     const rect = canvas.getBoundingClientRect();
     if (canvas.width !== rect.width || canvas.height !== rect.height) {
         canvas.width = rect.width || 600;
@@ -38,7 +27,7 @@ window.drawRoulette = function() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // ----- CORES DE FALLBACK (caso temas não carreguem) -----
+    // Cores (fallback)
     const fallbackColors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
     let colors = fallbackColors;
     let wheelBorder = '#f5b342';
@@ -112,30 +101,33 @@ window.drawRoulette = function() {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Texto
+        // ---- TEXTO AJUSTADO ----
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
-        ctx.textAlign = 'right';
+        ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const textRadius = radius * 0.78;
-        let fontSize = Math.min(radius * 0.13, 28);
+        // Distância do centro: 85% do raio (mais próximo da borda)
+        const textRadius = radius * 0.85;
+        // Calcula o tamanho máximo da fonte baseado no espaço disponível no arco
+        const maxTextWidth = (2 * Math.PI * textRadius) / numSegments * 0.85;
+        let fontSize = Math.min(radius * 0.14, 28);
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
-        const textWidth = ctx.measureText(items[i]).width;
-        const maxWidth = (2 * Math.PI * textRadius) / numSegments * 0.85;
-        if (textWidth > maxWidth && fontSize > 10) {
-            fontSize = Math.max(10, fontSize * (maxWidth / textWidth));
+        let textWidth = ctx.measureText(items[i]).width;
+        if (textWidth > maxTextWidth && fontSize > 10) {
+            fontSize = Math.max(10, fontSize * (maxTextWidth / textWidth));
             ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         }
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.6)';
         ctx.shadowBlur = 8;
+        // Posiciona o texto no raio calculado, centralizado no segmento
         ctx.fillText(items[i], textRadius, 0);
         ctx.shadowBlur = 0;
         ctx.restore();
     }
 
-    // Centro
+    // Centro da roleta (por baixo do botão)
     const centerRadius = radius * 0.16;
     ctx.beginPath();
     ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
@@ -147,91 +139,3 @@ window.drawRoulette = function() {
 
     console.log('✅ Roleta desenhada com', numSegments, 'segmentos');
 };
-
-// ========================== GIRO (igual à versão anterior, mantido) ==========================
-window.spinRoulette = function() {
-    if (isSpinning || window.appState.foods.length === 0) return;
-    if (window.appState.coins < 1) {
-        alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
-        return;
-    }
-    window.appState.coins -= 1;
-    window.saveData();
-    window.updateCoinsDisplay();
-
-    const btn = document.getElementById('btnSpin');
-    if (btn) btn.disabled = true;
-
-    const ctx = getAudioContext();
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-    isSpinning = true;
-    spinTimeCount = 0;
-    spinTimeTotal = Math.random() * 1000 + 4000;
-    spinSpeed = Math.random() * 0.3 + 0.4;
-    lastSoundAngle = startAngle;
-    animateSpin();
-};
-
-function animateSpin() {
-    spinTimeCount += 20;
-    if (spinTimeCount >= spinTimeTotal) {
-        isSpinning = false;
-        finalizeSpin();
-        return;
-    }
-    const progress = spinTimeCount / spinTimeTotal;
-    const currentVelocity = spinSpeed * Math.pow(1 - progress, 2);
-    startAngle += currentVelocity;
-    window.drawRoulette();
-
-    const arcSize = (2 * Math.PI) / window.appState.foods.length;
-    if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
-        window.playSynthesizedSound(activeSpinSound.type);
-        lastSoundAngle = startAngle;
-    }
-    requestAnimationFrame(animateSpin);
-}
-
-function finalizeSpin() {
-    const numSegments = window.appState.foods.length;
-    if (numSegments === 0) return;
-    const arcSize = (2 * Math.PI) / numSegments;
-    let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
-    if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
-    let index = Math.floor(angleFromStart / arcSize);
-    if (index >= numSegments) index = 0;
-    if (index < 0) index = numSegments - 1;
-
-    const winningFood = window.appState.foods[index];
-
-    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
-    window.playSynthesizedSound(activeEndSound.type);
-
-    setTimeout(() => {
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
-        window.playSynthesizedSound(activeWinSound.type);
-        if (typeof window.launchCurrentEffect === 'function') {
-            window.launchCurrentEffect();
-        } else {
-            window.launchConfetti();
-        }
-        const nameEl = document.getElementById('modalFoodName');
-        const emojiEl = document.getElementById('modalEmoji');
-        const overlay = document.getElementById('resultOverlay');
-        if (nameEl && emojiEl && overlay) {
-            nameEl.textContent = winningFood;
-            const emojiMatch = winningFood.match(/\p{Emoji}/u);
-            emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
-            overlay.style.display = 'flex';
-        }
-        const btn = document.getElementById('btnSpin');
-        if (btn) btn.disabled = false;
-    }, 1000);
-}
-
-// Forçar redesenho quando a página for carregada ou redimensionada
-window.addEventListener('load', function() {
-    setTimeout(window.drawRoulette, 100);
-});
-window.addEventListener('resize', window.drawRoulette);
