@@ -85,7 +85,6 @@
             <div class="store-grid" id="winSoundsGrid"></div>
         </section>
 
-        <!-- NOVA SEÇÃO: EFEITOS VISUAIS -->
         <section class="card">
             <h2><i class="fas fa-magic"></i> Efeitos Visuais</h2>
             <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Escolha como comemorar suas vitórias!</p>
@@ -123,7 +122,7 @@
     <div id="adOverlay" class="iframe-overlay">
         <div class="iframe-box">
             <div class="iframe-header">
-                Aguarde <span id="adCountdown">20</span> segundos para coletar suas moedas...
+                Aguarde <span id="adCountdown">30</span> segundos para coletar suas moedas...
             </div>
             <iframe id="adFrame" src="about:blank"></iframe>
         </div>
@@ -141,10 +140,13 @@
 
     <canvas id="confettiCanvas"></canvas>
 
+    <!-- ============================================================ -->
+    <!-- ORDEM CORRETA DOS SCRIPTS (dependências primeiro)             -->
+    <!-- ============================================================ -->
     <script src="sons.js"></script>
     <script src="comidas.js"></script>
     <script src="temas.js"></script>
-    <script src="efeitos-lista.js"></script>   <!-- NOVO -->
+    <script src="efeitos-lista.js"></script>
     <script src="efeitos.js"></script>
     <script src="roleta.js"></script>
     <script src="core.js"></script>

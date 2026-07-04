@@ -68,7 +68,7 @@ window.drawRoulette = function() {
         const maxWidth = (2 * Math.PI * textRadius) / numSegments * 0.85;
         if (textWidth > maxWidth) {
             fontSize = fontSize * (maxWidth / textWidth);
-            ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
+            ctx.font = `bold ${fontSize}px 'Inter', sans-serif';
         }
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8;
@@ -133,23 +133,29 @@ function finalizeSpin() {
     if (numSegments === 0) return;
     const arcSize = (2 * Math.PI) / numSegments;
 
-    let normalizedAngle = startAngle % (2 * Math.PI);
-    if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
-    let relativeAngle = (normalizedAngle - (Math.PI / 2)) % (2 * Math.PI);
-    if (relativeAngle < 0) relativeAngle += 2 * Math.PI;
-    let index = Math.floor(relativeAngle / arcSize + 0.0001);
+    // ===== CORREÇÃO: cálculo correto do setor sob a seta =====
+    // Ângulo da seta (topo, -π/2) em relação ao início da roleta (startAngle)
+    let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
+    if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
+    let index = Math.floor(angleFromStart / arcSize);
+    // ===== FIM DA CORREÇÃO =====
+
+    // Garantia de índice válido
     if (index >= numSegments) index = 0;
     if (index < 0) index = numSegments - 1;
 
     const winningFood = window.appState.foods[index];
 
+    // Som de fim (roleta parou)
     const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
     window.playSynthesizedSound(activeEndSound.type);
 
+    // Após 1 segundo, toca o som de vitória e mostra o resultado
     setTimeout(() => {
         const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
         window.playSynthesizedSound(activeWinSound.type);
         
+        // Lança o efeito visual atual (fallback para confetes)
         if (typeof window.launchCurrentEffect === 'function') {
             window.launchCurrentEffect();
         } else {

@@ -10,7 +10,7 @@ window.SONS_GIRO = [
     { id: "spin-5", name: "Digital", price: 30, type: "digital" }
 ];
 
-// 2. SONS DE FIM DA ROLETA (Quando a roleta acabou de parar - antigo som de vitória)
+// 2. SONS DE FIM DA ROLETA (Quando a roleta acabou de parar)
 window.SONS_FIM = [
     { id: "end-1", name: "Acorde Simples", price: 0, type: "end-chord" },
     { id: "end-2", name: "Plim Sino", price: 15, type: "end-bell" },

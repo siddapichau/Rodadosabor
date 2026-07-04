@@ -7,6 +7,26 @@ window.updateCoinsDisplay = function() {
     if (coinBalance) coinBalance.textContent = window.appState.coins;
 };
 
+// ========== FUNÇÃO PARA LANÇAR EFEITO VISUAL ATUAL ==========
+window.launchCurrentEffect = function() {
+    const effectId = window.appState.currentEffect || 'effect-1';
+    // Mapeia o ID para a função correspondente
+    switch (effectId) {
+        case 'effect-1':
+            window.launchConfetti();
+            break;
+        case 'effect-2':
+            window.launchFireworks();
+            break;
+        case 'effect-3':
+            window.launchStars();
+            break;
+        default:
+            window.launchConfetti(); // fallback
+            break;
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     let comidasSelecionadasTemporarias = [];
 
@@ -20,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnModeToggle.addEventListener('click', () => {
             window.appState.darkMode = !window.appState.darkMode;
             window.applyThemes();
+            window.saveData();
         });
     }
 
@@ -48,28 +69,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }, 1000);
 
+            // Função para fechar o anúncio manualmente
             const closeAd = () => {
                 clearInterval(adInterval);
                 adOverlay.style.display = 'none';
                 document.getElementById('adFrame').src = 'about:blank';
             };
 
+            // Fechar ao clicar fora do iframe (no overlay)
             adOverlay.addEventListener('click', function handler(e) {
                 if (e.target === adOverlay) {
                     closeAd();
                     adOverlay.removeEventListener('click', handler);
                 }
             });
+
+            // Fechar com tecla ESC (opcional)
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeAd();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+
+            // Guardar referência para limpeza
             adOverlay._closeAd = closeAd;
+            adOverlay._escHandler = escHandler;
         });
     }
 
     // ---------- MODAL DE SELEÇÃO DE COMIDAS ----------
     const foodModal = document.getElementById('foodSelectionModal');
     document.getElementById('btnOpenFoodModal')?.addEventListener('click', () => {
+        // Inicializa a seleção temporária com as comidas atuais
         comidasSelecionadasTemporarias = [...window.appState.foods];
         foodModal.style.display = 'flex';
-        renderModalFoodOptions();
+        renderModalFoodOptions(document.getElementById('searchFoodInput')?.value || '');
     });
 
     document.getElementById('btnCloseFoodModal')?.addEventListener('click', () => {
@@ -89,10 +125,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnSaveFoodSelection')?.addEventListener('click', () => {
         const count = comidasSelecionadasTemporarias.length;
         if (count < 2) {
-            alert("Selecione pelo menos 2 comidas!"); return;
+            alert("Selecione pelo menos 2 comidas!");
+            return;
         }
         if (count > 6) {
-            alert("Máximo permitido é 6 comidas na roleta!"); return;
+            alert("Máximo permitido é 6 comidas na roleta!");
+            return;
         }
         window.appState.foods = [...comidasSelecionadasTemporarias];
         window.saveData();
@@ -161,6 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!modalGrid) return;
         modalGrid.innerHTML = '';
 
+        // Monta lista completa (banco + personalizadas)
         const allItems = [...(window.BANCO_DE_COMIDAS || [])];
         window.appState.customFoods.forEach(custom => {
             const match = custom.match(/\p{Emoji}/u);
@@ -238,6 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Funções de compra/uso de sons (já existentes, mas mantidas)
     window.buySpinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedSpinSounds.push(id); window.useSpinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useSpinSound = (id) => { window.appState.currentSpinSound = id; window.saveData(); renderSounds(); };
     
@@ -337,6 +377,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ---------- RENDERIZAÇÃO DOS TEMAS (PÁGINA E ROLETA) ----------
+    function renderThemes() {
+        // Temas da página
+        const pageGrid = document.getElementById('pageThemesGrid');
+        if (pageGrid) {
+            pageGrid.innerHTML = '';
+            (window.listTemas || []).forEach(theme => {
+                const isUnlocked = window.appState.unlockedPageThemes.includes(theme.id);
+                const isActive = window.appState.currentPageTheme === theme.id;
+                const card = document.createElement('div');
+                card.className = `item-card ${isActive ? 'active' : ''}`;
+                let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="usePageTheme('${theme.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyPageTheme('${theme.id}', ${theme.price || 0})"><i class="fas fa-coins"></i> ${theme.price || 0}</button>`;
+                card.innerHTML = `<div class="item-info"><h4>${theme.nome}</h4></div>${btnHTML}`;
+                pageGrid.appendChild(card);
+            });
+        }
+
+        // Temas da roleta
+        const rouletteGrid = document.getElementById('rouletteThemesGrid');
+        if (rouletteGrid) {
+            rouletteGrid.innerHTML = '';
+            (window.listTemas || []).forEach(theme => {
+                const isUnlocked = window.appState.unlockedRouletteThemes.includes(theme.id);
+                const isActive = window.appState.currentRouletteTheme === theme.id;
+                const card = document.createElement('div');
+                card.className = `item-card ${isActive ? 'active' : ''}`;
+                let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` : isUnlocked ? `<button class="btn-action btn-use" onclick="useRouletteTheme('${theme.id}')">Usar</button>` : `<button class="btn-action btn-buy" onclick="buyRouletteTheme('${theme.id}', ${theme.price || 0})"><i class="fas fa-coins"></i> ${theme.price || 0}</button>`;
+                card.innerHTML = `<div class="item-info"><h4>${theme.nome}</h4></div>${btnHTML}`;
+                rouletteGrid.appendChild(card);
+            });
+        }
+    }
+
+    // Funções globais para compra/uso de temas
+    window.buyPageTheme = (id, price) => {
+        if (window.appState.coins >= price) {
+            window.appState.coins -= price;
+            if (!window.appState.unlockedPageThemes.includes(id)) window.appState.unlockedPageThemes.push(id);
+            window.usePageTheme(id);
+            window.updateCoinsDisplay();
+        } else alert("Moedas insuficientes!");
+    };
+    window.usePageTheme = (id) => {
+        window.appState.currentPageTheme = id;
+        window.saveData();
+        window.applyThemes();
+        renderThemes();
+    };
+
+    window.buyRouletteTheme = (id, price) => {
+        if (window.appState.coins >= price) {
+            window.appState.coins -= price;
+            if (!window.appState.unlockedRouletteThemes.includes(id)) window.appState.unlockedRouletteThemes.push(id);
+            window.useRouletteTheme(id);
+            window.updateCoinsDisplay();
+        } else alert("Moedas insuficientes!");
+    };
+    window.useRouletteTheme = (id) => {
+        window.appState.currentRouletteTheme = id;
+        window.saveData();
+        window.applyThemes();
+        renderThemes();
+    };
+
     // ---------- PWA ----------
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -361,6 +465,14 @@ document.addEventListener('DOMContentLoaded', function() {
             window.appState.unlockedRecipes.push(rec.id);
         }
     });
+
+    // Garantir que os temas iniciais estejam desbloqueados
+    if (!window.appState.unlockedPageThemes || window.appState.unlockedPageThemes.length === 0) {
+        window.appState.unlockedPageThemes = ['theme-1'];
+    }
+    if (!window.appState.unlockedRouletteThemes || window.appState.unlockedRouletteThemes.length === 0) {
+        window.appState.unlockedRouletteThemes = ['theme-1'];
+    }
 
     // Força a exibição do saldo
     window.updateCoinsDisplay();
