@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---------- ANÚNCIO (com cancelamento seguro) ----------
+    // ---------- ANÚNCIO ----------
     const btnWatchAd = document.getElementById('btnWatchAd');
     if (btnWatchAd) {
         btnWatchAd.addEventListener('click', function() {
@@ -48,22 +48,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }, 1000);
 
-            // Função para fechar manualmente (cancela o timer)
             const closeAd = () => {
                 clearInterval(adInterval);
                 adOverlay.style.display = 'none';
                 document.getElementById('adFrame').src = 'about:blank';
             };
 
-            // Fecha se clicar no backdrop
             adOverlay.addEventListener('click', function handler(e) {
                 if (e.target === adOverlay) {
                     closeAd();
                     adOverlay.removeEventListener('click', handler);
                 }
             });
-
-            // Guarda referência para uso futuro (ex: fechar via tecla ESC)
             adOverlay._closeAd = closeAd;
         });
     }
@@ -80,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function() {
         foodModal.style.display = 'none';
     });
 
-    // Fecha o modal de comidas se clicar no fundo
     foodModal?.addEventListener('click', function(e) {
         if (e.target === foodModal) {
             foodModal.style.display = 'none';
@@ -111,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function() {
         resultOverlay.style.display = 'none';
     });
 
-    // Fecha o resultado se clicar no fundo
     resultOverlay?.addEventListener('click', function(e) {
         if (e.target === resultOverlay) {
             resultOverlay.style.display = 'none';
@@ -253,6 +247,54 @@ document.addEventListener('DOMContentLoaded', function() {
     window.buyWinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedWinSounds.push(id); window.useWinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
     window.useWinSound = (id) => { window.appState.currentWinSound = id; window.saveData(); renderSounds(); };
 
+    // ---------- LOJA DE EFEITOS VISUAIS (NOVO) ----------
+    function renderEffects() {
+        const grid = document.getElementById('effectsGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        (window.EFEITOS_VISUAIS || []).forEach(effect => {
+            const isUnlocked = window.appState.unlockedEffects.includes(effect.id);
+            const isActive = window.appState.currentEffect === effect.id;
+            const card = document.createElement('div');
+            card.className = `item-card ${isActive ? 'active' : ''}`;
+
+            let btnHTML = '';
+            if (isActive) {
+                btnHTML = `<button class="btn-action btn-active">Ativo</button>`;
+            } else if (isUnlocked) {
+                btnHTML = `<button class="btn-action btn-use" onclick="useEffect('${effect.id}')">Usar</button>`;
+            } else {
+                btnHTML = `<button class="btn-action btn-buy" onclick="buyEffect('${effect.id}', ${effect.price})"><i class="fas fa-coins"></i> ${effect.price}</button>`;
+            }
+
+            card.innerHTML = `
+                <div class="item-info">
+                    <h4>${effect.name}</h4>
+                    <p>${effect.price === 0 ? 'Grátis' : effect.price + ' moedas'}</p>
+                </div>
+                ${btnHTML}
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    window.buyEffect = (id, price) => {
+        if (window.appState.coins >= price) {
+            window.appState.coins -= price;
+            window.appState.unlockedEffects.push(id);
+            window.useEffect(id);
+            window.updateCoinsDisplay();
+        } else {
+            alert("Moedas insuficientes!");
+        }
+    };
+    window.useEffect = (id) => {
+        window.appState.currentEffect = id;
+        window.saveData();
+        renderEffects();
+    };
+
     // ---------- LOJA DE RECEITAS ----------
     function renderRecipes() {
         const grid = document.getElementById('recipesGrid');
@@ -312,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderFoodList();
     renderThemes();
     renderSounds();
+    renderEffects();   // <-- NOVO
     renderRecipes();
     window.applyThemes();
     window.updateCoinsDisplay();
