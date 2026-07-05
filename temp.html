@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Testes - Roda do Sabor</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css" />
     <style>
-        body { padding: 2rem; max-width: 800px; margin: 0 auto; background: #1e2a3a; color: white; }
+        body { padding: 2rem; max-width: 800px; margin: 0 auto; background: #1e2a3a; color: white; font-family: 'Inter', sans-serif; }
         .debug-card { background: rgba(255, 255, 255, 0.1); padding: 1.5rem; border-radius: 1rem; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.2); }
         h1 { margin-bottom: 1.5rem; color: #f5b342; }
         h3 { margin-bottom: 1rem; color: #7b9e5a; }
         .coin-display { font-size: 2rem; font-weight: 800; margin-bottom: 1rem; color: #f5d742; }
-        .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        button { padding: 0.6rem 1.2rem; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-family: 'Inter', sans-serif; transition: 0.2s; }
+        .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        button { padding: 0.6rem 1.2rem; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:hover { filter: brightness(1.1); transform: translateY(-2px); }
         .btn-add { background: #3b82f6; color: white; }
         .btn-remove { background: #e94b3c; color: white; }
         .btn-reset { background: #f5b342; color: #1e2a3a; }
+        .btn-vip { background: #9b59b6; color: white; }
         .btn-danger { background: #8e1f1f; color: white; width: 100%; margin-top: 1rem; padding: 1rem;}
-        .log-box { background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #a5b4fc; white-space: pre-wrap; margin-top: 1rem;}
+        .log-box { background: rgba(0,0,0,0.5); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #a5b4fc; white-space: pre-wrap; margin-top: 1rem; max-height: 300px; overflow-y: auto;}
     </style>
 </head>
 <body>
@@ -35,6 +35,15 @@
             <button class="btn-add" onclick="modifyCoins(1000)">+ 1000 Moedas</button>
             <button class="btn-remove" onclick="modifyCoins(-50)">- 50 Moedas</button>
             <button class="btn-remove" onclick="setCoins(0)">Zerar Moedas</button>
+        </div>
+    </div>
+    
+    <div class="debug-card">
+        <h3>👑 Controle VIP</h3>
+        <p style="font-size: 0.9rem; margin-bottom: 1rem; color: #cbd5e1;">Adicione ou remova o status VIP da sua conta local.</p>
+        <div class="btn-row">
+            <button class="btn-vip" onclick="addVip()">Adicionar VIP (30 Dias)</button>
+            <button class="btn-remove" onclick="removeVip()">Tirar VIP</button>
         </div>
     </div>
 
@@ -57,33 +66,19 @@
     </div>
 
     <script>
-        // Função padrão para ler o banco de dados local
         function getState() {
             try {
                 const data = localStorage.getItem('rodaDoSaborState');
                 if (data) return JSON.parse(data);
             } catch (e) {}
-            
-            // Se não houver nada, retorna um estado zerado
-            return {
-                coins: 0,
-                foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
-                unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
-                unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
-                unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1",
-                unlockedEndSounds: ["end-1"], currentEndSound: "end-1",
-                unlockedWinSounds: ["win-1"], currentWinSound: "win-1",
-                unlockedRecipes: [], customFoods: []
-            };
+            return { coins: 0, vipUntil: 0, foods: ["Pizza 🍕", "Hambúrguer 🍔"], unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1", unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1", unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1", unlockedEndSounds: ["end-1"], currentEndSound: "end-1", unlockedWinSounds: ["win-1"], currentWinSound: "win-1", unlockedRecipes: [], customFoods: [] };
         }
 
-        // Função padrão para salvar no banco de dados local
         function saveState(state) {
             localStorage.setItem('rodaDoSaborState', JSON.stringify(state));
             updateUI();
         }
 
-        // Atualiza a tela do painel de testes
         function updateUI() {
             const state = getState();
             document.getElementById('currentCoins').textContent = state.coins || 0;
@@ -95,12 +90,10 @@
             document.getElementById('stateLog').textContent = JSON.stringify(state, null, 2);
         }
 
-        // --- FUNÇÕES DE AÇÃO ---
-
         function modifyCoins(amount) {
             const state = getState();
             state.coins = (state.coins || 0) + amount;
-            if (state.coins < 0) state.coins = 0; // Não deixa ficar negativo
+            if (state.coins < 0) state.coins = 0;
             saveState(state);
         }
 
@@ -109,43 +102,43 @@
             state.coins = amount;
             saveState(state);
         }
+        
+        function addVip() {
+            const state = getState();
+            state.vipUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
+            saveState(state);
+            alert("VIP Adicionado localmente!");
+        }
+
+        function removeVip() {
+            const state = getState();
+            state.vipUntil = 0;
+            saveState(state);
+            alert("VIP Removido localmente!");
+        }
 
         function resetPurchases() {
             if(!confirm("Tem certeza que deseja bloquear todos os itens comprados?")) return;
             const state = getState();
-            
-            state.unlockedPageThemes = ["theme-1"];
-            state.currentPageTheme = "theme-1";
-            
-            state.unlockedRouletteThemes = ["theme-1"];
-            state.currentRouletteTheme = "theme-1";
-            
-            state.unlockedSpinSounds = ["spin-1"];
-            state.currentSpinSound = "spin-1";
-            
-            state.unlockedEndSounds = ["end-1"];
-            state.currentEndSound = "end-1";
-            
-            state.unlockedWinSounds = ["win-1"];
-            state.currentWinSound = "win-1";
-            
-            state.unlockedRecipes = []; // Receitas zeradas
-            
+            state.unlockedPageThemes = ["theme-1"]; state.currentPageTheme = "theme-1";
+            state.unlockedRouletteThemes = ["theme-1"]; state.currentRouletteTheme = "theme-1";
+            state.unlockedSpinSounds = ["spin-1"]; state.currentSpinSound = "spin-1";
+            state.unlockedEndSounds = ["end-1"]; state.currentEndSound = "end-1";
+            state.unlockedWinSounds = ["win-1"]; state.currentWinSound = "win-1";
+            state.unlockedEffects = ["effect-1"]; state.currentEffect = "effect-1";
+            state.unlockedRecipes = []; 
             saveState(state);
-            alert("Compras resetadas! Atualize a página do app para ver.");
+            alert("Compras resetadas!");
         }
 
         function hardReset() {
             if(!confirm("CUIDADO: Isso vai apagar completamente todos os dados do app neste navegador. Tem certeza?")) return;
-            
             localStorage.removeItem('rodaDoSaborState');
-            localStorage.removeItem('appState'); // Por garantia
-            
-            alert("Aplicativo formatado. Ao abrir o app novamente, ele iniciará zerado.");
+            localStorage.removeItem('appState');
+            alert("Aplicativo formatado.");
             updateUI();
         }
 
-        // Inicia a interface
         updateUI();
     </script>
 </body>
