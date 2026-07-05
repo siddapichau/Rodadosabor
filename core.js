@@ -2,10 +2,12 @@
 console.log('core.js carregado');
 
 (function() {
-    // 1. O estado real blindado (Agora com vipUntil)
+    // Flag de segurança vital: bloqueia interações até a nuvem validar os dados
+    window.isServerSynced = false;
+
     const _rawState = {
         coins: 20,
-        vipUntil: 0, // Timestamp de quando o VIP acaba
+        vipUntil: 0,
         darkMode: false,
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
@@ -17,18 +19,11 @@ console.log('core.js carregado');
         unlockedRecipes: [], customFoods: []
     };
 
-    // 2. O Proxy Blindado (Impede Edição e Injeção em Arrays)
     const proxyState = new Proxy(_rawState, {
-        set(target, prop, value) {
-            console.warn(`🛑 Operação bloqueada. Tentativa de alterar '${prop}' rejeitada.`);
-            return false; // Bloqueia edição de QUALQUER propriedade diretamente
-        },
+        set(target, prop, value) { return false; }, // Bloqueio absoluto
         get(target, prop) {
             const value = target[prop];
-            // Se tentarem acessar uma lista, devolvemos uma cópia congelada (impossível usar .push)
-            if (Array.isArray(value)) {
-                return Object.freeze([...value]); 
-            }
+            if (Array.isArray(value)) return Object.freeze([...value]); 
             return value;
         }
     });
@@ -37,18 +32,13 @@ console.log('core.js carregado');
         value: proxyState, writable: false, configurable: false
     });
 
-    // ========================== SISTEMA VIP ==========================
-    window.isVipAtivo = function() {
-        return _rawState.vipUntil > Date.now();
-    };
+    window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
 
-    // Função que checa se o item pode ser usado (Comprado OU VIP)
     window.isItemLiberado = function(nomeDoArray, idDoItem) {
-        if (window.isVipAtivo()) return true; // VIP tem acesso a tudo
+        if (window.isVipAtivo()) return true; 
         return _rawState[nomeDoArray].includes(idDoItem);
     };
 
-    // Simulador de Compra VIP (Ligaremos ao PIX no futuro)
     window.ativarVipMensal = function() {
         const trintaDiasEmMs = 30 * 24 * 60 * 60 * 1000;
         _rawState.vipUntil = Date.now() + trintaDiasEmMs;
@@ -58,13 +48,17 @@ console.log('core.js carregado');
 
     // ========================== COMPRAS SEGURAS ==========================
     window.comprarItemSeguro = function(categoria, id) {
+        if (!window.isServerSynced) {
+            alert("⏳ Autenticando servidor... Tente novamente em alguns segundos.");
+            return false;
+        }
+
         if (window.isVipAtivo()) {
-            alert("Você é VIP! Não precisa gastar moedas. O item já está liberado para uso.");
+            alert("Você é VIP! Não precisa gastar moedas. O item já está liberado.");
             return false;
         }
 
         let preco = 0; let arrayDestravados = ''; let itemAtual = '';
-
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
         else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
@@ -101,12 +95,14 @@ console.log('core.js carregado');
     };
 
     window.gastarMoedaGiro = function() {
+        if (!window.isServerSynced) return false;
         if (_rawState.coins >= 1) { _rawState.coins -= 1; window.saveData(); return true; }
         return false;
     };
 
     let lastAdTime = 0;
     window.ganharMoedasAnuncio = function() {
+        if (!window.isServerSynced) return false;
         const now = Date.now();
         if (now - lastAdTime < 30000) { console.warn("🛑 SPAM Bloqueado."); return false; }
         lastAdTime = now; _rawState.coins += 3; window.saveData(); return true;
@@ -119,7 +115,6 @@ console.log('core.js carregado');
     let currentUserUid = null;
 
     function reverterItensVencidos() {
-        // Se o VIP acabou, devolve os itens equipados para o padrão 1 caso o usuário não os tenha comprado
         if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
         if (!window.isItemLiberado('unlockedSpinSounds', _rawState.currentSpinSound)) _rawState.currentSpinSound = "spin-1";
         if (!window.isItemLiberado('unlockedEndSounds', _rawState.currentEndSound)) _rawState.currentEndSound = "end-1";
@@ -142,6 +137,7 @@ console.log('core.js carregado');
     }
 
     window.loadData = function() {
+        // Carrega localmente apenas para pintar a tela rápido, mas bloqueia compras
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) Object.assign(_rawState, JSON.parse(saved));
@@ -154,11 +150,22 @@ console.log('core.js carregado');
                 if (user) {
                     currentUserUid = user.uid;
                     database.ref('users/' + currentUserUid + '/appState').once('value').then((snapshot) => {
+                        window.isServerSynced = true; // Sincronização concluída! Libera a loja.
+                        
                         if (snapshot.exists()) {
-                            Object.assign(_rawState, snapshot.val()); 
+                            // A LEI DO SERVIDOR: Esmaga impiedosamente qualquer dado falso local
+                            const serverData = snapshot.val();
+                            Object.assign(_rawState, serverData); 
                             garantirArraysNoEstado();
+                            console.log("☁️ Autenticado com sucesso no Firebase!");
                             if (typeof window.renderAll === 'function') window.renderAll();
-                        } else { window.saveData(); }
+                        } else {
+                            // Novo usuário no servidor: força a resetar para estado limpo
+                            _rawState.coins = 20; _rawState.vipUntil = 0;
+                            _rawState.unlockedPageThemes = ["theme-1"]; _rawState.unlockedEffects = ["effect-1"];
+                            garantirArraysNoEstado();
+                            window.saveData(); 
+                        }
                     });
                 }
             });
@@ -171,9 +178,10 @@ console.log('core.js carregado');
         if (coinEl) coinEl.textContent = _rawState.coins;
         
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
+        
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
-            if (currentUserUid && database) {
+            if (currentUserUid && database && window.isServerSynced) {
                 database.ref('users/' + currentUserUid + '/appState').set(_rawState)
                     .catch((error) => {
                         if (error.code === "PERMISSION_DENIED") {
@@ -187,7 +195,7 @@ console.log('core.js carregado');
 
     window.loadData();
 
-    // SINTETIZADOR DE ÁUDIO 
+    // ========================== SINTETIZADOR DE ÁUDIO ==========================
     let audioCtx = null;
     window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
