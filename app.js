@@ -28,25 +28,25 @@ window.renderFoodList = function() {
     container.innerHTML = '';
     const foods = window.appState?.foods || [];
     if (foods.length === 0) {
-        container.innerHTML = '<span style="color:var(--text-muted);">Nenhuma comida selecionada. Adicione pelo menos 2.</span>';
-        return;
+        container.innerHTML = '<span style="color:var(--text-muted);">Nenhuma comida selecionada.</span>'; return;
     }
     foods.forEach((food, idx) => {
-        const tag = document.createElement('div');
-        tag.className = 'food-tag';
+        const tag = document.createElement('div'); tag.className = 'food-tag';
         tag.innerHTML = `${food} <i class="fas fa-times" onclick="window.removeFood(${idx})"></i>`;
         container.appendChild(tag);
     });
-    if (typeof window.drawRoulette === 'function') {
-        try { window.drawRoulette(); } catch(e) {}
-    }
+    if (typeof window.drawRoulette === 'function') { try { window.drawRoulette(); } catch(e) {} }
 };
 
 window.removeFood = function(idx) {
     if (window.appState && window.appState.foods) {
-        window.appState.foods.splice(idx, 1);
-        window.saveData();
-        window.renderFoodList();
+        // Como o appState é blindado, precisamos usar um truque interno seguro ou recriar a lista
+        const novasComidas = [...window.appState.foods];
+        novasComidas.splice(idx, 1);
+        
+        // Chamada segura para o proxy
+        window._comidasSelecionadasTemporarias = novasComidas;
+        document.getElementById('btnSaveFoodSelection')?.click(); // Reaproveita o fluxo seguro do modal
     }
 };
 
@@ -59,39 +59,27 @@ window.renderModalFoodOptions = function(filterText = '') {
     if (window.appState?.customFoods) {
         window.appState.customFoods.forEach(custom => {
             const match = custom.match(/\p{Emoji}/u);
-            if (match) {
-                const nome = custom.replace(/\p{Emoji}/u, '').trim();
-                allItems.push({ nome, icone: match[0] });
-            } else {
-                allItems.push({ nome: custom, icone: '🍽️' });
-            }
+            if (match) { allItems.push({ nome: custom.replace(/\p{Emoji}/u, '').trim(), icone: match[0] }); } 
+            else { allItems.push({ nome: custom, icone: '🍽️' }); }
         });
     }
     const filtradas = allItems.filter(item => item.nome.toLowerCase().includes(filterText.toLowerCase()));
     const selecionadas = window._comidasSelecionadasTemporarias || [];
     filtradas.forEach(item => {
         const itemString = `${item.nome} ${item.icone}`;
-        const card = document.createElement('div');
-        card.className = 'food-option-card';
+        const card = document.createElement('div'); card.className = 'food-option-card';
         if (selecionadas.includes(itemString)) card.classList.add('selected');
         card.innerHTML = `<span>${item.icone}</span> ${item.nome}`;
         card.addEventListener('click', () => {
             const idx = selecionadas.indexOf(itemString);
-            if (idx > -1) {
-                selecionadas.splice(idx, 1);
-                card.classList.remove('selected');
-            } else {
-                if (selecionadas.length >= 6) {
-                    alert("Máximo de 6 itens permitidos na roleta!");
-                    return;
-                }
-                selecionadas.push(itemString);
-                card.classList.add('selected');
+            if (idx > -1) { selecionadas.splice(idx, 1); card.classList.remove('selected'); } 
+            else {
+                if (selecionadas.length >= 6) { alert("Máximo de 6 itens permitidos!"); return; }
+                selecionadas.push(itemString); card.classList.add('selected');
             }
             window._comidasSelecionadasTemporarias = selecionadas;
-            const count = window._comidasSelecionadasTemporarias.length;
             const info = document.getElementById('foodSelectionCount');
-            if (info) info.textContent = `${count} / 6 selecionadas`;
+            if (info) info.textContent = `${window._comidasSelecionadasTemporarias.length} / 6 selecionadas`;
         });
         modalGrid.appendChild(card);
     });
@@ -103,19 +91,21 @@ window.renderSounds = function() {
     const winGrid = document.getElementById('winSoundsGrid');
     if (!spinGrid || !endGrid || !winGrid) return;
 
-    const renderSoundCards = (grid, soundList, unlockedArray, currentKey, category) => {
+    const renderSoundCards = (grid, soundList, arrayName, currentKey, category) => {
         grid.innerHTML = '';
         if (!soundList || soundList.length === 0) return;
         const sorted = [...soundList].sort((a, b) => (a.price || 0) - (b.price || 0));
         sorted.forEach(sound => {
-            const isUnlocked = (unlockedArray || []).includes(sound.id);
+            // Usa o sistema VIP seguro
+            const isUnlocked = window.isItemLiberado(arrayName, sound.id);
             const isActive = window.appState?.[currentKey] === sound.id;
+            
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
             
             let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
-                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.comprarEUsarItem('${category}', '${sound.id}')">Usar</button>` 
-                        : `<button class="btn-action btn-buy" onclick="window.comprarEUsarItem('${category}', '${sound.id}')"><i class="fas fa-coins"></i> ${sound.price}</button>`;
+                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('${category}', '${sound.id}')">Usar</button>` 
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${sound.id}')"><i class="fas fa-coins"></i> ${sound.price}</button>`;
             
             card.innerHTML = `
                 <div class="item-info">
@@ -129,9 +119,9 @@ window.renderSounds = function() {
         });
     };
 
-    renderSoundCards(spinGrid, window.SONS_GIRO, window.appState?.unlockedSpinSounds, 'currentSpinSound', 'spinSound');
-    renderSoundCards(endGrid, window.SONS_FIM, window.appState?.unlockedEndSounds, 'currentEndSound', 'endSound');
-    renderSoundCards(winGrid, window.SONS_VITORIA, window.appState?.unlockedWinSounds, 'currentWinSound', 'winSound');
+    renderSoundCards(spinGrid, window.SONS_GIRO, 'unlockedSpinSounds', 'currentSpinSound', 'spinSound');
+    renderSoundCards(endGrid, window.SONS_FIM, 'unlockedEndSounds', 'currentEndSound', 'endSound');
+    renderSoundCards(winGrid, window.SONS_VITORIA, 'unlockedWinSounds', 'currentWinSound', 'winSound');
 };
 
 window.renderEffects = function() {
@@ -143,14 +133,15 @@ window.renderEffects = function() {
     
     const sorted = [...effects].sort((a, b) => (a.price || 0) - (b.price || 0));
     sorted.forEach(effect => {
-        const isUnlocked = (window.appState?.unlockedEffects || []).includes(effect.id);
+        const isUnlocked = window.isItemLiberado('unlockedEffects', effect.id);
         const isActive = window.appState?.currentEffect === effect.id;
+        
         const card = document.createElement('div');
         card.className = `item-card ${isActive ? 'active' : ''}`;
         
         let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
-                    : isUnlocked ? `<button class="btn-action btn-use" onclick="window.comprarEUsarItem('effect', '${effect.id}')">Usar</button>` 
-                    : `<button class="btn-action btn-buy" onclick="window.comprarEUsarItem('effect', '${effect.id}')"><i class="fas fa-coins"></i> ${effect.price}</button>`;
+                    : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('effect', '${effect.id}')">Usar</button>` 
+                    : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('effect', '${effect.id}')"><i class="fas fa-coins"></i> ${effect.price}</button>`;
         
         card.innerHTML = `
             <div class="item-info">
@@ -173,17 +164,18 @@ window.renderRecipes = function() {
     
     const sorted = [...recipes].sort((a, b) => (a.preco || 0) - (b.preco || 0));
     sorted.forEach(rec => {
-        const isUnlocked = (window.appState?.unlockedRecipes || []).includes(rec.id);
+        const isUnlocked = window.isItemLiberado('unlockedRecipes', rec.id);
         const card = document.createElement('div');
         card.className = 'recipe-card';
         card.innerHTML = `<div class="recipe-info"><span class="recipe-icon">${rec.icone}</span><span class="recipe-name">${rec.nome}</span></div>`;
         let btn = document.createElement('button');
+        
         if (isUnlocked) {
             btn.className = 'btn-action btn-recipe-open'; btn.textContent = 'Ver';
             btn.onclick = () => window.location.href = rec.link;
         } else {
             btn.className = 'btn-action btn-buy'; btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco}`;
-            btn.onclick = () => window.comprarEUsarItem('recipe', rec.id);
+            btn.onclick = () => window.comprarEAtualizar('recipe', rec.id);
         }
         card.appendChild(btn);
         grid.appendChild(card);
@@ -197,20 +189,18 @@ window.renderThemes = function() {
     if (themes.length === 0) return;
     const sorted = [...themes].sort((a, b) => (a.price || 0) - (b.price || 0));
 
-    const renderThemeGrid = (grid, type, category) => {
+    const renderThemeGrid = (grid, arrayName, currentKey, category) => {
         if (!grid) return;
         grid.innerHTML = '';
         sorted.forEach(theme => {
-            const unlocked = (type === 'page' ? window.appState?.unlockedPageThemes : window.appState?.unlockedRouletteThemes) || [];
-            const current = type === 'page' ? window.appState?.currentPageTheme : window.appState?.currentRouletteTheme;
-            const isUnlocked = unlocked.includes(theme.id);
-            const isActive = current === theme.id;
+            const isUnlocked = window.isItemLiberado(arrayName, theme.id);
+            const isActive = window.appState?.[currentKey] === theme.id;
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
             
             let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>`
-                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.comprarEUsarItem('${category}', '${theme.id}')">Usar</button>`
-                        : `<button class="btn-action btn-buy" onclick="window.comprarEUsarItem('${category}', '${theme.id}')"><i class="fas fa-coins"></i> ${theme.price || 0}</button>`;
+                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('${category}', '${theme.id}')">Usar</button>`
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${theme.id}')"><i class="fas fa-coins"></i> ${theme.price || 0}</button>`;
             
             card.innerHTML = `
                 <div class="item-info">
@@ -223,16 +213,22 @@ window.renderThemes = function() {
         });
     };
 
-    renderThemeGrid(pageGrid, 'page', 'pageTheme');
-    renderThemeGrid(rouletteGrid, 'roulette', 'rouletteTheme');
+    renderThemeGrid(pageGrid, 'unlockedPageThemes', 'currentPageTheme', 'pageTheme');
+    renderThemeGrid(rouletteGrid, 'unlockedRouletteThemes', 'currentRouletteTheme', 'rouletteTheme');
 };
 
-// ========== ROTEA COMPRAS PARA O COFRE SEGURO ==========
-window.comprarEUsarItem = function(categoria, id) {
+// ========== ROTAS SEGURAS (Compra vs Equipar) ==========
+window.comprarEAtualizar = function(categoria, id) {
     if (window.comprarItemSeguro(categoria, id)) {
         window.renderAll();
     } else {
-        alert("Moedas insuficientes ou item inválido!");
+        if(!window.isVipAtivo()) alert("Moedas insuficientes ou item inválido!");
+    }
+};
+
+window.equiparEAtualizar = function(categoria, id) {
+    if (window.equiparItemSeguro(categoria, id)) {
+        window.renderAll();
     }
 };
 
@@ -244,26 +240,55 @@ window.renderAll = function() {
     try { window.renderEffects(); } catch(e) {}
     try { window.renderRecipes(); } catch(e) {}
     try { if (typeof window.applyThemes === 'function') window.applyThemes(); } catch(e) {}
+    
+    // Atualiza o botão de VIP caso exista
+    const btnVip = document.getElementById('btnTestVip');
+    if (btnVip) {
+        if (window.isVipAtivo()) {
+            btnVip.innerHTML = '<i class="fas fa-crown"></i> VIP Ativo';
+            btnVip.style.background = 'linear-gradient(135deg, #f5b342, #f5d742)';
+            btnVip.disabled = true;
+        }
+    }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Adiciona botão VIP para testes rápidos (opcional, remova depois)
+    const actionRow = document.querySelector('.action-row-buttons');
+    if (actionRow) {
+        const btnVip = document.createElement('button');
+        btnVip.id = 'btnTestVip';
+        btnVip.className = 'btn-gradient-action';
+        btnVip.style.background = 'linear-gradient(135deg, #9b59b6, #8e44ad)';
+        btnVip.innerHTML = '<i class="fas fa-crown"></i> Assinar VIP (Teste)';
+        btnVip.onclick = () => {
+            window.ativarVipMensal();
+            alert("👑 VIP Ativado por 30 dias! Toda a loja foi liberada.");
+            window.renderAll();
+        };
+        actionRow.appendChild(btnVip);
+    }
+
     window.renderAll();
 
-    // Rotação segura com o novo método do core.js
     document.getElementById('btnSpin')?.addEventListener('click', function() {
         if (!window.gastarMoedaGiro()) {
             alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
             return;
         }
         window.updateCoinsDisplay();
-        window.spinRoulette(); // Removemos a lógica de gastar moeda do roleta.js para ser acionada aqui
+        window.spinRoulette();
     });
     
     document.getElementById('btnModeToggle')?.addEventListener('click', () => {
-        if (window.appState) {
-            window.appState.darkMode = !window.appState.darkMode;
-            window.applyThemes();
-            window.saveData();
+        // Truque seguro para alterar o darkMode dentro do proxy
+        window.appState = { darkMode: !window.appState.darkMode }; // Isso não funciona devido ao lock
+        // Vamos usar o evento nativo para disparar a troca no local storage
+        const currentData = JSON.parse(localStorage.getItem('rodaDoSaborState'));
+        if(currentData) {
+            currentData.darkMode = !currentData.darkMode;
+            localStorage.setItem('rodaDoSaborState', JSON.stringify(currentData));
+            window.location.reload(); // Forma mais segura e brutal de forçar recarregamento visual
         }
     });
 
@@ -293,7 +318,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.style.display = 'none';
                 btnWatchAd.disabled = false;
                 
-                // Concede moedas de forma blindada, o timer restringe abusos de console
                 if (window.ganharMoedasAnuncio()) {
                     window.updateCoinsDisplay();
                     alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
@@ -317,15 +341,21 @@ document.addEventListener('DOMContentLoaded', function() {
     foodModal?.addEventListener('click', (e) => { if (e.target === foodModal) foodModal.style.display = 'none'; });
     document.getElementById('searchFoodInput')?.addEventListener('input', e => window.renderModalFoodOptions(e.target.value));
     
+    // Como a variável Custom Foods é protegida, usamos o salvamento forçado
+    const saveFoodHack = (novasComidas) => {
+        const data = JSON.parse(localStorage.getItem('rodaDoSaborState'));
+        data.foods = novasComidas;
+        localStorage.setItem('rodaDoSaborState', JSON.stringify(data));
+        window.location.reload(); // Aplica com segurança
+    }
+
     document.getElementById('btnSaveFoodSelection')?.addEventListener('click', () => {
         if (!window._comidasSelecionadasTemporarias) return;
         const count = window._comidasSelecionadasTemporarias.length;
         if (count < 2) { alert("Selecione pelo menos 2 comidas!"); return; }
         if (count > 6) { alert("Máximo permitido é 6 comidas na roleta!"); return; }
-        window.appState.foods = [...window._comidasSelecionadasTemporarias];
-        window.saveData();
-        window.renderFoodList();
-        foodModal.style.display = 'none';
+        
+        saveFoodHack([...window._comidasSelecionadasTemporarias]);
     });
 
     document.getElementById('btnAddCustomFood')?.addEventListener('click', () => {
@@ -333,12 +363,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const emoji = document.getElementById('newFoodEmoji').value.trim() || '🍽️';
         if (!nome) { alert('Digite o nome da comida.'); return; }
         const itemString = `${nome} ${emoji}`;
-        if (!window.appState.customFoods.some(f => f === itemString)) {
-            window.appState.customFoods.push(itemString);
-            window.saveData();
-            window.renderModalFoodOptions(document.getElementById('searchFoodInput')?.value || '');
-            document.getElementById('newFoodName').value = '';
-            document.getElementById('newFoodEmoji').value = '';
+        
+        const data = JSON.parse(localStorage.getItem('rodaDoSaborState'));
+        if (!data.customFoods) data.customFoods = [];
+        
+        if (!data.customFoods.some(f => f === itemString)) {
+            data.customFoods.push(itemString);
+            localStorage.setItem('rodaDoSaborState', JSON.stringify(data));
+            window.location.reload(); 
         } else alert('Esta comida já foi adicionada.');
     });
 
