@@ -23,62 +23,14 @@ window.appState = {
 };
 
 // ========================== FIREBASE SETUP ==========================
-// A configuração agora vem do arquivo firebase.js (window.firebaseConfig)
-if (!firebase.apps.length) {
+if (window.firebaseConfig && !firebase.apps.length) {
     firebase.initializeApp(window.firebaseConfig);
 }
-
-const auth = firebase.auth();
-const database = firebase.database();
+const auth = window.firebaseConfig ? firebase.auth() : null;
+const database = window.firebaseConfig ? firebase.database() : null;
 let currentUserUid = null;
 
 // ========================== GERENCIAMENTO DE DADOS ==========================
-window.loadData = function(onReadyCallback) {
-    // 1. Tenta fazer o login anônimo
-    auth.signInAnonymously().catch((error) => {
-        console.error("Erro na autenticação anônima:", error.code, error.message);
-        carregarFallbackLocal();
-        if (onReadyCallback) onReadyCallback();
-    });
-
-    // 2. Fica escutando mudanças de estado
-    auth.onAuthStateChanged((user) => {
-        if (user) {
-            currentUserUid = user.uid;
-            console.log("👻 Usuário Anônimo logado! UID:", currentUserUid);
-            
-            const userRef = database.ref('users/' + currentUserUid + '/appState');
-            userRef.once('value').then((snapshot) => {
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    window.appState = { ...window.appState, ...data };
-                    garantirArraysNoEstado();
-                    console.log('☁️ Estado carregado da Nuvem!');
-                } else {
-                    garantirArraysNoEstado();
-                    window.saveData();
-                    console.log('🆕 Novo usuário criado na Nuvem!');
-                }
-                if (onReadyCallback) onReadyCallback();
-            }).catch(erro => console.error("Erro ao puxar dados do banco:", erro));
-        }
-    });
-};
-
-window.saveData = function() {
-    try {
-        if (currentUserUid) {
-            database.ref('users/' + currentUserUid + '/appState').set(window.appState);
-        }
-        localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
-        
-        const coinEl = document.getElementById('coin-balance');
-        if (coinEl) coinEl.textContent = window.appState.coins;
-    } catch (e) {
-        console.warn('Erro ao salvar estado:', e);
-    }
-};
-
 function garantirArraysNoEstado() {
     if (!Array.isArray(window.appState.unlockedEffects) || window.appState.unlockedEffects.length === 0) window.appState.unlockedEffects = ["effect-1"];
     if (!window.appState.currentEffect) window.appState.currentEffect = "effect-1";
@@ -97,13 +49,60 @@ function garantirArraysNoEstado() {
     if (!Array.isArray(window.appState.unlockedRecipes)) window.appState.unlockedRecipes = [];
 }
 
-function carregarFallbackLocal() {
-    const saved = localStorage.getItem('rodaDoSaborState');
-    if (saved) {
-        window.appState = { ...window.appState, ...JSON.parse(saved) };
+window.loadData = function() {
+    // 1. CARREGAMENTO LOCAL INSTANTÂNEO (Para não quebrar a UI)
+    try {
+        const saved = localStorage.getItem('rodaDoSaborState');
+        if (saved) {
+            window.appState = { ...window.appState, ...JSON.parse(saved) };
+        }
+        garantirArraysNoEstado();
+    } catch (e) {
+        console.warn('Erro ao carregar estado local:', e);
     }
-    garantirArraysNoEstado();
-}
+
+    // 2. SINCRONIZAÇÃO COM A NUVEM EM BACKGROUND
+    if (auth && database) {
+        auth.signInAnonymously().catch(err => console.warn("Erro Auth Anônima:", err));
+        
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUserUid = user.uid;
+                database.ref('users/' + currentUserUid + '/appState').once('value').then((snapshot) => {
+                    if (snapshot.exists()) {
+                        window.appState = { ...window.appState, ...snapshot.val() };
+                        garantirArraysNoEstado();
+                        // Se a interface já estiver carregada, manda ela redesenhar com os dados da nuvem
+                        if (typeof window.renderAll === 'function') {
+                            window.renderAll();
+                        }
+                    } else {
+                        // Novo usuário, salva o estado inicial na nuvem
+                        window.saveData(); 
+                    }
+                });
+            }
+        });
+    }
+};
+
+window.saveData = function() {
+    try {
+        // Salva na nuvem
+        if (currentUserUid && database) {
+            database.ref('users/' + currentUserUid + '/appState').set(window.appState);
+        }
+        // Salva localmente como backup
+        localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
+        
+        const coinEl = document.getElementById('coin-balance');
+        if (coinEl) coinEl.textContent = window.appState.coins;
+    } catch (e) {
+        console.warn('Erro ao salvar estado:', e);
+    }
+};
+
+window.loadData();
 
 // ========================== SINTETIZADOR DE ÁUDIO ==========================
 let audioCtx = null;
@@ -173,6 +172,7 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
 window.applyThemes = function() {
     const themes = window.listTemas || [];
     if (themes.length === 0) {
+        console.warn('Nenhum tema definido. Usando valores padrão.');
         const root = document.documentElement;
         root.style.setProperty('--bg-body', 'linear-gradient(145deg, #fdf6f0 0%, #f3e7da 100%)');
         root.style.setProperty('--bg-card', 'rgba(255,255,255,0.92)');
@@ -188,6 +188,7 @@ window.applyThemes = function() {
     const rouletteTheme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
     const mode = window.appState.darkMode ? 'dark' : 'light';
     
+    // Aplica tema da página
     const pageData = pageTheme[mode];
     if (pageData && pageData.style) {
         const root = document.documentElement;
@@ -200,6 +201,7 @@ window.applyThemes = function() {
         root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${color1}, ${color2})`);
     }
 
+    // Aplica tema da roleta
     const rouletteData = rouletteTheme[mode];
     if (rouletteData && rouletteData.colors) {
         const root = document.documentElement;
@@ -207,7 +209,6 @@ window.applyThemes = function() {
         root.style.setProperty('--wheel-center', rouletteData.colors[2] || rouletteData.colors[1] || '#f5d742');
     }
 
-    window.saveData();
     if (typeof window.drawRoulette === 'function') {
         window.drawRoulette();
     }
