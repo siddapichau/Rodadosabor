@@ -3,7 +3,6 @@ console.log('core.js carregado');
 
 // Tudo dentro desta função é INVISÍVEL para o console do navegador
 (function() {
-    // 1. O estado real blindado
     const _rawState = {
         coins: 20,
         darkMode: false,
@@ -24,7 +23,6 @@ console.log('core.js carregado');
         customFoods: []
     };
 
-    // 2. O Proxy bloqueia a edição direta
     const proxyState = new Proxy(_rawState, {
         set(target, prop, value) {
             if (prop === 'coins') {
@@ -36,14 +34,12 @@ console.log('core.js carregado');
         }
     });
 
-    // 3. Solda o appState na janela (ninguém pode sobrescrever a variável inteira)
     Object.defineProperty(window, 'appState', {
         value: proxyState,
         writable: false,
         configurable: false
     });
 
-    // 4. Funções seguras expostas
     window.gastarMoedasSeguro = function(qnt) {
         if (_rawState.coins >= qnt) {
             _rawState.coins -= qnt;
@@ -58,7 +54,6 @@ console.log('core.js carregado');
         window.saveData();
     };
 
-    // ========================== FIREBASE SETUP ==========================
     if (window.firebaseConfig && !firebase.apps.length) {
         firebase.initializeApp(window.firebaseConfig);
     }
@@ -66,7 +61,7 @@ console.log('core.js carregado');
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
 
-    function garantizarArraysNoEstado() {
+    function garantirArraysNoEstado() {
         if (!Array.isArray(_rawState.unlockedEffects) || _rawState.unlockedEffects.length === 0) _rawState.unlockedEffects = ["effect-1"];
         if (!_rawState.currentEffect) _rawState.currentEffect = "effect-1";
         if (!Array.isArray(_rawState.unlockedSpinSounds) || _rawState.unlockedSpinSounds.length === 0) _rawState.unlockedSpinSounds = ["spin-1"];
@@ -102,8 +97,13 @@ console.log('core.js carregado');
                     currentUserUid = user.uid;
                     database.ref('users/' + currentUserUid + '/appState').once('value').then((snapshot) => {
                         if (snapshot.exists()) {
-                            Object.assign(_rawState, snapshot.val()); 
+                            const data = snapshot.val();
+                            Object.assign(_rawState, data); 
                             garantirArraysNoEstado();
+                            
+                            // 👇 Mostra no F12 o saldo blindado real
+                            console.log(`☁️ DADOS DO BANCO: Você tem exatamente ${data.coins} moedas no servidor Firebase.`);
+                            
                             if (typeof window.renderAll === 'function') window.renderAll();
                         } else {
                             window.saveData(); 
@@ -114,10 +114,8 @@ console.log('core.js carregado');
         }
     };
 
-    // Sistema de Debounce para agrupar salvamentos rápidos e evitar travamentos na compra
     let saveTimeout = null;
     window.saveData = function() {
-        // Atualiza a interface visual e o backup local imediatamente para dar fluidez ao app
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = _rawState.coins;
         
@@ -125,24 +123,24 @@ console.log('core.js carregado');
             localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState));
         } catch (e) {}
 
-        // Cancela o envio anterior se houver chamadas seguidas (como deduzir moedas + usar item simultâneo)
         if (saveTimeout) clearTimeout(saveTimeout);
 
-        // Agenda o envio definitivo para a nuvem após 100ms
         saveTimeout = setTimeout(() => {
             if (currentUserUid && database) {
                 database.ref('users/' + currentUserUid + '/appState').set(_rawState)
                     .then(() => {
-                        console.log('☁️ Sincronizado com a nuvem com sucesso!');
+                        console.log('☁️ Sincronizado com a nuvem!');
                     })
                     .catch((error) => {
-                        // Verifica se foi especificamente um bloqueio de segurança das regras do Firebase
                         if (error.code === "PERMISSION_DENIED" || error.message.includes("Permission denied")) {
-                            console.error("🛑 O Firebase bloqueou esta ação por violação de regras:", error.message);
-                            alert("Erro de segurança! Modificação não autorizada detectada.");
+                            console.error("🛑 O Firebase bloqueou esta ação por fraude:", error.message);
+                            
+                            // 👇 SE O FIREBASE NEGAR, DESTRÓI OS DADOS FALSOS E RECARREGA A PÁGINA
+                            alert("⚠️ ALERTA DE SEGURANÇA: Saldo adulterado detectado! Limpando dados falsos e restaurando do servidor...");
+                            localStorage.removeItem('rodaDoSaborState'); 
                             window.location.reload(); 
                         } else {
-                            console.warn("⚠️ Falha temporária de conexão ao salvar na nuvem:", error.message);
+                            console.warn("⚠️ Falha temporária de conexão:", error.message);
                         }
                     });
             }
@@ -214,7 +212,6 @@ console.log('core.js carregado');
         o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
     }
 
-    // ========================== APLICAÇÃO DE TEMAS ==========================
     window.applyThemes = function() {
         const themes = window.listTemas || [];
         if (themes.length === 0) return;
