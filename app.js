@@ -1,13 +1,11 @@
 'use strict';
 console.log('app.js carregado');
 
-// ========== FUNÇÃO GLOBAL DE ATUALIZAÇÃO DE MOEDAS ==========
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
     if (coinBalance) coinBalance.textContent = window.appState.coins;
 };
 
-// ========== FUNÇÃO PARA LANÇAR EFEITO VISUAL ATUAL ==========
 window.launchCurrentEffect = function() {
     const effectId = window.appState.currentEffect || 'effect-1';
     switch (effectId) {
@@ -24,7 +22,6 @@ window.launchCurrentEffect = function() {
     }
 };
 
-// ========== FUNÇÕES DE RENDERIZAÇÃO (GLOBAIS) ==========
 window.renderFoodList = function() {
     const container = document.getElementById('foodListContainer');
     if (!container) return;
@@ -41,7 +38,7 @@ window.renderFoodList = function() {
         container.appendChild(tag);
     });
     if (typeof window.drawRoulette === 'function') {
-        try { window.drawRoulette(); } catch(e) { console.warn('Erro ao desenhar roleta após foodList:', e); }
+        try { window.drawRoulette(); } catch(e) {}
     }
 };
 
@@ -53,7 +50,6 @@ window.removeFood = function(idx) {
     }
 };
 
-// ---------- RENDERIZAÇÃO DO MODAL DE COMIDAS ----------
 window.renderModalFoodOptions = function(filterText = '') {
     const modalGrid = document.getElementById('modalFoodOptionsGrid');
     if (!modalGrid) return;
@@ -101,7 +97,6 @@ window.renderModalFoodOptions = function(filterText = '') {
     });
 };
 
-// ---------- RENDERIZAÇÃO DE SONS ----------
 window.renderSounds = function() {
     const spinGrid = document.getElementById('spinSoundsGrid');
     const endGrid = document.getElementById('endSoundsGrid');
@@ -110,24 +105,16 @@ window.renderSounds = function() {
 
     const renderSoundCards = (grid, soundList, unlockedArray, currentKey, useFn, buyFn) => {
         grid.innerHTML = '';
-        if (!soundList || soundList.length === 0) {
-            grid.innerHTML = '<p style="grid-column:1/-1; color:var(--text-muted);">Nenhum som disponível.</p>';
-            return;
-        }
+        if (!soundList || soundList.length === 0) return;
         const sorted = [...soundList].sort((a, b) => (a.price || 0) - (b.price || 0));
         sorted.forEach(sound => {
             const isUnlocked = (unlockedArray || []).includes(sound.id);
             const isActive = window.appState?.[currentKey] === sound.id;
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
-            let btnHTML = '';
-            if (isActive) {
-                btnHTML = `<button class="btn-action btn-active">Ativo</button>`;
-            } else if (isUnlocked) {
-                btnHTML = `<button class="btn-action btn-use" onclick="window.${useFn}('${sound.id}')">Usar</button>`;
-            } else {
-                btnHTML = `<button class="btn-action btn-buy" onclick="window.${buyFn}('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
-            }
+            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
+                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.${useFn}('${sound.id}')">Usar</button>` 
+                        : `<button class="btn-action btn-buy" onclick="window.${buyFn}('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
             const priceTag = sound.price === 0 ? 'Grátis' : `${sound.price} moedas`;
             card.innerHTML = `
                 <div class="item-info">
@@ -146,7 +133,6 @@ window.renderSounds = function() {
     renderSoundCards(winGrid, window.SONS_VITORIA, window.appState?.unlockedWinSounds, 'currentWinSound', 'useWinSound', 'buyWinSound');
 };
 
-// ---------- RENDERIZAÇÃO DE EFEITOS ----------
 window.renderEffects = function() {
     const grid = document.getElementById('effectsGrid');
     if (!grid) return;
@@ -176,7 +162,6 @@ window.renderEffects = function() {
     });
 };
 
-// ---------- RENDERIZAÇÃO DE RECEITAS ----------
 window.renderRecipes = function() {
     const grid = document.getElementById('recipesGrid');
     if (!grid) return;
@@ -197,8 +182,7 @@ window.renderRecipes = function() {
         } else {
             btn.className = 'btn-action btn-buy'; btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco}`;
             btn.onclick = () => {
-                if (window.appState && window.appState.coins >= rec.preco) {
-                    window.appState.coins -= rec.preco;
+                if (window.gastarMoedasSeguro(rec.preco)) {
                     if (!window.appState.unlockedRecipes.includes(rec.id)) window.appState.unlockedRecipes.push(rec.id);
                     window.saveData();
                     window.renderRecipes();
@@ -212,7 +196,6 @@ window.renderRecipes = function() {
     });
 };
 
-// ---------- RENDERIZAÇÃO DE TEMAS ----------
 window.renderThemes = function() {
     const pageGrid = document.getElementById('pageThemesGrid');
     const rouletteGrid = document.getElementById('rouletteThemesGrid');
@@ -249,21 +232,20 @@ window.renderThemes = function() {
     renderThemeGrid(rouletteGrid, 'roulette');
 };
 
-// ========== FUNÇÕES DE COMPRA/USO ==========
-window.buySpinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedSpinSounds.push(id); window.useSpinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+// ========== COMPRAS SEGURAS ==========
+window.buySpinSound = (id, price) => { if (window.gastarMoedasSeguro(price)) { window.appState.unlockedSpinSounds.push(id); window.useSpinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
 window.useSpinSound = (id) => { window.appState.currentSpinSound = id; window.saveData(); window.renderSounds(); };
-window.buyEndSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedEndSounds.push(id); window.useEndSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+window.buyEndSound = (id, price) => { if (window.gastarMoedasSeguro(price)) { window.appState.unlockedEndSounds.push(id); window.useEndSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
 window.useEndSound = (id) => { window.appState.currentEndSound = id; window.saveData(); window.renderSounds(); };
-window.buyWinSound = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; window.appState.unlockedWinSounds.push(id); window.useWinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+window.buyWinSound = (id, price) => { if (window.gastarMoedasSeguro(price)) { window.appState.unlockedWinSounds.push(id); window.useWinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
 window.useWinSound = (id) => { window.appState.currentWinSound = id; window.saveData(); window.renderSounds(); };
-window.buyEffect = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; if (!window.appState.unlockedEffects.includes(id)) window.appState.unlockedEffects.push(id); window.useEffect(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+window.buyEffect = (id, price) => { if (window.gastarMoedasSeguro(price)) { if (!window.appState.unlockedEffects.includes(id)) window.appState.unlockedEffects.push(id); window.useEffect(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
 window.useEffect = (id) => { window.appState.currentEffect = id; window.saveData(); window.renderEffects(); };
-window.buyPageTheme = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; if (!window.appState.unlockedPageThemes.includes(id)) window.appState.unlockedPageThemes.push(id); window.usePageTheme(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+window.buyPageTheme = (id, price) => { if (window.gastarMoedasSeguro(price)) { if (!window.appState.unlockedPageThemes.includes(id)) window.appState.unlockedPageThemes.push(id); window.usePageTheme(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
 window.usePageTheme = (id) => { window.appState.currentPageTheme = id; window.saveData(); window.applyThemes(); window.renderThemes(); };
-window.buyRouletteTheme = (id, price) => { if (window.appState.coins >= price) { window.appState.coins -= price; if (!window.appState.unlockedRouletteThemes.includes(id)) window.appState.unlockedRouletteThemes.push(id); window.useRouletteTheme(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
+window.buyRouletteTheme = (id, price) => { if (window.gastarMoedasSeguro(price)) { if (!window.appState.unlockedRouletteThemes.includes(id)) window.appState.unlockedRouletteThemes.push(id); window.useRouletteTheme(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
 window.useRouletteTheme = (id) => { window.appState.currentRouletteTheme = id; window.saveData(); window.applyThemes(); window.renderThemes(); };
 
-// ========== FUNÇÃO GLOBAL PARA RENDERIZAR TUDO (Usada no loadData) ==========
 window.renderAll = function() {
     window.updateCoinsDisplay();
     try { window.renderFoodList(); } catch(e) {}
@@ -274,16 +256,11 @@ window.renderAll = function() {
     try { if (typeof window.applyThemes === 'function') window.applyThemes(); } catch(e) {}
 };
 
-// ========== INICIALIZAÇÃO E EVENTOS ==========
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOMContentLoaded - Inicializando app...');
-
-    // Chama renderAll na inicialização baseada nos dados locais do core.js
     window.renderAll();
 
-    // Eventos
     document.getElementById('btnSpin')?.addEventListener('click', window.spinRoulette);
-
+    
     document.getElementById('btnModeToggle')?.addEventListener('click', () => {
         if (window.appState) {
             window.appState.darkMode = !window.appState.darkMode;
@@ -292,8 +269,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    document.getElementById('btnWatchAd')?.addEventListener('click', function() {
-        alert('Função de anúncio será implementada em breve.');
+    // 👇 LÓGICA DO ANÚNCIO COM CRONÔMETRO
+    const btnWatchAd = document.getElementById('btnWatchAd');
+    btnWatchAd?.addEventListener('click', function() {
+        const overlay = document.getElementById('adOverlay');
+        const countdownSpan = document.getElementById('adCountdown');
+        
+        if (!overlay || !countdownSpan) return;
+        
+        btnWatchAd.disabled = true; // Impede duplo clique
+        overlay.style.display = 'flex';
+        
+        let timeLeft = 30; // 30 segundos
+        countdownSpan.textContent = timeLeft;
+        
+        // Bloqueia o clique fora do modal para não roubar
+        const preventClose = (e) => e.stopPropagation();
+        overlay.addEventListener('click', preventClose);
+        
+        const timer = setInterval(() => {
+            timeLeft--;
+            countdownSpan.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                overlay.removeEventListener('click', preventClose);
+                overlay.style.display = 'none';
+                btnWatchAd.disabled = false;
+                
+                // Concede a recompensa
+                window.ganharMoedasAnuncio();
+                window.updateCoinsDisplay();
+                alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
+            }
+        }, 1000);
     });
 
     const foodModal = document.getElementById('foodSelectionModal');
@@ -339,18 +348,4 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultOverlay = document.getElementById('resultOverlay');
     document.getElementById('btnCloseModal')?.addEventListener('click', () => resultOverlay.style.display = 'none');
     resultOverlay?.addEventListener('click', (e) => { if (e.target === resultOverlay) resultOverlay.style.display = 'none'; });
-
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault(); deferredPrompt = e;
-        document.getElementById('installAppBtn').style.display = 'flex';
-    });
-    document.getElementById('installAppBtn')?.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            await deferredPrompt.userChoice;
-            deferredPrompt = null;
-            document.getElementById('installAppBtn').style.display = 'none';
-        }
-    });
 });
