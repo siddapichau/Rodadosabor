@@ -153,14 +153,6 @@ window.drawRoulette = function() {
 // ========================== GIRO ==========================
 window.spinRoulette = function() {
     if (isSpinning || window.appState.foods.length === 0) return;
-    
-    // Tenta gastar 1 moeda usando o sistema de segurança
-    if (!window.gastarMoedasSeguro(1)) {
-        alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
-        return;
-    }
-    
-    window.updateCoinsDisplay();
 
     const btn = document.getElementById('btnSpin');
     if (btn) btn.disabled = true;
