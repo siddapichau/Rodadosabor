@@ -103,7 +103,7 @@ window.renderSounds = function() {
     const winGrid = document.getElementById('winSoundsGrid');
     if (!spinGrid || !endGrid || !winGrid) return;
 
-    const renderSoundCards = (grid, soundList, unlockedArray, currentKey, useFn, buyFn) => {
+    const renderSoundCards = (grid, soundList, unlockedArray, currentKey, category) => {
         grid.innerHTML = '';
         if (!soundList || soundList.length === 0) return;
         const sorted = [...soundList].sort((a, b) => (a.price || 0) - (b.price || 0));
@@ -112,14 +112,15 @@ window.renderSounds = function() {
             const isActive = window.appState?.[currentKey] === sound.id;
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
+            
             let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
-                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.${useFn}('${sound.id}')">Usar</button>` 
-                        : `<button class="btn-action btn-buy" onclick="window.${buyFn}('${sound.id}', ${sound.price})"><i class="fas fa-coins"></i> ${sound.price}</button>`;
-            const priceTag = sound.price === 0 ? 'Grátis' : `${sound.price} moedas`;
+                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.comprarEUsarItem('${category}', '${sound.id}')">Usar</button>` 
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEUsarItem('${category}', '${sound.id}')"><i class="fas fa-coins"></i> ${sound.price}</button>`;
+            
             card.innerHTML = `
                 <div class="item-info">
                     <h4>${sound.name}</h4>
-                    <p style="font-size:0.65rem; color:var(--text-muted);">${priceTag}</p>
+                    <p style="font-size:0.65rem; color:var(--text-muted);">${sound.price === 0 ? 'Grátis' : `${sound.price} moedas`}</p>
                     <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="window.playSynthesizedSound('${sound.type}')"></i>
                 </div>
                 ${btnHTML}
@@ -128,9 +129,9 @@ window.renderSounds = function() {
         });
     };
 
-    renderSoundCards(spinGrid, window.SONS_GIRO, window.appState?.unlockedSpinSounds, 'currentSpinSound', 'useSpinSound', 'buySpinSound');
-    renderSoundCards(endGrid, window.SONS_FIM, window.appState?.unlockedEndSounds, 'currentEndSound', 'useEndSound', 'buyEndSound');
-    renderSoundCards(winGrid, window.SONS_VITORIA, window.appState?.unlockedWinSounds, 'currentWinSound', 'useWinSound', 'buyWinSound');
+    renderSoundCards(spinGrid, window.SONS_GIRO, window.appState?.unlockedSpinSounds, 'currentSpinSound', 'spinSound');
+    renderSoundCards(endGrid, window.SONS_FIM, window.appState?.unlockedEndSounds, 'currentEndSound', 'endSound');
+    renderSoundCards(winGrid, window.SONS_VITORIA, window.appState?.unlockedWinSounds, 'currentWinSound', 'winSound');
 };
 
 window.renderEffects = function() {
@@ -146,14 +147,15 @@ window.renderEffects = function() {
         const isActive = window.appState?.currentEffect === effect.id;
         const card = document.createElement('div');
         card.className = `item-card ${isActive ? 'active' : ''}`;
+        
         let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
-                    : isUnlocked ? `<button class="btn-action btn-use" onclick="window.useEffect('${effect.id}')">Usar</button>` 
-                    : `<button class="btn-action btn-buy" onclick="window.buyEffect('${effect.id}', ${effect.price})"><i class="fas fa-coins"></i> ${effect.price}</button>`;
-        const priceTag = effect.price === 0 ? 'Grátis' : `${effect.price} moedas`;
+                    : isUnlocked ? `<button class="btn-action btn-use" onclick="window.comprarEUsarItem('effect', '${effect.id}')">Usar</button>` 
+                    : `<button class="btn-action btn-buy" onclick="window.comprarEUsarItem('effect', '${effect.id}')"><i class="fas fa-coins"></i> ${effect.price}</button>`;
+        
         card.innerHTML = `
             <div class="item-info">
                 <h4>${effect.name}</h4>
-                <p style="font-size:0.65rem; color:var(--text-muted);">${priceTag}</p>
+                <p style="font-size:0.65rem; color:var(--text-muted);">${effect.price === 0 ? 'Grátis' : `${effect.price} moedas`}</p>
                 <p style="font-size:0.6rem; color:var(--text-muted);">${effect.description || ''}</p>
             </div>
             ${btnHTML}
@@ -181,15 +183,7 @@ window.renderRecipes = function() {
             btn.onclick = () => window.location.href = rec.link;
         } else {
             btn.className = 'btn-action btn-buy'; btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco}`;
-            btn.onclick = () => {
-                if (window.gastarMoedasSeguro(rec.preco)) {
-                    if (!window.appState.unlockedRecipes.includes(rec.id)) window.appState.unlockedRecipes.push(rec.id);
-                    window.saveData();
-                    window.renderRecipes();
-                    window.updateCoinsDisplay();
-                    alert(`🎉 Receita "${rec.nome}" desbloqueada!`);
-                } else alert("Moedas insuficientes!");
-            };
+            btn.onclick = () => window.comprarEUsarItem('recipe', rec.id);
         }
         card.appendChild(btn);
         grid.appendChild(card);
@@ -203,7 +197,7 @@ window.renderThemes = function() {
     if (themes.length === 0) return;
     const sorted = [...themes].sort((a, b) => (a.price || 0) - (b.price || 0));
 
-    const renderThemeGrid = (grid, type) => {
+    const renderThemeGrid = (grid, type, category) => {
         if (!grid) return;
         grid.innerHTML = '';
         sorted.forEach(theme => {
@@ -213,14 +207,15 @@ window.renderThemes = function() {
             const isActive = current === theme.id;
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
+            
             let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>`
-                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.${type === 'page' ? 'usePageTheme' : 'useRouletteTheme'}('${theme.id}')">Usar</button>`
-                        : `<button class="btn-action btn-buy" onclick="window.${type === 'page' ? 'buyPageTheme' : 'buyRouletteTheme'}('${theme.id}', ${theme.price || 0})"><i class="fas fa-coins"></i> ${theme.price || 0}</button>`;
-            const priceTag = theme.price === 0 ? 'Grátis' : `${theme.price} moedas`;
+                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.comprarEUsarItem('${category}', '${theme.id}')">Usar</button>`
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEUsarItem('${category}', '${theme.id}')"><i class="fas fa-coins"></i> ${theme.price || 0}</button>`;
+            
             card.innerHTML = `
                 <div class="item-info">
                     <h4>${theme.nome}</h4>
-                    <p style="font-size:0.65rem; color:var(--text-muted);">${priceTag}</p>
+                    <p style="font-size:0.65rem; color:var(--text-muted);">${theme.price === 0 ? 'Grátis' : `${theme.price} moedas`}</p>
                 </div>
                 ${btnHTML}
             `;
@@ -228,23 +223,18 @@ window.renderThemes = function() {
         });
     };
 
-    renderThemeGrid(pageGrid, 'page');
-    renderThemeGrid(rouletteGrid, 'roulette');
+    renderThemeGrid(pageGrid, 'page', 'pageTheme');
+    renderThemeGrid(rouletteGrid, 'roulette', 'rouletteTheme');
 };
 
-// ========== COMPRAS SEGURAS ==========
-window.buySpinSound = (id, price) => { if (window.gastarMoedasSeguro(price)) { window.appState.unlockedSpinSounds.push(id); window.useSpinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
-window.useSpinSound = (id) => { window.appState.currentSpinSound = id; window.saveData(); window.renderSounds(); };
-window.buyEndSound = (id, price) => { if (window.gastarMoedasSeguro(price)) { window.appState.unlockedEndSounds.push(id); window.useEndSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
-window.useEndSound = (id) => { window.appState.currentEndSound = id; window.saveData(); window.renderSounds(); };
-window.buyWinSound = (id, price) => { if (window.gastarMoedasSeguro(price)) { window.appState.unlockedWinSounds.push(id); window.useWinSound(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
-window.useWinSound = (id) => { window.appState.currentWinSound = id; window.saveData(); window.renderSounds(); };
-window.buyEffect = (id, price) => { if (window.gastarMoedasSeguro(price)) { if (!window.appState.unlockedEffects.includes(id)) window.appState.unlockedEffects.push(id); window.useEffect(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
-window.useEffect = (id) => { window.appState.currentEffect = id; window.saveData(); window.renderEffects(); };
-window.buyPageTheme = (id, price) => { if (window.gastarMoedasSeguro(price)) { if (!window.appState.unlockedPageThemes.includes(id)) window.appState.unlockedPageThemes.push(id); window.usePageTheme(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
-window.usePageTheme = (id) => { window.appState.currentPageTheme = id; window.saveData(); window.applyThemes(); window.renderThemes(); };
-window.buyRouletteTheme = (id, price) => { if (window.gastarMoedasSeguro(price)) { if (!window.appState.unlockedRouletteThemes.includes(id)) window.appState.unlockedRouletteThemes.push(id); window.useRouletteTheme(id); window.updateCoinsDisplay(); } else alert("Moedas insuficientes!"); };
-window.useRouletteTheme = (id) => { window.appState.currentRouletteTheme = id; window.saveData(); window.applyThemes(); window.renderThemes(); };
+// ========== ROTEA COMPRAS PARA O COFRE SEGURO ==========
+window.comprarEUsarItem = function(categoria, id) {
+    if (window.comprarItemSeguro(categoria, id)) {
+        window.renderAll();
+    } else {
+        alert("Moedas insuficientes ou item inválido!");
+    }
+};
 
 window.renderAll = function() {
     window.updateCoinsDisplay();
@@ -259,7 +249,15 @@ window.renderAll = function() {
 document.addEventListener('DOMContentLoaded', function() {
     window.renderAll();
 
-    document.getElementById('btnSpin')?.addEventListener('click', window.spinRoulette);
+    // Rotação segura com o novo método do core.js
+    document.getElementById('btnSpin')?.addEventListener('click', function() {
+        if (!window.gastarMoedaGiro()) {
+            alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
+            return;
+        }
+        window.updateCoinsDisplay();
+        window.spinRoulette(); // Removemos a lógica de gastar moeda do roleta.js para ser acionada aqui
+    });
     
     document.getElementById('btnModeToggle')?.addEventListener('click', () => {
         if (window.appState) {
@@ -269,7 +267,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 👇 LÓGICA DO ANÚNCIO COM CRONÔMETRO
     const btnWatchAd = document.getElementById('btnWatchAd');
     btnWatchAd?.addEventListener('click', function() {
         const overlay = document.getElementById('adOverlay');
@@ -277,13 +274,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!overlay || !countdownSpan) return;
         
-        btnWatchAd.disabled = true; // Impede duplo clique
+        btnWatchAd.disabled = true;
         overlay.style.display = 'flex';
         
-        let timeLeft = 30; // 30 segundos
+        let timeLeft = 30;
         countdownSpan.textContent = timeLeft;
         
-        // Bloqueia o clique fora do modal para não roubar
         const preventClose = (e) => e.stopPropagation();
         overlay.addEventListener('click', preventClose);
         
@@ -297,10 +293,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.style.display = 'none';
                 btnWatchAd.disabled = false;
                 
-                // Concede a recompensa
-                window.ganharMoedasAnuncio();
-                window.updateCoinsDisplay();
-                alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
+                // Concede moedas de forma blindada, o timer restringe abusos de console
+                if (window.ganharMoedasAnuncio()) {
+                    window.updateCoinsDisplay();
+                    alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
+                }
             }
         }, 1000);
     });
