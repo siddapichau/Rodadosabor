@@ -48,9 +48,9 @@ console.log('core.js carregado');
 
     // ========================== COMPRAS SEGURAS ==========================
     window.comprarItemSeguro = function(categoria, id) {
+        // Falha silenciosa se a nuvem ainda não validou (o app.js exibe moedas insuficientes)
         if (!window.isServerSynced) {
-            alert("⏳ Autenticando servidor... Tente novamente em alguns segundos.");
-            return false;
+            return false; 
         }
 
         if (window.isVipAtivo()) {
@@ -95,8 +95,16 @@ console.log('core.js carregado');
     };
 
     window.gastarMoedaGiro = function() {
+        // Se for VIP, não precisa validar servidor nem moedas, apenas gira!
+        if (window.isVipAtivo()) return true; 
+
         if (!window.isServerSynced) return false;
-        if (_rawState.coins >= 1) { _rawState.coins -= 1; window.saveData(); return true; }
+        
+        if (_rawState.coins >= 1) { 
+            _rawState.coins -= 1; 
+            window.saveData(); 
+            return true; 
+        }
         return false;
     };
 
@@ -137,11 +145,14 @@ console.log('core.js carregado');
     }
 
     window.loadData = function() {
-        // Carrega localmente apenas para pintar a tela rápido, mas bloqueia compras
+        // Carrega localmente apenas para pintar a tela rápido
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) Object.assign(_rawState, JSON.parse(saved));
             garantirArraysNoEstado();
+            
+            // Força a UI a mostrar os dados de carregamento
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
         } catch (e) {}
 
         if (auth && database) {
@@ -150,21 +161,22 @@ console.log('core.js carregado');
                 if (user) {
                     currentUserUid = user.uid;
                     database.ref('users/' + currentUserUid + '/appState').once('value').then((snapshot) => {
-                        window.isServerSynced = true; // Sincronização concluída! Libera a loja.
+                        window.isServerSynced = true; // Sincronização concluída!
                         
                         if (snapshot.exists()) {
-                            // A LEI DO SERVIDOR: Esmaga impiedosamente qualquer dado falso local
+                            // Esmaga os dados falsos da memória com os da nuvem
                             const serverData = snapshot.val();
                             Object.assign(_rawState, serverData); 
                             garantirArraysNoEstado();
-                            console.log("☁️ Autenticado com sucesso no Firebase!");
+                            
+                            // Chama renderAll que atualiza IMEDIATAMENTE as moedas no topo para o valor real
                             if (typeof window.renderAll === 'function') window.renderAll();
                         } else {
-                            // Novo usuário no servidor: força a resetar para estado limpo
                             _rawState.coins = 20; _rawState.vipUntil = 0;
                             _rawState.unlockedPageThemes = ["theme-1"]; _rawState.unlockedEffects = ["effect-1"];
                             garantirArraysNoEstado();
                             window.saveData(); 
+                            if (typeof window.renderAll === 'function') window.renderAll();
                         }
                     });
                 }
