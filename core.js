@@ -1,8 +1,9 @@
 'use strict';
 console.log('core.js carregado');
 
-// ========================== ESTADO GLOBAL ==========================
-window.appState = {
+// ========================== ESTADO GLOBAL (Protegido) ==========================
+// 1. O estado real fica escondido nesta variável privada
+const _rawState = {
     coins: 20,
     darkMode: false,
     foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
@@ -22,6 +23,33 @@ window.appState = {
     customFoods: []
 };
 
+// 2. O Proxy cria um campo de força. Ele deixa ler tudo, mas bloqueia a edição direta de moedas
+window.appState = new Proxy(_rawState, {
+    set(target, prop, value) {
+        if (prop === 'coins') {
+            console.warn('🛑 Tentativa de fraude bloqueada pelo sistema de segurança.');
+            return false; // Rejeita a alteração direta via console
+        }
+        target[prop] = value;
+        return true;
+    }
+});
+
+// 3. Funções seguras (só o nosso código usa isso para driblar o Proxy)
+window.gastarMoedasSeguro = function(qnt) {
+    if (_rawState.coins >= qnt) {
+        _rawState.coins -= qnt;
+        window.saveData();
+        return true;
+    }
+    return false;
+};
+
+window.ganharMoedasAnuncio = function() {
+    _rawState.coins += 3;
+    window.saveData();
+};
+
 // ========================== FIREBASE SETUP ==========================
 if (window.firebaseConfig && !firebase.apps.length) {
     firebase.initializeApp(window.firebaseConfig);
@@ -32,52 +60,45 @@ let currentUserUid = null;
 
 // ========================== GERENCIAMENTO DE DADOS ==========================
 function garantirArraysNoEstado() {
-    if (!Array.isArray(window.appState.unlockedEffects) || window.appState.unlockedEffects.length === 0) window.appState.unlockedEffects = ["effect-1"];
-    if (!window.appState.currentEffect) window.appState.currentEffect = "effect-1";
-    if (!Array.isArray(window.appState.unlockedSpinSounds) || window.appState.unlockedSpinSounds.length === 0) window.appState.unlockedSpinSounds = ["spin-1"];
-    if (!window.appState.currentSpinSound) window.appState.currentSpinSound = "spin-1";
-    if (!Array.isArray(window.appState.unlockedEndSounds) || window.appState.unlockedEndSounds.length === 0) window.appState.unlockedEndSounds = ["end-1"];
-    if (!window.appState.currentEndSound) window.appState.currentEndSound = "end-1";
-    if (!Array.isArray(window.appState.unlockedWinSounds) || window.appState.unlockedWinSounds.length === 0) window.appState.unlockedWinSounds = ["win-1"];
-    if (!window.appState.currentWinSound) window.appState.currentWinSound = "win-1";
-    if (!Array.isArray(window.appState.unlockedPageThemes) || window.appState.unlockedPageThemes.length === 0) window.appState.unlockedPageThemes = ["theme-1"];
-    if (!window.appState.currentPageTheme) window.appState.currentPageTheme = "theme-1";
-    if (!Array.isArray(window.appState.unlockedRouletteThemes) || window.appState.unlockedRouletteThemes.length === 0) window.appState.unlockedRouletteThemes = ["theme-1"];
-    if (!window.appState.currentRouletteTheme) window.appState.currentRouletteTheme = "theme-1";
-    if (!Array.isArray(window.appState.foods) || window.appState.foods.length === 0) window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
-    if (!Array.isArray(window.appState.customFoods)) window.appState.customFoods = [];
-    if (!Array.isArray(window.appState.unlockedRecipes)) window.appState.unlockedRecipes = [];
+    if (!Array.isArray(_rawState.unlockedEffects) || _rawState.unlockedEffects.length === 0) _rawState.unlockedEffects = ["effect-1"];
+    if (!_rawState.currentEffect) _rawState.currentEffect = "effect-1";
+    if (!Array.isArray(_rawState.unlockedSpinSounds) || _rawState.unlockedSpinSounds.length === 0) _rawState.unlockedSpinSounds = ["spin-1"];
+    if (!_rawState.currentSpinSound) _rawState.currentSpinSound = "spin-1";
+    if (!Array.isArray(_rawState.unlockedEndSounds) || _rawState.unlockedEndSounds.length === 0) _rawState.unlockedEndSounds = ["end-1"];
+    if (!_rawState.currentEndSound) _rawState.currentEndSound = "end-1";
+    if (!Array.isArray(_rawState.unlockedWinSounds) || _rawState.unlockedWinSounds.length === 0) _rawState.unlockedWinSounds = ["win-1"];
+    if (!_rawState.currentWinSound) _rawState.currentWinSound = "win-1";
+    if (!Array.isArray(_rawState.unlockedPageThemes) || _rawState.unlockedPageThemes.length === 0) _rawState.unlockedPageThemes = ["theme-1"];
+    if (!_rawState.currentPageTheme) _rawState.currentPageTheme = "theme-1";
+    if (!Array.isArray(_rawState.unlockedRouletteThemes) || _rawState.unlockedRouletteThemes.length === 0) _rawState.unlockedRouletteThemes = ["theme-1"];
+    if (!_rawState.currentRouletteTheme) _rawState.currentRouletteTheme = "theme-1";
+    if (!Array.isArray(_rawState.foods) || _rawState.foods.length === 0) _rawState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
+    if (!Array.isArray(_rawState.customFoods)) _rawState.customFoods = [];
+    if (!Array.isArray(_rawState.unlockedRecipes)) _rawState.unlockedRecipes = [];
 }
 
 window.loadData = function() {
-    // 1. CARREGAMENTO LOCAL INSTANTÂNEO (Para não quebrar a UI)
     try {
         const saved = localStorage.getItem('rodaDoSaborState');
         if (saved) {
-            window.appState = { ...window.appState, ...JSON.parse(saved) };
+            Object.assign(_rawState, JSON.parse(saved)); // Atualiza sem acionar o bloqueio
         }
         garantirArraysNoEstado();
     } catch (e) {
         console.warn('Erro ao carregar estado local:', e);
     }
 
-    // 2. SINCRONIZAÇÃO COM A NUVEM EM BACKGROUND
     if (auth && database) {
         auth.signInAnonymously().catch(err => console.warn("Erro Auth Anônima:", err));
-        
         auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUserUid = user.uid;
                 database.ref('users/' + currentUserUid + '/appState').once('value').then((snapshot) => {
                     if (snapshot.exists()) {
-                        window.appState = { ...window.appState, ...snapshot.val() };
+                        Object.assign(_rawState, snapshot.val()); // Injeta os dados da nuvem
                         garantirArraysNoEstado();
-                        // Se a interface já estiver carregada, manda ela redesenhar com os dados da nuvem
-                        if (typeof window.renderAll === 'function') {
-                            window.renderAll();
-                        }
+                        if (typeof window.renderAll === 'function') window.renderAll();
                     } else {
-                        // Novo usuário, salva o estado inicial na nuvem
                         window.saveData(); 
                     }
                 });
@@ -88,15 +109,14 @@ window.loadData = function() {
 
 window.saveData = function() {
     try {
-        // Salva na nuvem
         if (currentUserUid && database) {
-            database.ref('users/' + currentUserUid + '/appState').set(window.appState);
+            // Mandamos o _rawState limpo para a nuvem
+            database.ref('users/' + currentUserUid + '/appState').set(_rawState);
         }
-        // Salva localmente como backup
-        localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
+        localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState));
         
         const coinEl = document.getElementById('coin-balance');
-        if (coinEl) coinEl.textContent = window.appState.coins;
+        if (coinEl) coinEl.textContent = _rawState.coins;
     } catch (e) {
         console.warn('Erro ao salvar estado:', e);
     }
@@ -172,23 +192,12 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
 window.applyThemes = function() {
     const themes = window.listTemas || [];
     if (themes.length === 0) {
-        console.warn('Nenhum tema definido. Usando valores padrão.');
-        const root = document.documentElement;
-        root.style.setProperty('--bg-body', 'linear-gradient(145deg, #fdf6f0 0%, #f3e7da 100%)');
-        root.style.setProperty('--bg-card', 'rgba(255,255,255,0.92)');
-        root.style.setProperty('--text-primary', '#1e2a3a');
-        root.style.setProperty('--accent', '#7b9e5a');
-        root.style.setProperty('--accent-gradient', 'linear-gradient(135deg, #f5d742, #7b9e5a)');
-        root.style.setProperty('--wheel-border', '#f5b342');
-        root.style.setProperty('--wheel-center', '#f5d742');
         return;
     }
-
     const pageTheme = themes.find(t => t.id === window.appState.currentPageTheme) || themes[0];
     const rouletteTheme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
     const mode = window.appState.darkMode ? 'dark' : 'light';
     
-    // Aplica tema da página
     const pageData = pageTheme[mode];
     if (pageData && pageData.style) {
         const root = document.documentElement;
@@ -201,7 +210,6 @@ window.applyThemes = function() {
         root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${color1}, ${color2})`);
     }
 
-    // Aplica tema da roleta
     const rouletteData = rouletteTheme[mode];
     if (rouletteData && rouletteData.colors) {
         const root = document.documentElement;
