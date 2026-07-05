@@ -14,7 +14,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- ===== HEADER ===== -->
         <header class="header">
             <div class="logo-area">
                 <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -38,7 +37,6 @@
             </div>
         </header>
 
-        <!-- ===== ROLETA ===== -->
         <div class="card" style="padding: 1.5rem 1rem;">
             <div class="roulette-wrapper">
                 <div class="roulette-arrow"></div>
@@ -52,7 +50,6 @@
             </div>
         </div>
 
-        <!-- ===== BOTÕES DE AÇÃO ===== -->
         <div class="action-row-buttons">
             <button id="btnOpenFoodModal" class="btn-gradient-action dynamic-blue">
                 <i class="fas fa-utensils"></i> Selecionar Comidas
@@ -62,13 +59,11 @@
             </button>
         </div>
 
-        <!-- ===== ITENS ATIVOS NA ROLETA ===== -->
         <section class="card">
             <h2><i class="fas fa-clipboard-list"></i> Itens Ativos na Roleta</h2>
             <div class="food-list" id="foodListContainer"></div>
         </section>
 
-        <!-- ===== TEMAS ===== -->
         <section class="card">
             <h2><i class="fas fa-palette"></i> Temas da Página</h2>
             <div class="store-grid" id="pageThemesGrid" style="margin-bottom: 2rem;"></div>
@@ -77,7 +72,6 @@
             <div class="store-grid" id="rouletteThemesGrid"></div>
         </section>
 
-        <!-- ===== SONS ===== -->
         <section class="card">
             <h2><i class="fas fa-volume-up"></i> Sons Personalizados</h2>
             
@@ -91,14 +85,12 @@
             <div class="store-grid" id="winSoundsGrid"></div>
         </section>
 
-        <!-- ===== EFEITOS VISUAIS ===== -->
         <section class="card">
             <h2><i class="fas fa-magic"></i> Efeitos Visuais</h2>
             <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Escolha como comemorar suas vitórias!</p>
             <div class="store-grid" id="effectsGrid"></div>
         </section>
 
-        <!-- ===== RECEITAS ===== -->
         <section class="card">
             <h2><i class="fas fa-book-open"></i> Receitas Completas</h2>
             <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Clique em uma receita para ver os detalhes.</p>
@@ -106,7 +98,6 @@
         </section>
     </div>
 
-    <!-- ===== MODAL DE SELEÇÃO DE COMIDAS ===== -->
     <div id="foodSelectionModal" class="result-overlay">
         <div class="modal-content-box">
             <div class="modal-header-container">
@@ -122,7 +113,6 @@
                 <button id="btnAddCustomFood" class="btn-gradient-action dynamic-blue" style="flex:0.8; padding:0.6rem 1rem; font-size:0.9rem;">+ Adicionar</button>
             </div>
             <div class="grid-food-options" id="modalFoodOptionsGrid"></div>
-            <!-- Contador de seleção (será preenchido pelo JS) -->
             <div id="foodSelectionCount" style="text-align:center; margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">0 / 6 selecionadas</div>
             <div style="text-align: center; margin-top: 0.5rem;">
                 <button class="btn-close-modal" id="btnSaveFoodSelection">Salvar Alterações</button>
@@ -130,7 +120,6 @@
         </div>
     </div>
 
-    <!-- ===== OVERLAY DO ANÚNCIO ===== -->
     <div id="adOverlay" class="iframe-overlay">
         <div class="iframe-box">
             <div class="iframe-header">
@@ -140,7 +129,6 @@
         </div>
     </div>
 
-    <!-- ===== MODAL DE RESULTADO ===== -->
     <div class="result-overlay" id="resultOverlay">
         <div class="result-modal">
             <h3>Refeição Sorteada!</h3>
@@ -151,13 +139,14 @@
         </div>
     </div>
 
-    <!-- ===== CANVAS PARA CONFETES ===== -->
     <canvas id="confettiCanvas"></canvas>
 
-    <!-- ============================================================ -->
-    <!-- ORDEM DOS SCRIPTS (dependências primeiro)                     -->
-    <!-- ============================================================ -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    
     <script src="firebase.js"></script>
+
     <script src="sons.js"></script>
     <script src="comidas.js"></script>
     <script src="temas.js"></script>
