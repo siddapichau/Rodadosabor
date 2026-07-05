@@ -1,7 +1,6 @@
 'use strict';
 console.log('core.js carregado');
 
-// Tudo dentro desta função é INVISÍVEL para o console do navegador
 (function() {
     const _rawState = {
         coins: 20,
@@ -40,18 +39,78 @@ console.log('core.js carregado');
         configurable: false
     });
 
-    window.gastarMoedasSeguro = function(qnt) {
-        if (_rawState.coins >= qnt) {
-            _rawState.coins -= qnt;
+    // SISTEMA DE COMPRA INTERNO BLINDADO (Não confia no HTML)
+    window.comprarItemSeguro = function(categoria, id) {
+        let preco = 0;
+        let arrayDestravados = '';
+        let itemAtual = '';
+
+        if (categoria === 'spinSound') {
+            const item = window.SONS_GIRO?.find(i => i.id === id);
+            if(!item) return false;
+            preco = item.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound';
+        } else if (categoria === 'endSound') {
+            const item = window.SONS_FIM?.find(i => i.id === id);
+            if(!item) return false;
+            preco = item.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound';
+        } else if (categoria === 'winSound') {
+            const item = window.SONS_VITORIA?.find(i => i.id === id);
+            if(!item) return false;
+            preco = item.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound';
+        } else if (categoria === 'effect') {
+            const item = window.EFEITOS_VISUAIS?.find(i => i.id === id);
+            if(!item) return false;
+            preco = item.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect';
+        } else if (categoria === 'pageTheme') {
+            const item = window.listTemas?.find(i => i.id === id);
+            if(!item) return false;
+            preco = item.price; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme';
+        } else if (categoria === 'rouletteTheme') {
+            const item = window.listTemas?.find(i => i.id === id);
+            if(!item) return false;
+            preco = item.price; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme';
+        } else if (categoria === 'recipe') {
+            const item = window.RECEITAS?.find(i => i.id === id);
+            if(!item) return false;
+            preco = item.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null;
+        }
+
+        // Validação final de moedas
+        if (_rawState.coins >= preco) {
+            _rawState.coins -= preco;
+            if (!_rawState[arrayDestravados].includes(id)) {
+                _rawState[arrayDestravados].push(id);
+            }
+            if (itemAtual) {
+                _rawState[itemAtual] = id;
+            }
             window.saveData();
             return true;
         }
         return false;
     };
 
+    window.gastarMoedaGiro = function() {
+        if (_rawState.coins >= 1) {
+            _rawState.coins -= 1;
+            window.saveData();
+            return true;
+        }
+        return false;
+    };
+
+    // COOLDOWN DE 30 SEGUNDOS ANTI-SPAM DE CONSOLE
+    let lastAdTime = 0;
     window.ganharMoedasAnuncio = function() {
+        const now = Date.now();
+        if (now - lastAdTime < 30000) { 
+            console.warn("🛑 Bloqueado! Você não assistiu aos 30 segundos reais.");
+            return false;
+        }
+        lastAdTime = now;
         _rawState.coins += 3;
         window.saveData();
+        return true;
     };
 
     if (window.firebaseConfig && !firebase.apps.length) {
@@ -100,10 +159,6 @@ console.log('core.js carregado');
                             const data = snapshot.val();
                             Object.assign(_rawState, data); 
                             garantirArraysNoEstado();
-                            
-                            // 👇 Mostra no F12 o saldo blindado real
-                            console.log(`☁️ DADOS DO BANCO: Você tem exatamente ${data.coins} moedas no servidor Firebase.`);
-                            
                             if (typeof window.renderAll === 'function') window.renderAll();
                         } else {
                             window.saveData(); 
@@ -119,28 +174,18 @@ console.log('core.js carregado');
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = _rawState.coins;
         
-        try {
-            localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState));
-        } catch (e) {}
+        try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
 
         if (saveTimeout) clearTimeout(saveTimeout);
-
         saveTimeout = setTimeout(() => {
             if (currentUserUid && database) {
                 database.ref('users/' + currentUserUid + '/appState').set(_rawState)
-                    .then(() => {
-                        console.log('☁️ Sincronizado com a nuvem!');
-                    })
+                    .then(() => console.log('☁️ Sincronizado!'))
                     .catch((error) => {
                         if (error.code === "PERMISSION_DENIED" || error.message.includes("Permission denied")) {
-                            console.error("🛑 O Firebase bloqueou esta ação por fraude:", error.message);
-                            
-                            // 👇 SE O FIREBASE NEGAR, DESTRÓI OS DADOS FALSOS E RECARREGA A PÁGINA
-                            alert("⚠️ ALERTA DE SEGURANÇA: Saldo adulterado detectado! Limpando dados falsos e restaurando do servidor...");
+                            alert("⚠️ ALERTA DE SEGURANÇA: Saldo adulterado detectado! Limpando dados falsos...");
                             localStorage.removeItem('rodaDoSaborState'); 
                             window.location.reload(); 
-                        } else {
-                            console.warn("⚠️ Falha temporária de conexão:", error.message);
                         }
                     });
             }
@@ -149,7 +194,7 @@ console.log('core.js carregado');
 
     window.loadData();
 
-    // ========================== SINTETIZADOR DE ÁUDIO ==========================
+    // SINTETIZADOR E EFEITOS AQUI (mesmo código que você já tinha)
     let audioCtx = null;
     window.getAudioContext = function() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -182,9 +227,7 @@ console.log('core.js carregado');
                 case 'win-party': [440, 440, 440, 554, 659, 554, 659, 880].forEach((f, i) => osc(ctx, now + i * 0.12, f, f, 0.1, 'square', 0.15)); break;
                 default: osc(ctx, now, 400, 400, 0.1, 'sine', 0.2); break;
             }
-        } catch (e) {
-            console.warn('Erro ao reproduzir som:', e);
-        }
+        } catch (e) {}
     };
 
     function playNoise(ctx, start, duration, gainValue) {
