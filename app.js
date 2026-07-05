@@ -3,7 +3,6 @@ console.log('app.js carregado');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
-    // Só renderiza moedas na UI se o servidor já autorizou, para evitar tela piscando dados falsos
     if (coinBalance && window.isServerSynced) coinBalance.textContent = window.appState.coins;
 };
 
@@ -214,7 +213,6 @@ window.renderThemes = function() {
     renderThemeGrid(rouletteGrid, 'unlockedRouletteThemes', 'currentRouletteTheme', 'rouletteTheme');
 };
 
-// ========== ROTAS SEGURAS (Compra vs Equipar) ==========
 window.comprarEAtualizar = function(categoria, id) {
     if (window.comprarItemSeguro(categoria, id)) {
         window.renderAll();
@@ -265,6 +263,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.renderAll();
+
+    // 👇 CHAMA A FUNÇÃO DE LOGIN DO GOOGLE
+    document.getElementById('btnGoogleLogin')?.addEventListener('click', function() {
+        if (typeof window.conectarGoogle === 'function') {
+            window.conectarGoogle();
+        }
+    });
 
     document.getElementById('btnSpin')?.addEventListener('click', function() {
         if (!window.gastarMoedaGiro()) {
@@ -319,7 +324,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.style.display = 'none';
                 btnWatchAd.disabled = false;
                 
-                // Se a função de ganhar retornar TRUE (foi validada pelo anti-spam do cofre)
                 if (window.ganharMoedasAnuncio()) {
                     window.updateCoinsDisplay();
                     alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
