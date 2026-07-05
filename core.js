@@ -66,7 +66,7 @@ console.log('core.js carregado');
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
 
-    function garantirArraysNoEstado() {
+    function garantizarArraysNoEstado() {
         if (!Array.isArray(_rawState.unlockedEffects) || _rawState.unlockedEffects.length === 0) _rawState.unlockedEffects = ["effect-1"];
         if (!_rawState.currentEffect) _rawState.currentEffect = "effect-1";
         if (!Array.isArray(_rawState.unlockedSpinSounds) || _rawState.unlockedSpinSounds.length === 0) _rawState.unlockedSpinSounds = ["spin-1"];
@@ -88,7 +88,6 @@ console.log('core.js carregado');
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) {
-                // Injeta direto no state privado, driblando o bloqueio do proxy localmente
                 Object.assign(_rawState, JSON.parse(saved));
             }
             garantirArraysNoEstado();
@@ -115,21 +114,41 @@ console.log('core.js carregado');
         }
     };
 
+    // Sistema de Debounce para agrupar salvamentos rápidos e evitar travamentos na compra
+    let saveTimeout = null;
     window.saveData = function() {
+        // Atualiza a interface visual e o backup local imediatamente para dar fluidez ao app
+        const coinEl = document.getElementById('coin-balance');
+        if (coinEl) coinEl.textContent = _rawState.coins;
+        
         try {
-            if (currentUserUid && database) {
-                database.ref('users/' + currentUserUid + '/appState').set(_rawState);
-            }
             localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState));
-            
-            const coinEl = document.getElementById('coin-balance');
-            if (coinEl) coinEl.textContent = _rawState.coins;
-        } catch (e) {
-            console.warn('Erro ao salvar estado:', e);
-        }
+        } catch (e) {}
+
+        // Cancela o envio anterior se houver chamadas seguidas (como deduzir moedas + usar item simultâneo)
+        if (saveTimeout) clearTimeout(saveTimeout);
+
+        // Agenda o envio definitivo para a nuvem após 100ms
+        saveTimeout = setTimeout(() => {
+            if (currentUserUid && database) {
+                database.ref('users/' + currentUserUid + '/appState').set(_rawState)
+                    .then(() => {
+                        console.log('☁️ Sincronizado com a nuvem com sucesso!');
+                    })
+                    .catch((error) => {
+                        // Verifica se foi especificamente um bloqueio de segurança das regras do Firebase
+                        if (error.code === "PERMISSION_DENIED" || error.message.includes("Permission denied")) {
+                            console.error("🛑 O Firebase bloqueou esta ação por violação de regras:", error.message);
+                            alert("Erro de segurança! Modificação não autorizada detectada.");
+                            window.location.reload(); 
+                        } else {
+                            console.warn("⚠️ Falha temporária de conexão ao salvar na nuvem:", error.message);
+                        }
+                    });
+            }
+        }, 100);
     };
 
-    // Auto-inicia o carregamento
     window.loadData();
 
     // ========================== SINTETIZADOR DE ÁUDIO ==========================
