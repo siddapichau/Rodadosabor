@@ -2,88 +2,98 @@
 console.log('core.js carregado');
 
 (function() {
+    // 1. O estado real blindado (Agora com vipUntil)
     const _rawState = {
         coins: 20,
+        vipUntil: 0, // Timestamp de quando o VIP acaba
         darkMode: false,
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
-        unlockedPageThemes: ["theme-1"],
-        currentPageTheme: "theme-1",
-        unlockedRouletteThemes: ["theme-1"],
-        currentRouletteTheme: "theme-1",
-        unlockedSpinSounds: ["spin-1"],
-        currentSpinSound: "spin-1",
-        unlockedEndSounds: ["end-1"],
-        currentEndSound: "end-1",
-        unlockedWinSounds: ["win-1"],
-        currentWinSound: "win-1",
-        unlockedEffects: ["effect-1"],
-        currentEffect: "effect-1",
-        unlockedRecipes: [],
-        customFoods: []
+        unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
+        unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
+        unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1",
+        unlockedEndSounds: ["end-1"], currentEndSound: "end-1",
+        unlockedWinSounds: ["win-1"], currentWinSound: "win-1",
+        unlockedEffects: ["effect-1"], currentEffect: "effect-1",
+        unlockedRecipes: [], customFoods: []
     };
 
+    // 2. O Proxy Blindado (Impede Edição e Injeção em Arrays)
     const proxyState = new Proxy(_rawState, {
         set(target, prop, value) {
-            if (prop === 'coins') {
-                console.warn('🛑 Operação bloqueada. Sistema de segurança ativo.');
-                return false; 
+            console.warn(`🛑 Operação bloqueada. Tentativa de alterar '${prop}' rejeitada.`);
+            return false; // Bloqueia edição de QUALQUER propriedade diretamente
+        },
+        get(target, prop) {
+            const value = target[prop];
+            // Se tentarem acessar uma lista, devolvemos uma cópia congelada (impossível usar .push)
+            if (Array.isArray(value)) {
+                return Object.freeze([...value]); 
             }
-            target[prop] = value;
-            return true;
+            return value;
         }
     });
 
     Object.defineProperty(window, 'appState', {
-        value: proxyState,
-        writable: false,
-        configurable: false
+        value: proxyState, writable: false, configurable: false
     });
 
-    // SISTEMA DE COMPRA INTERNO BLINDADO (Não confia no HTML)
-    window.comprarItemSeguro = function(categoria, id) {
-        let preco = 0;
-        let arrayDestravados = '';
-        let itemAtual = '';
+    // ========================== SISTEMA VIP ==========================
+    window.isVipAtivo = function() {
+        return _rawState.vipUntil > Date.now();
+    };
 
-        if (categoria === 'spinSound') {
-            const item = window.SONS_GIRO?.find(i => i.id === id);
-            if(!item) return false;
-            preco = item.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound';
-        } else if (categoria === 'endSound') {
-            const item = window.SONS_FIM?.find(i => i.id === id);
-            if(!item) return false;
-            preco = item.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound';
-        } else if (categoria === 'winSound') {
-            const item = window.SONS_VITORIA?.find(i => i.id === id);
-            if(!item) return false;
-            preco = item.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound';
-        } else if (categoria === 'effect') {
-            const item = window.EFEITOS_VISUAIS?.find(i => i.id === id);
-            if(!item) return false;
-            preco = item.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect';
-        } else if (categoria === 'pageTheme') {
-            const item = window.listTemas?.find(i => i.id === id);
-            if(!item) return false;
-            preco = item.price; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme';
-        } else if (categoria === 'rouletteTheme') {
-            const item = window.listTemas?.find(i => i.id === id);
-            if(!item) return false;
-            preco = item.price; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme';
-        } else if (categoria === 'recipe') {
-            const item = window.RECEITAS?.find(i => i.id === id);
-            if(!item) return false;
-            preco = item.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null;
+    // Função que checa se o item pode ser usado (Comprado OU VIP)
+    window.isItemLiberado = function(nomeDoArray, idDoItem) {
+        if (window.isVipAtivo()) return true; // VIP tem acesso a tudo
+        return _rawState[nomeDoArray].includes(idDoItem);
+    };
+
+    // Simulador de Compra VIP (Ligaremos ao PIX no futuro)
+    window.ativarVipMensal = function() {
+        const trintaDiasEmMs = 30 * 24 * 60 * 60 * 1000;
+        _rawState.vipUntil = Date.now() + trintaDiasEmMs;
+        window.saveData();
+        return true;
+    };
+
+    // ========================== COMPRAS SEGURAS ==========================
+    window.comprarItemSeguro = function(categoria, id) {
+        if (window.isVipAtivo()) {
+            alert("Você é VIP! Não precisa gastar moedas. O item já está liberado para uso.");
+            return false;
         }
 
-        // Validação final de moedas
+        let preco = 0; let arrayDestravados = ''; let itemAtual = '';
+
+        if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
+        else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
+        else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
+        else if (categoria === 'effect') { const i = window.EFEITOS_VISUAIS?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
+        else if (categoria === 'pageTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
+        else if (categoria === 'rouletteTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
+        else if (categoria === 'recipe') { const i = window.RECEITAS?.find(x => x.id === id); if(!i) return false; preco = i.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null; }
+
         if (_rawState.coins >= preco) {
             _rawState.coins -= preco;
-            if (!_rawState[arrayDestravados].includes(id)) {
-                _rawState[arrayDestravados].push(id);
-            }
-            if (itemAtual) {
-                _rawState[itemAtual] = id;
-            }
+            if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id);
+            if (itemAtual) _rawState[itemAtual] = id;
+            window.saveData();
+            return true;
+        }
+        return false;
+    };
+
+    window.equiparItemSeguro = function(categoria, id) {
+        let arrayDestravados = ''; let itemAtual = '';
+        if (categoria === 'spinSound') { arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
+        else if (categoria === 'endSound') { arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
+        else if (categoria === 'winSound') { arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
+        else if (categoria === 'effect') { arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
+        else if (categoria === 'pageTheme') { arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
+        else if (categoria === 'rouletteTheme') { arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
+
+        if (window.isItemLiberado(arrayDestravados, id)) {
+            _rawState[itemAtual] = id;
             window.saveData();
             return true;
         }
@@ -91,78 +101,64 @@ console.log('core.js carregado');
     };
 
     window.gastarMoedaGiro = function() {
-        if (_rawState.coins >= 1) {
-            _rawState.coins -= 1;
-            window.saveData();
-            return true;
-        }
+        if (_rawState.coins >= 1) { _rawState.coins -= 1; window.saveData(); return true; }
         return false;
     };
 
-    // COOLDOWN DE 30 SEGUNDOS ANTI-SPAM DE CONSOLE
     let lastAdTime = 0;
     window.ganharMoedasAnuncio = function() {
         const now = Date.now();
-        if (now - lastAdTime < 30000) { 
-            console.warn("🛑 Bloqueado! Você não assistiu aos 30 segundos reais.");
-            return false;
-        }
-        lastAdTime = now;
-        _rawState.coins += 3;
-        window.saveData();
-        return true;
+        if (now - lastAdTime < 30000) { console.warn("🛑 SPAM Bloqueado."); return false; }
+        lastAdTime = now; _rawState.coins += 3; window.saveData(); return true;
     };
 
-    if (window.firebaseConfig && !firebase.apps.length) {
-        firebase.initializeApp(window.firebaseConfig);
-    }
+    // ========================== FIREBASE & DADOS ==========================
+    if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
 
+    function reverterItensVencidos() {
+        // Se o VIP acabou, devolve os itens equipados para o padrão 1 caso o usuário não os tenha comprado
+        if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
+        if (!window.isItemLiberado('unlockedSpinSounds', _rawState.currentSpinSound)) _rawState.currentSpinSound = "spin-1";
+        if (!window.isItemLiberado('unlockedEndSounds', _rawState.currentEndSound)) _rawState.currentEndSound = "end-1";
+        if (!window.isItemLiberado('unlockedWinSounds', _rawState.currentWinSound)) _rawState.currentWinSound = "win-1";
+        if (!window.isItemLiberado('unlockedPageThemes', _rawState.currentPageTheme)) _rawState.currentPageTheme = "theme-1";
+        if (!window.isItemLiberado('unlockedRouletteThemes', _rawState.currentRouletteTheme)) _rawState.currentRouletteTheme = "theme-1";
+    }
+
     function garantirArraysNoEstado() {
-        if (!Array.isArray(_rawState.unlockedEffects) || _rawState.unlockedEffects.length === 0) _rawState.unlockedEffects = ["effect-1"];
-        if (!_rawState.currentEffect) _rawState.currentEffect = "effect-1";
-        if (!Array.isArray(_rawState.unlockedSpinSounds) || _rawState.unlockedSpinSounds.length === 0) _rawState.unlockedSpinSounds = ["spin-1"];
-        if (!_rawState.currentSpinSound) _rawState.currentSpinSound = "spin-1";
-        if (!Array.isArray(_rawState.unlockedEndSounds) || _rawState.unlockedEndSounds.length === 0) _rawState.unlockedEndSounds = ["end-1"];
-        if (!_rawState.currentEndSound) _rawState.currentEndSound = "end-1";
-        if (!Array.isArray(_rawState.unlockedWinSounds) || _rawState.unlockedWinSounds.length === 0) _rawState.unlockedWinSounds = ["win-1"];
-        if (!_rawState.currentWinSound) _rawState.currentWinSound = "win-1";
-        if (!Array.isArray(_rawState.unlockedPageThemes) || _rawState.unlockedPageThemes.length === 0) _rawState.unlockedPageThemes = ["theme-1"];
-        if (!_rawState.currentPageTheme) _rawState.currentPageTheme = "theme-1";
-        if (!Array.isArray(_rawState.unlockedRouletteThemes) || _rawState.unlockedRouletteThemes.length === 0) _rawState.unlockedRouletteThemes = ["theme-1"];
-        if (!_rawState.currentRouletteTheme) _rawState.currentRouletteTheme = "theme-1";
+        if (!Array.isArray(_rawState.unlockedEffects)) _rawState.unlockedEffects = ["effect-1"];
+        if (!Array.isArray(_rawState.unlockedSpinSounds)) _rawState.unlockedSpinSounds = ["spin-1"];
+        if (!Array.isArray(_rawState.unlockedEndSounds)) _rawState.unlockedEndSounds = ["end-1"];
+        if (!Array.isArray(_rawState.unlockedWinSounds)) _rawState.unlockedWinSounds = ["win-1"];
+        if (!Array.isArray(_rawState.unlockedPageThemes)) _rawState.unlockedPageThemes = ["theme-1"];
+        if (!Array.isArray(_rawState.unlockedRouletteThemes)) _rawState.unlockedRouletteThemes = ["theme-1"];
         if (!Array.isArray(_rawState.foods) || _rawState.foods.length === 0) _rawState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
         if (!Array.isArray(_rawState.customFoods)) _rawState.customFoods = [];
         if (!Array.isArray(_rawState.unlockedRecipes)) _rawState.unlockedRecipes = [];
+        reverterItensVencidos();
     }
 
     window.loadData = function() {
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
-            if (saved) {
-                Object.assign(_rawState, JSON.parse(saved));
-            }
+            if (saved) Object.assign(_rawState, JSON.parse(saved));
             garantirArraysNoEstado();
-        } catch (e) {
-            console.warn('Erro ao carregar estado local:', e);
-        }
+        } catch (e) {}
 
         if (auth && database) {
-            auth.signInAnonymously().catch(err => console.warn("Erro Auth Anônima:", err));
+            auth.signInAnonymously().catch(err => console.warn("Erro Auth:", err));
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserUid = user.uid;
                     database.ref('users/' + currentUserUid + '/appState').once('value').then((snapshot) => {
                         if (snapshot.exists()) {
-                            const data = snapshot.val();
-                            Object.assign(_rawState, data); 
+                            Object.assign(_rawState, snapshot.val()); 
                             garantirArraysNoEstado();
                             if (typeof window.renderAll === 'function') window.renderAll();
-                        } else {
-                            window.saveData(); 
-                        }
+                        } else { window.saveData(); }
                     });
                 }
             });
@@ -175,17 +171,14 @@ console.log('core.js carregado');
         if (coinEl) coinEl.textContent = _rawState.coins;
         
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
-
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
             if (currentUserUid && database) {
                 database.ref('users/' + currentUserUid + '/appState').set(_rawState)
-                    .then(() => console.log('☁️ Sincronizado!'))
                     .catch((error) => {
-                        if (error.code === "PERMISSION_DENIED" || error.message.includes("Permission denied")) {
-                            alert("⚠️ ALERTA DE SEGURANÇA: Saldo adulterado detectado! Limpando dados falsos...");
-                            localStorage.removeItem('rodaDoSaborState'); 
-                            window.location.reload(); 
+                        if (error.code === "PERMISSION_DENIED") {
+                            alert("⚠️ Erro de Segurança! Recarregando...");
+                            localStorage.removeItem('rodaDoSaborState'); window.location.reload(); 
                         }
                     });
             }
@@ -194,17 +187,13 @@ console.log('core.js carregado');
 
     window.loadData();
 
-    // SINTETIZADOR E EFEITOS AQUI (mesmo código que você já tinha)
+    // SINTETIZADOR DE ÁUDIO 
     let audioCtx = null;
-    window.getAudioContext = function() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        return audioCtx;
-    };
+    window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
     window.playSynthesizedSound = function(soundType) {
         try {
-            const ctx = window.getAudioContext();
-            const now = ctx.currentTime;
+            const ctx = window.getAudioContext(); const now = ctx.currentTime;
             switch (soundType) {
                 case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
                 case 'swoosh': osc(ctx, now, 80, 250, 0.08, 'triangle', 0.2); break;
@@ -217,10 +206,7 @@ console.log('core.js carregado');
                 case 'end-coin': [987.77, 1318.51].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.2, 0.15)); break;
                 case 'end-thud': osc(ctx, now, 150, 40, 0.2, 'square', 0.4); break;
                 case 'end-zap': oscSquare(ctx, now, 800, 100, 0.3, 0.2); break;
-                case 'win-tada': 
-                    [523.25, 659.25, 783.99].forEach((f) => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); 
-                    [523.25, 659.25, 783.99, 1046.50].forEach((f) => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); 
-                    break;
+                case 'win-tada': [523.25, 659.25, 783.99].forEach(f => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); [523.25, 659.25, 783.99, 1046.50].forEach(f => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); break;
                 case 'win-applause': playNoise(ctx, now, 2.5, 0.3); break;
                 case 'win-arcade': [261.63, 329.63, 392.00, 523.25, 659.25, 783.99].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.15, 0.15)); break;
                 case 'win-epic': [261.63, 392, 523.25, 783.99].forEach((f, i) => osc(ctx, now + i * 0.2, f, f, 1.2, 'triangle', 0.2)); break;
@@ -231,33 +217,28 @@ console.log('core.js carregado');
     };
 
     function playNoise(ctx, start, duration, gainValue) {
-        const bufferSize = ctx.sampleRate * duration;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
+        const bufferSize = ctx.sampleRate * duration; const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate); const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const noise = ctx.createBufferSource(); noise.buffer = buffer;
-        const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1000;
+        const noise = ctx.createBufferSource(); noise.buffer = buffer; const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1000;
         const g = ctx.createGain(); g.gain.setValueAtTime(gainValue, start); g.gain.exponentialRampToValueAtTime(0.01, start + duration);
-        noise.connect(filter); filter.connect(g); g.connect(ctx.destination);
-        noise.start(start);
+        noise.connect(filter); filter.connect(g); g.connect(ctx.destination); noise.start(start);
     }
 
-    function osc(ctx, start, freqStart, freqEnd, duration, type, gain) {
-        const o = ctx.createOscillator(); const g = ctx.createGain();
-        o.type = type; o.frequency.setValueAtTime(freqStart, start); o.frequency.exponentialRampToValueAtTime(freqEnd, start + duration);
+    function osc(ctx, start, fStart, fEnd, duration, type, gain) {
+        const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = type;
+        o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
         g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
         o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
     }
-    function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
-        const o = ctx.createOscillator(); const g = ctx.createGain();
-        o.type = 'square'; o.frequency.setValueAtTime(freqStart, start); o.frequency.exponentialRampToValueAtTime(freqEnd, start + duration);
+    function oscSquare(ctx, start, fStart, fEnd, duration, gain) {
+        const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = 'square';
+        o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
         g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
         o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
     }
 
     window.applyThemes = function() {
-        const themes = window.listTemas || [];
-        if (themes.length === 0) return;
+        const themes = window.listTemas || []; if (themes.length === 0) return;
         const pageTheme = themes.find(t => t.id === _rawState.currentPageTheme) || themes[0];
         const rouletteTheme = themes.find(t => t.id === _rawState.currentRouletteTheme) || themes[0];
         const mode = _rawState.darkMode ? 'dark' : 'light';
@@ -265,24 +246,17 @@ console.log('core.js carregado');
         const pageData = pageTheme[mode];
         if (pageData && pageData.style) {
             const root = document.documentElement;
-            root.style.setProperty('--bg-body', pageData.style.bg);
-            root.style.setProperty('--bg-card', pageData.style.card);
-            root.style.setProperty('--text-primary', pageData.style.text);
-            root.style.setProperty('--accent', pageData.style.accent);
-            const color1 = pageData.colors[0] || '#f5d742';
-            const color2 = pageData.colors[1] || '#7b9e5a';
-            root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${color1}, ${color2})`);
+            root.style.setProperty('--bg-body', pageData.style.bg); root.style.setProperty('--bg-card', pageData.style.card);
+            root.style.setProperty('--text-primary', pageData.style.text); root.style.setProperty('--accent', pageData.style.accent);
+            root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${pageData.colors[0] || '#f5d742'}, ${pageData.colors[1] || '#7b9e5a'})`);
         }
 
         const rouletteData = rouletteTheme[mode];
         if (rouletteData && rouletteData.colors) {
             const root = document.documentElement;
-            root.style.setProperty('--wheel-border', rouletteData.colors[0]);
-            root.style.setProperty('--wheel-center', rouletteData.colors[2] || rouletteData.colors[1] || '#f5d742');
+            root.style.setProperty('--wheel-border', rouletteData.colors[0]); root.style.setProperty('--wheel-center', rouletteData.colors[2] || rouletteData.colors[1] || '#f5d742');
         }
 
-        if (typeof window.drawRoulette === 'function') {
-            window.drawRoulette();
-        }
+        if (typeof window.drawRoulette === 'function') window.drawRoulette();
     };
 })();
