@@ -6,7 +6,7 @@ console.log('core.js carregado');
     window.isServerSynced = false;
 
     const _rawState = {
-        coins: 20,
+        coins: 0, // 👈 O app sempre nasce ZERADO. Só a nuvem pode colocar dinheiro real aqui.
         vipUntil: 0,
         darkMode: false,
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
@@ -20,7 +20,7 @@ console.log('core.js carregado');
     };
 
     const proxyState = new Proxy(_rawState, {
-        set(target, prop, value) { return false; }, // Bloqueio absoluto
+        set(target, prop, value) { return false; }, // Bloqueio absoluto via console
         get(target, prop) {
             const value = target[prop];
             if (Array.isArray(value)) return Object.freeze([...value]); 
@@ -48,10 +48,7 @@ console.log('core.js carregado');
 
     // ========================== COMPRAS SEGURAS ==========================
     window.comprarItemSeguro = function(categoria, id) {
-        // Falha silenciosa se a nuvem ainda não validou (o app.js exibe moedas insuficientes)
-        if (!window.isServerSynced) {
-            return false; 
-        }
+        if (!window.isServerSynced) return false; 
 
         if (window.isVipAtivo()) {
             alert("Você é VIP! Não precisa gastar moedas. O item já está liberado.");
@@ -95,9 +92,7 @@ console.log('core.js carregado');
     };
 
     window.gastarMoedaGiro = function() {
-        // Se for VIP, não precisa validar servidor nem moedas, apenas gira!
         if (window.isVipAtivo()) return true; 
-
         if (!window.isServerSynced) return false;
         
         if (_rawState.coins >= 1) { 
@@ -145,14 +140,20 @@ console.log('core.js carregado');
     }
 
     window.loadData = function() {
-        // Carrega localmente apenas para pintar a tela rápido
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
-            if (saved) Object.assign(_rawState, JSON.parse(saved));
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // 🛑 A MÁGICA ESTÁ AQUI: Excluímos as moedas e o VIP do cache falso local!
+                delete parsed.coins;
+                delete parsed.vipUntil;
+                Object.assign(_rawState, parsed);
+            }
             garantirArraysNoEstado();
             
-            // Força a UI a mostrar os dados de carregamento
-            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            // Coloca um ícone de carregamento para o usuário saber que o servidor está buscando o saldo
+            const coinEl = document.getElementById('coin-balance');
+            if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         } catch (e) {}
 
         if (auth && database) {
@@ -160,16 +161,14 @@ console.log('core.js carregado');
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserUid = user.uid;
-                    database.ref('users/' + currentUserUid + '/appState').once('value').then((snapshot) => {
-                        window.isServerSynced = true; // Sincronização concluída!
+                    // 🔥 USANDO '.on' EM VEZ DE '.once': Se a nuvem mudar, a tela muda na mesma hora!
+                    database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
+                        window.isServerSynced = true; 
                         
                         if (snapshot.exists()) {
-                            // Esmaga os dados falsos da memória com os da nuvem
                             const serverData = snapshot.val();
                             Object.assign(_rawState, serverData); 
                             garantirArraysNoEstado();
-                            
-                            // Chama renderAll que atualiza IMEDIATAMENTE as moedas no topo para o valor real
                             if (typeof window.renderAll === 'function') window.renderAll();
                         } else {
                             _rawState.coins = 20; _rawState.vipUntil = 0;
