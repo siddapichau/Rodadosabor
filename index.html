@@ -144,6 +144,26 @@
     </div>
 
     <canvas id="confettiCanvas"></canvas>
+    <div id="googleReminderModal" class="result-overlay" style="display: none; z-index: 180;">
+        <div class="result-modal" style="max-width: 420px;">
+            <h3 style="color: var(--accent);"><i class="fas fa-shield-alt"></i> Proteja seu Progresso!</h3>
+            <span style="font-size: 3.5rem; margin: 0.5rem 0; display: block;">👑</span>
+            <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.8rem; font-weight: 600;">
+                Você está jogando em uma conta temporária.
+            </p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.4;">
+                Se você limpar o histórico do celular ou o cache do navegador, poderá perder todas as suas moedas, VIP e temas comprados. Salve agora usando sua conta Google!
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                <button class="btn-gradient-action dynamic-blue" id="btnGoogleModalLogin" style="width: 100%; min-width: auto; padding: 0.7rem;">
+                    <i class="fab fa-google"></i> Salvar Meus Dados
+                </button>
+                <button class="btn-action btn-active" id="btnGoogleModalClose" style="background: transparent; border: none; cursor: pointer; padding: 0.3rem; font-size: 0.75rem;">
+                    Lembrar-me amanhã
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
