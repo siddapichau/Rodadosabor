@@ -2,11 +2,10 @@
 console.log('core.js carregado');
 
 (function() {
-    // Flag de segurança vital: bloqueia interações até a nuvem validar os dados
     window.isServerSynced = false;
 
     const _rawState = {
-        coins: 0, // 👈 O app sempre nasce ZERADO. Só a nuvem pode colocar dinheiro real aqui.
+        coins: 0, 
         vipUntil: 0,
         darkMode: false,
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
@@ -20,7 +19,7 @@ console.log('core.js carregado');
     };
 
     const proxyState = new Proxy(_rawState, {
-        set(target, prop, value) { return false; }, // Bloqueio absoluto via console
+        set(target, prop, value) { return false; }, 
         get(target, prop) {
             const value = target[prop];
             if (Array.isArray(value)) return Object.freeze([...value]); 
@@ -46,10 +45,8 @@ console.log('core.js carregado');
         return true;
     };
 
-    // ========================== COMPRAS SEGURAS ==========================
     window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) return false; 
-
         if (window.isVipAtivo()) {
             alert("Você é VIP! Não precisa gastar moedas. O item já está liberado.");
             return false;
@@ -105,13 +102,22 @@ console.log('core.js carregado');
 
     let lastAdTime = 0;
     window.ganharMoedasAnuncio = function() {
-        if (!window.isServerSynced) return false;
+        if (!window.isServerSynced) {
+            console.warn("🛑 Aguarde o servidor sincronizar para receber recompensas.");
+            return false;
+        }
         const now = Date.now();
-        if (now - lastAdTime < 30000) { console.warn("🛑 SPAM Bloqueado."); return false; }
-        lastAdTime = now; _rawState.coins += 3; window.saveData(); return true;
+        // Reduzido para 25 segundos para perdoar o atraso do motor do navegador (setInterval)
+        if (now - lastAdTime < 25000) { 
+            console.warn("🛑 Detectado acionamento rápido demais. Recompensa retida."); 
+            return false; 
+        }
+        lastAdTime = now; 
+        _rawState.coins += 3; 
+        window.saveData(); 
+        return true;
     };
 
-    // ========================== FIREBASE & DADOS ==========================
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
@@ -144,14 +150,12 @@ console.log('core.js carregado');
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) {
                 const parsed = JSON.parse(saved);
-                // 🛑 A MÁGICA ESTÁ AQUI: Excluímos as moedas e o VIP do cache falso local!
                 delete parsed.coins;
                 delete parsed.vipUntil;
                 Object.assign(_rawState, parsed);
             }
             garantirArraysNoEstado();
             
-            // Coloca um ícone de carregamento para o usuário saber que o servidor está buscando o saldo
             const coinEl = document.getElementById('coin-balance');
             if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         } catch (e) {}
@@ -161,7 +165,6 @@ console.log('core.js carregado');
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserUid = user.uid;
-                    // 🔥 USANDO '.on' EM VEZ DE '.once': Se a nuvem mudar, a tela muda na mesma hora!
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
                         window.isServerSynced = true; 
                         
@@ -186,7 +189,7 @@ console.log('core.js carregado');
     let saveTimeout = null;
     window.saveData = function() {
         const coinEl = document.getElementById('coin-balance');
-        if (coinEl) coinEl.textContent = _rawState.coins;
+        if (coinEl && window.isServerSynced) coinEl.textContent = _rawState.coins;
         
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
         
@@ -196,7 +199,7 @@ console.log('core.js carregado');
                 database.ref('users/' + currentUserUid + '/appState').set(_rawState)
                     .catch((error) => {
                         if (error.code === "PERMISSION_DENIED") {
-                            alert("⚠️ Erro de Segurança! Recarregando...");
+                            console.warn("Transação negada pelo servidor.");
                             localStorage.removeItem('rodaDoSaborState'); window.location.reload(); 
                         }
                     });
@@ -206,7 +209,7 @@ console.log('core.js carregado');
 
     window.loadData();
 
-    // ========================== SINTETIZADOR DE ÁUDIO ==========================
+    // SINTETIZADOR DE ÁUDIO 
     let audioCtx = null;
     window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
