@@ -22,52 +22,56 @@ window.appState = {
     customFoods: []
 };
 
-window.loadData = function() {
-    try {
-        const saved = localStorage.getItem('rodaDoSaborState');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            window.appState = { ...window.appState, ...parsed };
+// ========================== FIREBASE SETUP ==========================
+// A configuração agora vem do arquivo firebase.js (window.firebaseConfig)
+if (!firebase.apps.length) {
+    firebase.initializeApp(window.firebaseConfig);
+}
+
+const auth = firebase.auth();
+const database = firebase.database();
+let currentUserUid = null;
+
+// ========================== GERENCIAMENTO DE DADOS ==========================
+window.loadData = function(onReadyCallback) {
+    // 1. Tenta fazer o login anônimo
+    auth.signInAnonymously().catch((error) => {
+        console.error("Erro na autenticação anônima:", error.code, error.message);
+        carregarFallbackLocal();
+        if (onReadyCallback) onReadyCallback();
+    });
+
+    // 2. Fica escutando mudanças de estado
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            currentUserUid = user.uid;
+            console.log("👻 Usuário Anônimo logado! UID:", currentUserUid);
+            
+            const userRef = database.ref('users/' + currentUserUid + '/appState');
+            userRef.once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    window.appState = { ...window.appState, ...data };
+                    garantirArraysNoEstado();
+                    console.log('☁️ Estado carregado da Nuvem!');
+                } else {
+                    garantirArraysNoEstado();
+                    window.saveData();
+                    console.log('🆕 Novo usuário criado na Nuvem!');
+                }
+                if (onReadyCallback) onReadyCallback();
+            }).catch(erro => console.error("Erro ao puxar dados do banco:", erro));
         }
-        // Garantias de arrays
-        if (!Array.isArray(window.appState.unlockedEffects) || window.appState.unlockedEffects.length === 0) {
-            window.appState.unlockedEffects = ["effect-1"];
-        }
-        if (!window.appState.currentEffect) window.appState.currentEffect = "effect-1";
-        if (!Array.isArray(window.appState.unlockedSpinSounds) || window.appState.unlockedSpinSounds.length === 0) {
-            window.appState.unlockedSpinSounds = ["spin-1"];
-        }
-        if (!window.appState.currentSpinSound) window.appState.currentSpinSound = "spin-1";
-        if (!Array.isArray(window.appState.unlockedEndSounds) || window.appState.unlockedEndSounds.length === 0) {
-            window.appState.unlockedEndSounds = ["end-1"];
-        }
-        if (!window.appState.currentEndSound) window.appState.currentEndSound = "end-1";
-        if (!Array.isArray(window.appState.unlockedWinSounds) || window.appState.unlockedWinSounds.length === 0) {
-            window.appState.unlockedWinSounds = ["win-1"];
-        }
-        if (!window.appState.currentWinSound) window.appState.currentWinSound = "win-1";
-        if (!Array.isArray(window.appState.unlockedPageThemes) || window.appState.unlockedPageThemes.length === 0) {
-            window.appState.unlockedPageThemes = ["theme-1"];
-        }
-        if (!window.appState.currentPageTheme) window.appState.currentPageTheme = "theme-1";
-        if (!Array.isArray(window.appState.unlockedRouletteThemes) || window.appState.unlockedRouletteThemes.length === 0) {
-            window.appState.unlockedRouletteThemes = ["theme-1"];
-        }
-        if (!window.appState.currentRouletteTheme) window.appState.currentRouletteTheme = "theme-1";
-        if (!Array.isArray(window.appState.foods) || window.appState.foods.length === 0) {
-            window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
-        }
-        if (!Array.isArray(window.appState.customFoods)) window.appState.customFoods = [];
-        if (!Array.isArray(window.appState.unlockedRecipes)) window.appState.unlockedRecipes = [];
-        console.log('📦 Estado carregado:', window.appState);
-    } catch (e) {
-        console.warn('Erro ao carregar estado, usando padrão:', e);
-    }
+    });
 };
 
 window.saveData = function() {
     try {
+        if (currentUserUid) {
+            database.ref('users/' + currentUserUid + '/appState').set(window.appState);
+        }
         localStorage.setItem('rodaDoSaborState', JSON.stringify(window.appState));
+        
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = window.appState.coins;
     } catch (e) {
@@ -75,7 +79,31 @@ window.saveData = function() {
     }
 };
 
-window.loadData();
+function garantirArraysNoEstado() {
+    if (!Array.isArray(window.appState.unlockedEffects) || window.appState.unlockedEffects.length === 0) window.appState.unlockedEffects = ["effect-1"];
+    if (!window.appState.currentEffect) window.appState.currentEffect = "effect-1";
+    if (!Array.isArray(window.appState.unlockedSpinSounds) || window.appState.unlockedSpinSounds.length === 0) window.appState.unlockedSpinSounds = ["spin-1"];
+    if (!window.appState.currentSpinSound) window.appState.currentSpinSound = "spin-1";
+    if (!Array.isArray(window.appState.unlockedEndSounds) || window.appState.unlockedEndSounds.length === 0) window.appState.unlockedEndSounds = ["end-1"];
+    if (!window.appState.currentEndSound) window.appState.currentEndSound = "end-1";
+    if (!Array.isArray(window.appState.unlockedWinSounds) || window.appState.unlockedWinSounds.length === 0) window.appState.unlockedWinSounds = ["win-1"];
+    if (!window.appState.currentWinSound) window.appState.currentWinSound = "win-1";
+    if (!Array.isArray(window.appState.unlockedPageThemes) || window.appState.unlockedPageThemes.length === 0) window.appState.unlockedPageThemes = ["theme-1"];
+    if (!window.appState.currentPageTheme) window.appState.currentPageTheme = "theme-1";
+    if (!Array.isArray(window.appState.unlockedRouletteThemes) || window.appState.unlockedRouletteThemes.length === 0) window.appState.unlockedRouletteThemes = ["theme-1"];
+    if (!window.appState.currentRouletteTheme) window.appState.currentRouletteTheme = "theme-1";
+    if (!Array.isArray(window.appState.foods) || window.appState.foods.length === 0) window.appState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
+    if (!Array.isArray(window.appState.customFoods)) window.appState.customFoods = [];
+    if (!Array.isArray(window.appState.unlockedRecipes)) window.appState.unlockedRecipes = [];
+}
+
+function carregarFallbackLocal() {
+    const saved = localStorage.getItem('rodaDoSaborState');
+    if (saved) {
+        window.appState = { ...window.appState, ...JSON.parse(saved) };
+    }
+    garantirArraysNoEstado();
+}
 
 // ========================== SINTETIZADOR DE ÁUDIO ==========================
 let audioCtx = null;
@@ -145,7 +173,6 @@ function oscSquare(ctx, start, freqStart, freqEnd, duration, gain) {
 window.applyThemes = function() {
     const themes = window.listTemas || [];
     if (themes.length === 0) {
-        console.warn('Nenhum tema definido. Usando valores padrão.');
         const root = document.documentElement;
         root.style.setProperty('--bg-body', 'linear-gradient(145deg, #fdf6f0 0%, #f3e7da 100%)');
         root.style.setProperty('--bg-card', 'rgba(255,255,255,0.92)');
@@ -161,7 +188,6 @@ window.applyThemes = function() {
     const rouletteTheme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
     const mode = window.appState.darkMode ? 'dark' : 'light';
     
-    // Aplica tema da página
     const pageData = pageTheme[mode];
     if (pageData && pageData.style) {
         const root = document.documentElement;
@@ -169,13 +195,11 @@ window.applyThemes = function() {
         root.style.setProperty('--bg-card', pageData.style.card);
         root.style.setProperty('--text-primary', pageData.style.text);
         root.style.setProperty('--accent', pageData.style.accent);
-        // Gradiente do título usando as duas primeiras cores do tema
         const color1 = pageData.colors[0] || '#f5d742';
         const color2 = pageData.colors[1] || '#7b9e5a';
         root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${color1}, ${color2})`);
     }
 
-    // Aplica tema da roleta
     const rouletteData = rouletteTheme[mode];
     if (rouletteData && rouletteData.colors) {
         const root = document.documentElement;
