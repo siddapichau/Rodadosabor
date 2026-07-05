@@ -117,6 +117,35 @@ console.log('core.js carregado');
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
 
+    // 👇 NOVA FUNÇÃO: VINCULAR CONTA GOOGLE 👇
+    window.conectarGoogle = function() {
+        if (!auth) return;
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        // Se já for anônimo, tenta fazer o "Upgrade" fundindo os dados
+        if (auth.currentUser && auth.currentUser.isAnonymous) {
+            auth.currentUser.linkWithPopup(provider).then((result) => {
+                alert("✅ Conta salva e vinculada ao Google com sucesso!");
+                window.location.reload(); // Recarrega para aplicar a mudança visual do botão
+            }).catch((error) => {
+                // Se a conta do Google que a pessoa clicou JÁ TIVER dados antigos salvos no app
+                if (error.code === 'auth/credential-already-in-use') {
+                    if (confirm("Esse e-mail do Google já tem um progresso salvo. Deseja trocar para ele? (Você perderá o progresso anônimo atual).")) {
+                        auth.signInWithCredential(error.credential).then(() => {
+                            window.location.reload();
+                        });
+                    }
+                } else {
+                    console.error("Erro no Login com Google:", error);
+                    alert("❌ Ocorreu um erro ao conectar com o Google.");
+                }
+            });
+        } else {
+            // Se por algum milagre ele clicou no botão e já estava logado, apenas ignora
+            alert("Sua conta já está protegida pelo Google!");
+        }
+    };
+
     function reverterItensVencidos() {
         if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
         if (!window.isItemLiberado('unlockedSpinSounds', _rawState.currentSpinSound)) _rawState.currentSpinSound = "spin-1";
@@ -139,11 +168,10 @@ console.log('core.js carregado');
         reverterItensVencidos();
     }
 
-    // ================== FUNÇÃO DE FALLBACK OFFLINE ==================
     function ativarModoOffline() {
         if (!window.isServerSynced) {
-            console.warn("⚠️ Firebase não respondeu a tempo ou falhou. Entrando no modo Offline.");
-            window.isServerSynced = true; // Libera o app para funcionar localmente
+            console.warn("⚠️ Firebase não respondeu a tempo. Entrando no modo Offline.");
+            window.isServerSynced = true; 
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             if (typeof window.renderAll === 'function') window.renderAll();
         }
@@ -164,18 +192,24 @@ console.log('core.js carregado');
             if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         } catch (e) {}
 
-        // Failsafe: Se passar 4 segundos e o Firebase não conectar, libera offline
         setTimeout(ativarModoOffline, 4000);
 
         if (auth && database) {
             auth.signInAnonymously().catch(err => {
-                console.error("🛑 Erro Auth (Verifique se ativou Login Anônimo no Firebase!):", err);
-                ativarModoOffline(); // Força offline imediatamente se der erro de Auth
+                console.error("🛑 Erro Auth:", err);
+                ativarModoOffline(); 
             });
 
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserUid = user.uid;
+                    
+                    // Mostra o botão do Google apenas se o usuário for Anônimo
+                    const btnGoogle = document.getElementById('btnGoogleLogin');
+                    if (btnGoogle) {
+                        btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
+                    }
+
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
                         window.isServerSynced = true; 
                         
