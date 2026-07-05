@@ -46,7 +46,11 @@ console.log('core.js carregado');
     };
 
     window.comprarItemSeguro = function(categoria, id) {
-        if (!window.isServerSynced) return false; 
+        if (!window.isServerSynced) {
+            alert("Aguarde a sincronização com o servidor.");
+            return false; 
+        }
+
         if (window.isVipAtivo()) {
             alert("Você é VIP! Não precisa gastar moedas. O item já está liberado.");
             return false;
@@ -102,20 +106,10 @@ console.log('core.js carregado');
 
     let lastAdTime = 0;
     window.ganharMoedasAnuncio = function() {
-        if (!window.isServerSynced) {
-            console.warn("🛑 Aguarde o servidor sincronizar para receber recompensas.");
-            return false;
-        }
+        if (!window.isServerSynced) return false;
         const now = Date.now();
-        // Reduzido para 25 segundos para perdoar o atraso do motor do navegador (setInterval)
-        if (now - lastAdTime < 25000) { 
-            console.warn("🛑 Detectado acionamento rápido demais. Recompensa retida."); 
-            return false; 
-        }
-        lastAdTime = now; 
-        _rawState.coins += 3; 
-        window.saveData(); 
-        return true;
+        if (now - lastAdTime < 25000) { console.warn("🛑 SPAM Bloqueado."); return false; }
+        lastAdTime = now; _rawState.coins += 3; window.saveData(); return true;
     };
 
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
@@ -145,6 +139,16 @@ console.log('core.js carregado');
         reverterItensVencidos();
     }
 
+    // ================== FUNÇÃO DE FALLBACK OFFLINE ==================
+    function ativarModoOffline() {
+        if (!window.isServerSynced) {
+            console.warn("⚠️ Firebase não respondeu a tempo ou falhou. Entrando no modo Offline.");
+            window.isServerSynced = true; // Libera o app para funcionar localmente
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            if (typeof window.renderAll === 'function') window.renderAll();
+        }
+    }
+
     window.loadData = function() {
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
@@ -160,8 +164,15 @@ console.log('core.js carregado');
             if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         } catch (e) {}
 
+        // Failsafe: Se passar 4 segundos e o Firebase não conectar, libera offline
+        setTimeout(ativarModoOffline, 4000);
+
         if (auth && database) {
-            auth.signInAnonymously().catch(err => console.warn("Erro Auth:", err));
+            auth.signInAnonymously().catch(err => {
+                console.error("🛑 Erro Auth (Verifique se ativou Login Anônimo no Firebase!):", err);
+                ativarModoOffline(); // Força offline imediatamente se der erro de Auth
+            });
+
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserUid = user.uid;
@@ -183,6 +194,8 @@ console.log('core.js carregado');
                     });
                 }
             });
+        } else {
+            ativarModoOffline();
         }
     };
 
