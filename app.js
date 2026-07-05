@@ -3,7 +3,8 @@ console.log('app.js carregado');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
-    if (coinBalance) coinBalance.textContent = window.appState.coins;
+    // Só renderiza moedas na UI se o servidor já autorizou, para evitar tela piscando dados falsos
+    if (coinBalance && window.isServerSynced) coinBalance.textContent = window.appState.coins;
 };
 
 window.launchCurrentEffect = function() {
@@ -40,13 +41,10 @@ window.renderFoodList = function() {
 
 window.removeFood = function(idx) {
     if (window.appState && window.appState.foods) {
-        // Como o appState é blindado, precisamos usar um truque interno seguro ou recriar a lista
         const novasComidas = [...window.appState.foods];
         novasComidas.splice(idx, 1);
-        
-        // Chamada segura para o proxy
         window._comidasSelecionadasTemporarias = novasComidas;
-        document.getElementById('btnSaveFoodSelection')?.click(); // Reaproveita o fluxo seguro do modal
+        document.getElementById('btnSaveFoodSelection')?.click();
     }
 };
 
@@ -96,7 +94,6 @@ window.renderSounds = function() {
         if (!soundList || soundList.length === 0) return;
         const sorted = [...soundList].sort((a, b) => (a.price || 0) - (b.price || 0));
         sorted.forEach(sound => {
-            // Usa o sistema VIP seguro
             const isUnlocked = window.isItemLiberado(arrayName, sound.id);
             const isActive = window.appState?.[currentKey] === sound.id;
             
@@ -222,7 +219,7 @@ window.comprarEAtualizar = function(categoria, id) {
     if (window.comprarItemSeguro(categoria, id)) {
         window.renderAll();
     } else {
-        if(!window.isVipAtivo()) alert("Moedas insuficientes ou item inválido!");
+        if(!window.isVipAtivo()) alert("Não foi possível realizar a compra. Moedas insuficientes.");
     }
 };
 
@@ -241,7 +238,6 @@ window.renderAll = function() {
     try { window.renderRecipes(); } catch(e) {}
     try { if (typeof window.applyThemes === 'function') window.applyThemes(); } catch(e) {}
     
-    // Atualiza o botão de VIP caso exista
     const btnVip = document.getElementById('btnTestVip');
     if (btnVip) {
         if (window.isVipAtivo()) {
@@ -253,7 +249,6 @@ window.renderAll = function() {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Adiciona botão VIP para testes rápidos (opcional, remova depois)
     const actionRow = document.querySelector('.action-row-buttons');
     if (actionRow) {
         const btnVip = document.createElement('button');
@@ -263,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnVip.innerHTML = '<i class="fas fa-crown"></i> Assinar VIP (Teste)';
         btnVip.onclick = () => {
             window.ativarVipMensal();
-            alert("👑 VIP Ativado por 30 dias! Toda a loja foi liberada.");
+            alert("👑 VIP Ativado por 30 dias! Toda a loja e roleta ilimitada foram liberadas.");
             window.renderAll();
         };
         actionRow.appendChild(btnVip);
@@ -273,7 +268,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('btnSpin')?.addEventListener('click', function() {
         if (!window.gastarMoedaGiro()) {
-            alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
+            if(!window.isServerSynced) {
+                alert("⏳ Conectando ao servidor... Aguarde um instante.");
+            } else {
+                alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar moedas.");
+            }
             return;
         }
         window.updateCoinsDisplay();
@@ -281,19 +280,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     document.getElementById('btnModeToggle')?.addEventListener('click', () => {
-        // Truque seguro para alterar o darkMode dentro do proxy
-        window.appState = { darkMode: !window.appState.darkMode }; // Isso não funciona devido ao lock
-        // Vamos usar o evento nativo para disparar a troca no local storage
         const currentData = JSON.parse(localStorage.getItem('rodaDoSaborState'));
         if(currentData) {
             currentData.darkMode = !currentData.darkMode;
             localStorage.setItem('rodaDoSaborState', JSON.stringify(currentData));
-            window.location.reload(); // Forma mais segura e brutal de forçar recarregamento visual
+            window.location.reload(); 
         }
     });
 
     const btnWatchAd = document.getElementById('btnWatchAd');
     btnWatchAd?.addEventListener('click', function() {
+        if (!window.isServerSynced) {
+            alert("⏳ Conectando ao servidor... Tente novamente em alguns instantes.");
+            return;
+        }
+
         const overlay = document.getElementById('adOverlay');
         const countdownSpan = document.getElementById('adCountdown');
         
@@ -318,9 +319,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.style.display = 'none';
                 btnWatchAd.disabled = false;
                 
+                // Se a função de ganhar retornar TRUE (foi validada pelo anti-spam do cofre)
                 if (window.ganharMoedasAnuncio()) {
                     window.updateCoinsDisplay();
                     alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
+                } else {
+                    alert("⚠️ Falha ao resgatar. Você não assistiu aos 30 segundos corretamente ou o servidor perdeu conexão.");
                 }
             }
         }, 1000);
@@ -341,12 +345,11 @@ document.addEventListener('DOMContentLoaded', function() {
     foodModal?.addEventListener('click', (e) => { if (e.target === foodModal) foodModal.style.display = 'none'; });
     document.getElementById('searchFoodInput')?.addEventListener('input', e => window.renderModalFoodOptions(e.target.value));
     
-    // Como a variável Custom Foods é protegida, usamos o salvamento forçado
     const saveFoodHack = (novasComidas) => {
         const data = JSON.parse(localStorage.getItem('rodaDoSaborState'));
         data.foods = novasComidas;
         localStorage.setItem('rodaDoSaborState', JSON.stringify(data));
-        window.location.reload(); // Aplica com segurança
+        window.location.reload(); 
     }
 
     document.getElementById('btnSaveFoodSelection')?.addEventListener('click', () => {
