@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (v5 - estável)');
+console.log('roleta.js carregado (v6 - estável)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -8,13 +8,14 @@ let spinTimeTotal = 0;
 let spinTimeCount = 0;
 let lastSoundAngle = 0;
 
-// ========================== CONTROLE DE TAMANHO DO CANVAS ==========================
+// ========================== TAMANHO DO CANVAS ==========================
 function updateCanvasSize() {
     const canvas = document.getElementById('rouletteCanvas');
     if (!canvas) return;
+    // Tenta obter o tamanho do container, se falhar usa 300px
     const rect = canvas.getBoundingClientRect();
     let size = Math.min(rect.width, rect.height, 600);
-    if (size < 100) size = 300;
+    if (size < 50) size = 300; // fallback
     if (canvas.width !== size || canvas.height !== size) {
         canvas.width = size;
         canvas.height = size;
@@ -24,9 +25,18 @@ function updateCanvasSize() {
 // ========================== DESENHO ==========================
 window.drawRoulette = function() {
     const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) return;
+    if (!canvas) {
+        console.warn('Canvas não encontrado');
+        return;
+    }
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn('Contexto 2D não disponível');
+        return;
+    }
+
+    // Garante que o canvas tenha tamanho
+    updateCanvasSize();
 
     const width = canvas.width;
     const height = canvas.height;
@@ -36,9 +46,12 @@ window.drawRoulette = function() {
 
     ctx.clearRect(0, 0, width, height);
 
-    const items = window.appState?.foods || [];
+    // Obtém as comidas com fallback
+    const foods = window.appState?.foods || ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
+    const items = foods;
     const numSegments = items.length;
 
+    // Cores
     const fallbackColors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
     let colors = fallbackColors;
     let wheelBorder = '#f5b342';
@@ -46,8 +59,8 @@ window.drawRoulette = function() {
 
     try {
         if (window.listTemas && window.listTemas.length > 0) {
-            const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
-            const mode = window.appState.darkMode ? 'dark' : 'light';
+            const theme = window.listTemas.find(t => t.id === window.appState?.currentRouletteTheme) || window.listTemas[0];
+            const mode = window.appState?.darkMode ? 'dark' : 'light';
             const themeData = theme[mode];
             if (themeData && themeData.colors) {
                 colors = themeData.colors;
@@ -56,7 +69,7 @@ window.drawRoulette = function() {
             }
         }
     } catch (e) {
-        console.warn('Erro ao carregar tema, usando fallback:', e);
+        // fallback
     }
 
     if (numSegments === 0) {
@@ -75,6 +88,7 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
+    // Borda
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
     ctx.fillStyle = wheelBorder;
@@ -83,6 +97,7 @@ window.drawRoulette = function() {
     ctx.fill();
     ctx.shadowBlur = 0;
 
+    // Bolinhas
     for (let b = 0; b < 20; b++) {
         const bAngle = (b * 2 * Math.PI) / 20;
         const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
@@ -93,6 +108,7 @@ window.drawRoulette = function() {
         ctx.fill();
     }
 
+    // Segmentos
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
         const color = colors[i % colors.length];
@@ -107,6 +123,7 @@ window.drawRoulette = function() {
         ctx.lineWidth = 2;
         ctx.stroke();
 
+        // Texto
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
@@ -132,6 +149,7 @@ window.drawRoulette = function() {
         ctx.restore();
     }
 
+    // Centro
     const centerRadius = radius * 0.16;
     ctx.beginPath();
     ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
@@ -144,7 +162,7 @@ window.drawRoulette = function() {
 
 // ========================== GIRO ==========================
 window.spinRoulette = function() {
-    if (isSpinning || window.appState.foods.length === 0) return;
+    if (isSpinning || window.appState?.foods?.length === 0) return;
 
     const btn = document.getElementById('btnSpin');
     if (btn) btn.disabled = true;
@@ -171,39 +189,48 @@ function animateSpin() {
     startAngle += currentVelocity;
     window.drawRoulette();
 
-    const arcSize = (2 * Math.PI) / window.appState.foods.length;
+    const arcSize = (2 * Math.PI) / (window.appState?.foods?.length || 4);
     if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
+        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState?.currentSpinSound)) || { type: 'click' };
         window.playSynthesizedSound(activeSpinSound.type);
         lastSoundAngle = startAngle;
     }
     requestAnimationFrame(animateSpin);
 }
 
-// ========================== FINALIZAÇÃO (SEM ALERT) ==========================
 function finalizeSpin() {
-    try {
-        const numSegments = window.appState.foods.length;
-        if (numSegments === 0) return;
+    const numSegments = window.appState?.foods?.length || 0;
+    if (numSegments === 0) {
+        const btn = document.getElementById('btnSpin');
+        if (btn) btn.disabled = false;
+        return;
+    }
 
-        const arcSize = (2 * Math.PI) / numSegments;
-        let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
-        if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
-        let index = Math.floor(angleFromStart / arcSize);
-        if (index >= numSegments) index = 0;
-        if (index < 0) index = numSegments - 1;
+    const arcSize = (2 * Math.PI) / numSegments;
+    let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
+    if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
+    let index = Math.floor(angleFromStart / arcSize);
+    if (index >= numSegments) index = 0;
+    if (index < 0) index = numSegments - 1;
 
-        const winningFood = window.appState.foods[index];
+    const winningFood = window.appState.foods[index];
 
-        // Toca som de fim
-        const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
-        window.playSynthesizedSound(activeEndSound.type);
+    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
+    window.playSynthesizedSound(activeEndSound.type);
 
-        // Exibe modal
+    setTimeout(() => {
+        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
+        window.playSynthesizedSound(activeWinSound.type);
+
+        if (typeof window.launchCurrentEffect === 'function') {
+            window.launchCurrentEffect();
+        } else {
+            window.launchConfetti();
+        }
+
         const nameEl = document.getElementById('modalFoodName');
         const emojiEl = document.getElementById('modalEmoji');
         const overlay = document.getElementById('resultOverlay');
-
         if (nameEl && emojiEl && overlay) {
             nameEl.textContent = winningFood;
             const emojiMatch = winningFood.match(/\p{Emoji}/u);
@@ -211,41 +238,43 @@ function finalizeSpin() {
             overlay.style.display = 'flex';
         }
 
-        // Efeito e som de vitória (após delay)
-        setTimeout(() => {
-            try {
-                const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
-                window.playSynthesizedSound(activeWinSound.type);
-
-                if (typeof window.launchCurrentEffect === 'function') {
-                    window.launchCurrentEffect();
-                } else {
-                    window.launchConfetti();
-                }
-            } catch (e) {
-                console.warn('Erro no efeito, usando fallback:', e);
-                try { window.launchConfetti(); } catch(e2) {}
-            }
-        }, 300);
-
-        // Reativa botão
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
-
-    } catch (error) {
-        console.error('Erro em finalizeSpin:', error);
-        const btn = document.getElementById('btnSpin');
-        if (btn) btn.disabled = false;
-    }
+    }, 1000);
 }
 
-// ========================== EVENTOS ==========================
-window.addEventListener('load', function() {
+// ========================== INICIALIZAÇÃO ROBUSTA ==========================
+function initRoulette() {
     updateCanvasSize();
-    setTimeout(window.drawRoulette, 100);
+    window.drawRoulette();
+}
+
+// Tenta desenhar várias vezes até conseguir
+let attemptCount = 0;
+const maxAttempts = 10;
+
+function tryDraw() {
+    attemptCount++;
+    if (attemptCount > maxAttempts) return;
+    const canvas = document.getElementById('rouletteCanvas');
+    if (canvas && canvas.width > 10 && canvas.height > 10) {
+        initRoulette();
+        return;
+    }
+    setTimeout(tryDraw, 300);
+}
+
+// Quando a página carregar, tenta desenhar
+window.addEventListener('load', function() {
+    // Aguarda um pouco para o DOM e o estado carregarem
+    setTimeout(tryDraw, 300);
 });
 
+// Também redesenha ao redimensionar
 window.addEventListener('resize', function() {
     updateCanvasSize();
     window.drawRoulette();
 });
+
+// Se o estado mudar (ex: comidas atualizadas), redesenha
+// (o app.js já chama drawRoulette quando necessário)
