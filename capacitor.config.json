@@ -1,0 +1,6 @@
+{
+  "appId": "com.seuapp.rodasabor",
+  "appName": "Roda do Sabor",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}
