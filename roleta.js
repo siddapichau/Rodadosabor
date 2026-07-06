@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado');
+console.log('roleta.js carregado (fix)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -8,19 +8,28 @@ let spinTimeTotal = 0;
 let spinTimeCount = 0;
 let lastSoundAngle = 0;
 
+// ========================== CONTROLE DE TAMANHO DO CANVAS ==========================
+let canvasSize = 600;
+
+function updateCanvasSize() {
+    const canvas = document.getElementById('rouletteCanvas');
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    let size = Math.min(rect.width, rect.height, 600);
+    if (size < 100) size = 300;
+    if (canvas.width !== size || canvas.height !== size) {
+        canvas.width = size;
+        canvas.height = size;
+        canvasSize = size;
+    }
+}
+
 // ========================== DESENHO ==========================
 window.drawRoulette = function() {
     const canvas = document.getElementById('rouletteCanvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    // Ajusta o tamanho do canvas para corresponder ao CSS
-    const rect = canvas.getBoundingClientRect();
-    if (canvas.width !== rect.width || canvas.height !== rect.height) {
-        canvas.width = rect.width || 600;
-        canvas.height = rect.height || 600;
-    }
 
     const width = canvas.width;
     const height = canvas.height;
@@ -30,11 +39,9 @@ window.drawRoulette = function() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // ----- OBTÉM AS COMIDAS -----
     const items = window.appState?.foods || [];
     const numSegments = items.length;
 
-    // ----- CORES (fallback) -----
     const fallbackColors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
     let colors = fallbackColors;
     let wheelBorder = '#f5b342';
@@ -71,7 +78,6 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
-    // Borda externa
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
     ctx.fillStyle = wheelBorder;
@@ -80,7 +86,6 @@ window.drawRoulette = function() {
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // Bolinhas decorativas
     for (let b = 0; b < 20; b++) {
         const bAngle = (b * 2 * Math.PI) / 20;
         const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
@@ -91,12 +96,10 @@ window.drawRoulette = function() {
         ctx.fill();
     }
 
-    // Desenha os segmentos e textos
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
         const color = colors[i % colors.length];
 
-        // Segmento
         ctx.beginPath();
         ctx.fillStyle = color;
         ctx.moveTo(centerX, centerY);
@@ -107,19 +110,13 @@ window.drawRoulette = function() {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // ---------- TEXTO AJUSTADO (sem vazamento) ----------
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
 
-        // Alinha o texto à direita para que a extremidade final toque a borda
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-
-        // Posiciona o texto no raio **com uma pequena margem** para não encostar na borda
-        const textRadius = radius * 0.82; // 82% do raio, dá folga
-
-        // Calcula o tamanho máximo da fonte
+        const textRadius = radius * 0.82;
         const maxTextWidth = (2 * Math.PI * textRadius) / numSegments * 0.75;
         let fontSize = Math.min(radius * 0.13, 26);
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
@@ -133,13 +130,11 @@ window.drawRoulette = function() {
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.6)';
         ctx.shadowBlur = 8;
-        // Desenha o texto: a coordenada X é o raio, e como textAlign é 'right', o texto termina nesse ponto
         ctx.fillText(items[i], textRadius, 0);
         ctx.shadowBlur = 0;
         ctx.restore();
     }
 
-    // Centro da roleta
     const centerRadius = radius * 0.16;
     ctx.beginPath();
     ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
@@ -189,31 +184,24 @@ function animateSpin() {
 }
 
 function finalizeSpin() {
-    const numSegments = window.appState.foods.length;
-    if (numSegments === 0) return;
-    const arcSize = (2 * Math.PI) / numSegments;
+    try {
+        const numSegments = window.appState.foods.length;
+        if (numSegments === 0) return;
+        const arcSize = (2 * Math.PI) / numSegments;
 
-    let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
-    if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
-    let index = Math.floor(angleFromStart / arcSize);
-    if (index >= numSegments) index = 0;
-    if (index < 0) index = numSegments - 1;
+        let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
+        if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
+        let index = Math.floor(angleFromStart / arcSize);
+        if (index >= numSegments) index = 0;
+        if (index < 0) index = numSegments - 1;
 
-    const winningFood = window.appState.foods[index];
+        const winningFood = window.appState.foods[index];
 
-    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
-    window.playSynthesizedSound(activeEndSound.type);
+        // 1. Toca o som de fim
+        const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
+        window.playSynthesizedSound(activeEndSound.type);
 
-    setTimeout(() => {
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
-        window.playSynthesizedSound(activeWinSound.type);
-
-        if (typeof window.launchCurrentEffect === 'function') {
-            window.launchCurrentEffect();
-        } else {
-            window.launchConfetti();
-        }
-
+        // 2. Exibe o modal do resultado imediatamente
         const nameEl = document.getElementById('modalFoodName');
         const emojiEl = document.getElementById('modalEmoji');
         const overlay = document.getElementById('resultOverlay');
@@ -224,13 +212,50 @@ function finalizeSpin() {
             overlay.style.display = 'flex';
         }
 
+        // 3. Pequeno delay antes de lançar o efeito para garantir que o modal foi renderizado
+        setTimeout(() => {
+            try {
+                const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
+                window.playSynthesizedSound(activeWinSound.type);
+
+                if (typeof window.launchCurrentEffect === 'function') {
+                    window.launchCurrentEffect();
+                } else {
+                    window.launchConfetti();
+                }
+            } catch (e) {
+                console.error('Erro ao lançar efeito de vitória:', e);
+                // Se falhar, tenta confetti simples
+                try { window.launchConfetti(); } catch(e2) {}
+            }
+        }, 200);
+
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
-    }, 1000);
+
+    } catch (error) {
+        console.error('Erro em finalizeSpin:', error);
+        // Tenta exibir o modal mesmo com erro
+        const nameEl = document.getElementById('modalFoodName');
+        const emojiEl = document.getElementById('modalEmoji');
+        const overlay = document.getElementById('resultOverlay');
+        if (nameEl && emojiEl && overlay) {
+            nameEl.textContent = 'Algo deu errado, tente novamente!';
+            emojiEl.textContent = '⚠️';
+            overlay.style.display = 'flex';
+        }
+        const btn = document.getElementById('btnSpin');
+        if (btn) btn.disabled = false;
+    }
 }
 
 // ========================== EVENTOS ==========================
 window.addEventListener('load', function() {
+    updateCanvasSize();
     setTimeout(window.drawRoulette, 100);
 });
-window.addEventListener('resize', window.drawRoulette);
+
+window.addEventListener('resize', function() {
+    updateCanvasSize();
+    window.drawRoulette();
+});

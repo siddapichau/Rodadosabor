@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v2)');
+console.log('core.js carregado (v3)');
 
 (function() {
     window.isServerSynced = false;
@@ -189,7 +189,7 @@ console.log('core.js carregado (v2)');
         console.log(`✅ Nome exibido: "${firstName}" (anônimo: ${user.isAnonymous})`);
     }
 
-    // ===== EDITAR NOME (com validação) =====
+    // ===== EDITAR NOME =====
     window.editarNomeUsuario = function(novoNome) {
         if (!novoNome || typeof novoNome !== 'string') {
             alert("Nome inválido.");
@@ -241,7 +241,7 @@ console.log('core.js carregado (v2)');
         return merged;
     }
 
-    // ===== CONECTAR GOOGLE (com mesclagem) =====
+    // ===== CONECTAR GOOGLE =====
     window.conectarGoogle = function() {
         if (!auth) return;
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -281,13 +281,11 @@ console.log('core.js carregado (v2)');
                     if (!displayName && profile) {
                         displayName = profile.name || profile.given_name || 'Usuário';
                     }
-                    // Atualiza perfil no Firebase Auth
                     if (displayName && displayName !== result.user.displayName) {
                         result.user.updateProfile({ displayName }).catch(console.warn);
                     }
                     _rawState.displayName = displayName || 'Usuário';
                     window.saveData();
-                    // Recarrega o usuário para obter dados atualizados
                     result.user.reload().then(() => {
                         updateUserInterface(result.user);
                         alert("✅ Conta salva e vinculada ao Google com sucesso!");
@@ -425,18 +423,22 @@ console.log('core.js carregado (v2)');
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) {
                 const parsed = JSON.parse(saved);
-                delete parsed.coins;
-                delete parsed.vipUntil;
+                // NÃO deletamos moedas e vipUntil – mantemos para exibição imediata
+                // Apenas preservamos o que já existe e mesclamos depois
                 Object.assign(_rawState, parsed);
                 console.log("📦 Estado restaurado do localStorage:", _rawState);
             }
             garantirArraysNoEstado();
+            // Atualiza o display com as moedas locais imediatamente
             const coinEl = document.getElementById('coin-balance');
-            if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if (coinEl) {
+                coinEl.textContent = _rawState.coins;
+            }
         } catch (e) {
             console.warn("Erro ao carregar localStorage:", e);
         }
 
+        // Aguarda até 4 segundos para sincronizar, mas já exibe os dados locais
         setTimeout(ativarModoOffline, 4000);
 
         if (auth && database) {
@@ -444,7 +446,6 @@ console.log('core.js carregado (v2)');
                 console.log("👤 onAuthStateChanged:", user?.uid, user?.isAnonymous);
                 if (user) {
                     currentUserUid = user.uid;
-                    // Se o estado local não tiver displayName, tenta pegar do user
                     if (!_rawState.displayName && user.displayName) {
                         _rawState.displayName = user.displayName;
                     }
@@ -455,9 +456,16 @@ console.log('core.js carregado (v2)');
                         if (snapshot.exists()) {
                             const serverData = snapshot.val();
                             console.log("📡 Dados do servidor:", serverData);
-                            // Mescla preservando displayName se o servidor não tiver
+                            // Mescla preservando dados locais se o servidor não tiver
+                            const localCoins = _rawState.coins;
                             const localName = _rawState.displayName;
                             Object.assign(_rawState, serverData);
+                            // Mantém moedas locais se o servidor as sobrescrever com 0? 
+                            // Preferimos a soma? Vamos manter a do servidor se existir, senão a local.
+                            // Mas para evitar perda, se o servidor veio com 0 e local >0, mantém local.
+                            if (serverData.coins === 0 && localCoins > 0) {
+                                _rawState.coins = localCoins;
+                            }
                             if (!_rawState.displayName && localName) {
                                 _rawState.displayName = localName;
                             } else if (!_rawState.displayName && user.displayName) {
@@ -470,10 +478,12 @@ console.log('core.js carregado (v2)');
                             updateUserInterface(user);
                         } else {
                             console.log("🆕 Criando dados iniciais para o usuário");
-                            _rawState.coins = 20;
-                            _rawState.vipUntil = 0;
-                            _rawState.unlockedPageThemes = ["theme-1"];
-                            _rawState.unlockedEffects = ["effect-1"];
+                            // Se não há dados, mas já temos locais, mantém
+                            if (_rawState.coins === 0) _rawState.coins = 20;
+                            if (!_rawState.unlockedPageThemes || _rawState.unlockedPageThemes.length === 0) {
+                                _rawState.unlockedPageThemes = ["theme-1"];
+                                _rawState.unlockedEffects = ["effect-1"];
+                            }
                             if (user.displayName) _rawState.displayName = user.displayName;
                             if (!_rawState.displayName && !user.isAnonymous) _rawState.displayName = 'Usuário';
                             garantirArraysNoEstado();
@@ -501,7 +511,7 @@ console.log('core.js carregado (v2)');
     let saveTimeout = null;
     window.saveData = function() {
         const coinEl = document.getElementById('coin-balance');
-        if (coinEl && window.isServerSynced) coinEl.textContent = _rawState.coins;
+        if (coinEl) coinEl.textContent = _rawState.coins;
         
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
         
