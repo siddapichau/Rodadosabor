@@ -1,14 +1,11 @@
 'use strict';
-console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
+console.log('core.js carregado (v7 - AdMob Full + Google Popup)');
 
 (function() {
     window.isServerSynced = false;
 
     const _rawState = {
-        coins: 0, 
-        vipUntil: 0,
-        darkMode: false,
-        displayName: '',
+        coins: 0, vipUntil: 0, darkMode: false, displayName: '',
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -28,41 +25,17 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
         }
     });
 
-    Object.defineProperty(window, 'appState', {
-        value: proxyState, writable: false, configurable: false
-    });
+    Object.defineProperty(window, 'appState', { value: proxyState, writable: false, configurable: false });
 
-    // ===== PORTA SEGURA PARA TEMA ESCURO =====
-    window.toggleDarkModeSeguro = function() {
-        _rawState.darkMode = !_rawState.darkMode;
-        window.saveData();
-        window.applyThemes();
-    };
-
+    window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
+    window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
+    window.ativarVipMensal = function() { _rawState.vipUntil = Date.now() + (30 * 24 * 60 * 60 * 1000); window.saveData(); return true; };
 
-    window.isItemLiberado = function(nomeDoArray, idDoItem) {
-        if (window.isVipAtivo()) return true; 
-        return _rawState[nomeDoArray].includes(idDoItem);
-    };
-
-    window.ativarVipMensal = function() {
-        const trintaDiasEmMs = 30 * 24 * 60 * 60 * 1000;
-        _rawState.vipUntil = Date.now() + trintaDiasEmMs;
-        window.saveData();
-        return true;
-    };
-
-    // ===== COMPRAS =====
     window.comprarItemSeguro = function(categoria, id) {
-        if (!window.isServerSynced) {
-            alert("Aguarde a sincronização com o servidor.");
-            return false; 
-        }
-        if (window.isVipAtivo()) {
-            alert("Você é VIP! Não precisa gastar moedas.");
-            return false;
-        }
+        if (!window.isServerSynced) return false; 
+        if (window.isVipAtivo()) { alert("VIP Ativo! Item já liberado."); return false; }
+
         let preco = 0; let arrayDestravados = ''; let itemAtual = '';
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
@@ -102,46 +75,78 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
     window.gastarMoedaGiro = function() {
         if (window.isVipAtivo()) return true; 
         if (!window.isServerSynced) return false;
-        if (_rawState.coins >= 1) { 
-            _rawState.coins -= 1; 
-            window.saveData(); 
-            return true; 
-        }
+        if (_rawState.coins >= 1) { _rawState.coins -= 1; window.saveData(); return true; }
         return false;
     };
 
-    // ===== ADMOB =====
-    let lastAdTime = 0;
-    let rewardedAdLoaded = false;
-    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; // ID Oficial do Google de Teste
+    // ========================== ADMOB CONFIG ==========================
+    // ⚠️ ATENÇÃO: Estes são IDs de TESTE da Google. 
+    // Troque pelos seus IDs reais apenas quando for publicar na PlayStore.
+    const ADMOB_APP_OPEN = 'ca-app-pub-3940256099942544/9257395921';
+    const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
+    const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
+    const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
 
     window.isAppNativo = function() {
         return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
     };
 
-    // Inicializa o AdMob na abertura se for APK
+    window.spinCounter = 0; // Contador de giros para o anúncio Intersticial
+
     if (window.isAppNativo()) {
         try {
-            const { AdMob } = window.Capacitor.Plugins;
-            AdMob.initialize({ initializeForTesting: true }).then(() => console.log("✅ AdMob Inicializado")).catch(console.error);
+            const { AdMob, BannerPosition } = window.Capacitor.Plugins;
+            AdMob.initialize({ initializeForTesting: true }).then(async () => {
+                console.log("✅ Motor do AdMob ligado");
+
+                // 1. App Open Ad (Abertura)
+                try {
+                    await AdMob.prepareAppOpenAd({ adId: ADMOB_APP_OPEN, isTest: true });
+                    await AdMob.showAppOpenAd();
+                } catch(e) { console.warn("Erro App Open", e); }
+
+                // 2. Banner no Rodapé
+                try {
+                    await AdMob.showBanner({
+                        adId: ADMOB_BANNER,
+                        adPosition: 'BOTTOM_CENTER',
+                        isTest: true,
+                        margin: 0
+                    });
+                } catch(e) { console.warn("Erro Banner", e); }
+
+            }).catch(console.error);
         } catch(e) {}
     }
 
+    // 3. Intersticial (A cada 5 rodadas)
+    window.mostrarIntersticialSeNecessario = async function() {
+        if (!window.isAppNativo() || window.isVipAtivo()) return;
+        window.spinCounter++;
+        
+        if (window.spinCounter % 5 === 0) {
+            try {
+                const { AdMob } = window.Capacitor.Plugins;
+                await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTest: true });
+                await AdMob.showInterstitial();
+            } catch(e) { console.warn("Erro Intersticial", e); }
+        }
+    };
+
+    // 4. Premiado
+    let lastAdTime = 0; let rewardedAdLoaded = false;
     window.ganharMoedasAnuncioWeb = function() {
         if (!window.isServerSynced) return false;
         const now = Date.now();
         if (now - lastAdTime < 25000) return false;
-        lastAdTime = now;
-        _rawState.coins += 3;
-        window.saveData();
-        return true;
+        lastAdTime = now; _rawState.coins += 3; window.saveData(); return true;
     };
 
     window.mostrarAdMobNativo = async function() {
         try {
             const { AdMob } = window.Capacitor.Plugins;
             if (!rewardedAdLoaded) {
-                await AdMob.loadRewardedAd({ adId: ADMOB_REWARDED_ID, isTest: true });
+                await AdMob.loadRewardedAd({ adId: ADMOB_REWARDED, isTest: true });
                 rewardedAdLoaded = true;
             }
             return new Promise((resolve) => {
@@ -149,57 +154,26 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
                     _rawState.coins += reward.amount || 3;
                     window.saveData();
                     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                    rewardListener.remove();
-                    resolve(true);
+                    rewardListener.remove(); resolve(true);
                 });
                 const closeListener = AdMob.addListener('rewardedAdClosed', () => {
-                    closeListener.remove();
-                    rewardedAdLoaded = false; 
-                    resolve(false);
+                    closeListener.remove(); rewardedAdLoaded = false; resolve(false);
                 });
                 AdMob.showRewardedAd().catch((err) => {
-                    console.error('Erro ao exibir AdMob:', err);
-                    _rawState.coins += 3; 
-                    window.saveData();
-                    if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                    rewardedAdLoaded = false;
-                    resolve(true);
+                    _rawState.coins += 3; window.saveData(); rewardedAdLoaded = false; resolve(true);
                 });
             });
-        } catch (error) {
-            console.error('❌ Erro no AdMob:', error);
-            _rawState.coins += 3; 
-            window.saveData();
-            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-            return true;
-        }
+        } catch (error) { _rawState.coins += 3; window.saveData(); return true; }
     };
 
-    // ===== FIREBASE =====
+    // ========================== FIREBASE & GOOGLE (Popup Correto) ==========================
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
     let anonymousSignInAttempted = false;
 
-    if (auth) {
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn(err));
-        
-        // RECUPERA O RESULTADO DO REDIRECT (Evita tela branca)
-        auth.getRedirectResult().then((result) => {
-            if (result && result.user) {
-                alert("✅ Conta conectada com sucesso!");
-            }
-        }).catch((error) => {
-            if (error.code === 'auth/credential-already-in-use') {
-                if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (O progresso anônimo será perdido).")) {
-                    auth.signInWithCredential(error.credential).then(() => window.location.reload());
-                }
-            } else {
-                console.error("Erro Redirect Google:", error);
-            }
-        });
-    }
+    if (auth) auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn(e));
 
     function updateUserInterface(user) {
         const userArea = document.getElementById('userArea');
@@ -207,42 +181,31 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
         const userAvatar = document.getElementById('userAvatar');
         const btnGoogle = document.getElementById('btnGoogleLogin');
         const reminderModal = document.getElementById('googleReminderModal');
-        const btnEdit = document.getElementById('btnEditName');
 
-        if (!user) {
-            if (userArea) userArea.style.display = 'none';
-            return;
-        }
+        if (!user) { if (userArea) userArea.style.display = 'none'; return; }
 
         let displayName = _rawState.displayName || user.displayName || '';
-        if (!displayName && !user.isAnonymous) displayName = 'Usuário';
-        if (!displayName && user.isAnonymous) displayName = 'Convidado';
-
-        const firstName = displayName.split(' ')[0];
+        if (!displayName) displayName = user.isAnonymous ? 'Convidado' : 'Usuário';
 
         if (userArea) {
             userArea.style.display = 'flex';
-            if (userAvatar) userAvatar.textContent = firstName.charAt(0).toUpperCase();
+            if (userAvatar) userAvatar.textContent = displayName.charAt(0).toUpperCase();
             if (userName) {
-                userName.textContent = firstName;
-                if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Segura"></i>';
+                userName.textContent = displayName.split(' ')[0];
+                if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;"></i>';
             }
         }
-
         if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
         if (reminderModal && !user.isAnonymous) reminderModal.style.display = 'none';
-        if (btnEdit) btnEdit.style.display = 'flex';
     }
 
     window.editarNomeUsuario = function(novoNome) {
         if (!novoNome || typeof novoNome !== 'string') return false;
         let nomeLimpo = novoNome.replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
-        if (nomeLimpo.length < 3 || nomeLimpo.length > 16) { alert("O nome deve ter entre 3 e 16 caracteres."); return false; }
+        if (nomeLimpo.length < 3 || nomeLimpo.length > 16) return false;
         
-        _rawState.displayName = nomeLimpo;
-        window.saveData();
-        const user = auth?.currentUser;
-        if (user) updateUserInterface(user);
+        _rawState.displayName = nomeLimpo; window.saveData();
+        if (auth?.currentUser) updateUserInterface(auth.currentUser);
         return true;
     };
 
@@ -250,50 +213,59 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
         const mergedCoins = (anonData.coins || 0) + (googleData.coins || 0);
         const mergeArray = (arr1, arr2) => Array.from(new Set([...(arr1 || []), ...(arr2 || [])]));
         const arrayFields = ['foods', 'customFoods', 'unlockedPageThemes', 'unlockedRouletteThemes', 'unlockedSpinSounds', 'unlockedEndSounds', 'unlockedWinSounds', 'unlockedEffects', 'unlockedRecipes'];
-        const merged = { ...anonData };
-        merged.coins = mergedCoins;
+        const merged = { ...anonData, coins: mergedCoins };
         if (googleData.vipUntil && googleData.vipUntil > (merged.vipUntil || 0)) merged.vipUntil = googleData.vipUntil;
         if (googleData.darkMode !== undefined) merged.darkMode = googleData.darkMode;
         if (googleData.displayName) merged.displayName = googleData.displayName;
         arrayFields.forEach(field => { merged[field] = mergeArray(anonData[field], googleData[field]); });
-        const currentFields = ['currentPageTheme', 'currentRouletteTheme', 'currentSpinSound', 'currentEndSound', 'currentWinSound', 'currentEffect'];
-        currentFields.forEach(field => { if (googleData[field]) merged[field] = googleData[field]; });
         return merged;
     }
 
     window.conectarGoogle = function() {
         if (!auth) return;
+
+        // Se estiver no APK, bloqueia o popup e avisa para usar a Web
+        if (window.isAppNativo()) {
+            alert("⚠️ Segurança Android:\n\nPara proteger sua conta, o vínculo com o Google deve ser feito pelo navegador.\n\nAcesse nosso site (rodadosabor.vercel.app) pelo navegador do celular ou PC, faça o login, e seus dados sincronizarão aqui automaticamente!");
+            return;
+        }
+
         const provider = new firebase.auth.GoogleAuthProvider();
         const currentUser = auth.currentUser;
-
-        if (!currentUser || !currentUser.isAnonymous) {
-            alert("Sua conta já está protegida pelo Google!");
-            return;
-        }
-
-        const hasData = () => {
-            if (_rawState.coins > 0) return true;
-            if (_rawState.unlockedPageThemes.length > 1 || _rawState.unlockedEffects.length > 1) return true;
-            return false;
-        };
-
-        // Usa Redirect em vez de Popup para não bugar no Android
-        if (!hasData()) {
-            currentUser.linkWithRedirect(provider);
-            return;
-        }
+        if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
 
         const modal = document.getElementById('mergeAccountModal');
         if (!modal) return;
-        
         document.getElementById('anonSummary').textContent = `${_rawState.coins} moedas`;
-        document.getElementById('googleSummary').textContent = "Carregando após login...";
+        document.getElementById('googleSummary').textContent = "Aguardando login...";
 
+        // Mostramos o modal primeiro. Quando ele clicar em uma opção, disparamos o Popup
         function proceedWithChoice(choice) {
             modal.style.display = 'none';
-            // Salva a escolha no sessionStorage para o app saber o que fazer quando voltar do redirect
-            sessionStorage.setItem('rodaSabor_mergeChoice', choice);
-            currentUser.linkWithRedirect(provider);
+            // Voltou para o linkWithPopup que funciona 100% perfeito na Vercel Web
+            currentUser.linkWithPopup(provider).then((result) => {
+                const googleUser = result.user;
+                database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
+                    const googleData = snapshot.val() || {};
+                    let finalData;
+                    if (choice === 'keep') finalData = { ..._rawState };
+                    else if (choice === 'overwrite') finalData = { ...googleData };
+                    else if (choice === 'merge') finalData = _mergeData(_rawState, googleData);
+                    
+                    finalData.displayName = googleUser.displayName || 'Usuário';
+                    Object.assign(_rawState, finalData);
+                    window.saveData();
+                    updateUserInterface(googleUser);
+                    alert("✅ Conta vinculada e dados sincronizados!");
+                    if (typeof window.renderAll === 'function') window.renderAll();
+                });
+            }).catch((error) => {
+                if (error.code === 'auth/credential-already-in-use') {
+                    if (confirm("E-mail já tem dados salvos. Deseja fazer login com ele? (Seu progresso atual sumirá).")) {
+                        auth.signInWithCredential(error.credential).then(() => window.location.reload());
+                    }
+                } else alert("❌ Erro ao conectar.");
+            });
         }
 
         document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep');
@@ -334,12 +306,9 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
     }
 
     window.loadData = function() {
-        // UI Otimista: Carrega local e mostra NA HORA (sem delay)
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
-            if (saved) {
-                Object.assign(_rawState, JSON.parse(saved));
-            }
+            if (saved) Object.assign(_rawState, JSON.parse(saved));
             garantirArraysNoEstado();
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             if (typeof window.applyThemes === 'function') window.applyThemes();
@@ -351,52 +320,18 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserUid = user.uid;
-                    if (!_rawState.displayName && user.displayName) _rawState.displayName = user.displayName;
                     updateUserInterface(user);
 
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
                         window.isServerSynced = true;
-                        
-                        // Lógica Pós-Redirect Merge
-                        const mergeChoice = sessionStorage.getItem('rodaSabor_mergeChoice');
-                        
                         if (snapshot.exists()) {
-                            const serverData = snapshot.val();
-                            
-                            if (mergeChoice) {
-                                // Aplicar mesclagem pendente do Google Login
-                                let finalData;
-                                if (mergeChoice === 'keep') finalData = { ..._rawState };
-                                else if (mergeChoice === 'overwrite') finalData = { ...serverData };
-                                else if (mergeChoice === 'merge') finalData = _mergeData(_rawState, serverData);
-                                
-                                Object.assign(_rawState, finalData);
-                                sessionStorage.removeItem('rodaSabor_mergeChoice');
-                                window.saveData();
-                            } else {
-                                // Fluxo Normal
-                                const localCoins = _rawState.coins;
-                                const localName = _rawState.displayName;
-                                Object.assign(_rawState, serverData);
-                                if (serverData.coins === 0 && localCoins > 0) _rawState.coins = localCoins;
-                                if (!_rawState.displayName && localName) _rawState.displayName = localName;
-                                else if (!_rawState.displayName && user.displayName) _rawState.displayName = user.displayName;
-                                else if (!_rawState.displayName) _rawState.displayName = user.isAnonymous ? '' : 'Usuário';
-                            }
-                            
+                            Object.assign(_rawState, snapshot.val());
                             garantirArraysNoEstado();
                             if (typeof window.renderAll === 'function') window.renderAll();
                             updateUserInterface(user);
                         } else {
                             if (_rawState.coins === 0) _rawState.coins = 20;
-                            if (!_rawState.unlockedPageThemes || _rawState.unlockedPageThemes.length === 0) {
-                                _rawState.unlockedPageThemes = ["theme-1"]; _rawState.unlockedEffects = ["effect-1"];
-                            }
-                            if (user.displayName) _rawState.displayName = user.displayName;
-                            if (!_rawState.displayName && !user.isAnonymous) _rawState.displayName = 'Usuário';
-                            
-                            garantirArraysNoEstado();
-                            window.saveData();
+                            garantirArraysNoEstado(); window.saveData();
                             if (typeof window.renderAll === 'function') window.renderAll();
                             updateUserInterface(user);
                         }
@@ -408,9 +343,7 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
                     }
                 }
             });
-        } else {
-            ativarModoOffline();
-        }
+        } else { ativarModoOffline(); }
     };
 
     let saveTimeout = null;
@@ -422,20 +355,16 @@ console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
             if (currentUserUid && database && window.isServerSynced) {
-                database.ref('users/' + currentUserUid + '/appState').set(_rawState)
-                    .catch((error) => {
-                        if (error.code === "PERMISSION_DENIED") {
-                            localStorage.removeItem('rodaDoSaborState');
-                            window.location.reload();
-                        }
-                    });
+                database.ref('users/' + currentUserUid + '/appState').set(_rawState).catch((error) => {
+                    if (error.code === "PERMISSION_DENIED") { localStorage.removeItem('rodaDoSaborState'); window.location.reload(); }
+                });
             }
         }, 100);
     };
 
     window.loadData();
 
-    // ===== ÁUDIO E EFEITOS =====
+    // ========================== ÁUDIO E EFEITOS ==========================
     let audioCtx = null;
     window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
