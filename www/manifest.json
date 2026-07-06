@@ -1,0 +1,23 @@
+{
+  "name": "Roda do Sabor",
+  "short_name": "RodaSabor",
+  "description": "Escolha sua refeição de forma divertida!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3e7da",
+  "theme_color": "#f5b342",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
