@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v4 - Firebase + AdMob)');
+console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
 
 (function() {
     window.isServerSynced = false;
@@ -8,7 +8,7 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
         coins: 0, 
         vipUntil: 0,
         darkMode: false,
-        displayName: '',
+        displayName: '', // Guarda o nome do usuário
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -106,13 +106,12 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
     // ===== ANÚNCIO (ADMOB NATIVO + FALLBACK WEB) =====
     let lastAdTime = 0;
     let rewardedAdLoaded = false;
-    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; // ID Teste - Mude no futuro para o oficial
+    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; 
 
     window.isAppNativo = function() {
         return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
     };
 
-    // Apenas para PC/Web
     window.ganharMoedasAnuncioWeb = function() {
         if (!window.isServerSynced) return false;
         const now = Date.now();
@@ -123,7 +122,6 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
         return true;
     };
 
-    // Apenas para Celular (AdMob)
     window.mostrarAdMobNativo = async function() {
         try {
             const { AdMob } = window.Capacitor.Plugins;
@@ -141,12 +139,12 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
                 });
                 const closeListener = AdMob.addListener('rewardedAdClosed', () => {
                     closeListener.remove();
-                    rewardedAdLoaded = false; // Força carregar um novo no próximo clique
+                    rewardedAdLoaded = false; 
                     resolve(false);
                 });
                 AdMob.showRewardedAd().catch((err) => {
                     console.error('Erro ao exibir AdMob:', err);
-                    _rawState.coins += 3; // Fallback
+                    _rawState.coins += 3; 
                     window.saveData();
                     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
                     rewardedAdLoaded = false;
@@ -155,14 +153,14 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
             });
         } catch (error) {
             console.error('❌ Erro crítico no AdMob:', error);
-            _rawState.coins += 3; // Fallback
+            _rawState.coins += 3; 
             window.saveData();
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             return true;
         }
     };
 
-    // ===== FIREBASE & SINCROMIZAÇÃO =====
+    // ===== FIREBASE E DADOS DO USUÁRIO =====
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
@@ -170,10 +168,10 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
     let anonymousSignInAttempted = false;
 
     if (auth) {
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-            .catch(err => console.warn("Erro persistência:", err));
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn(err));
     }
 
+    // A Mágica da Interface do Usuário (Logado vs Anônimo)
     function updateUserInterface(user) {
         const userArea = document.getElementById('userArea');
         const userName = document.getElementById('userName');
@@ -198,15 +196,24 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
             if (userAvatar) userAvatar.textContent = firstName.charAt(0).toUpperCase();
             if (userName) {
                 userName.textContent = firstName;
-                if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;"></i>';
+                // Se NÃO for anônimo, coloca o ícone verde de conta segura
+                if (!user.isAnonymous) {
+                    userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Google Vinculada"></i>';
+                }
             }
         }
 
-        if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
+        if (btnGoogle) {
+            // Mostra o botão do Google SÓ SE a pessoa for anônima
+            btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
+        }
+        
+        // Esconde o aviso chato se ele já logou
         if (reminderModal && !user.isAnonymous) reminderModal.style.display = 'none';
         if (btnEdit) btnEdit.style.display = 'flex';
     }
 
+    // Editar o nome
     window.editarNomeUsuario = function(novoNome) {
         if (!novoNome || typeof novoNome !== 'string') { alert("Nome inválido."); return false; }
         let nomeLimpo = novoNome.replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
@@ -235,6 +242,7 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
         return merged;
     }
 
+    // Vincular com Google
     window.conectarGoogle = function() {
         if (!auth) return;
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -273,7 +281,7 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
                     if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (Seu progresso anônimo será perdido).")) {
                         auth.signInWithCredential(error.credential).then(() => window.location.reload());
                     }
-                } else { alert("❌ Erro ao conectar com Google."); }
+                } else { alert("❌ Erro ao conectar com Google. Verifique os domínios autorizados no Firebase."); }
             });
             return;
         }
@@ -361,11 +369,13 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) {
                 const parsed = JSON.parse(saved);
+                delete parsed.coins; 
+                delete parsed.vipUntil;
                 Object.assign(_rawState, parsed);
             }
             garantirArraysNoEstado();
             const coinEl = document.getElementById('coin-balance');
-            if (coinEl) coinEl.textContent = _rawState.coins;
+            if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         } catch (e) {}
 
         setTimeout(ativarModoOffline, 4000);
@@ -388,6 +398,7 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
                             if (!_rawState.displayName && localName) _rawState.displayName = localName;
                             else if (!_rawState.displayName && user.displayName) _rawState.displayName = user.displayName;
                             else if (!_rawState.displayName) _rawState.displayName = user.isAnonymous ? '' : 'Usuário';
+                            
                             garantirArraysNoEstado();
                             if (typeof window.renderAll === 'function') window.renderAll();
                             updateUserInterface(user);
@@ -398,6 +409,7 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
                             }
                             if (user.displayName) _rawState.displayName = user.displayName;
                             if (!_rawState.displayName && !user.isAnonymous) _rawState.displayName = 'Usuário';
+                            
                             garantirArraysNoEstado();
                             window.saveData();
                             if (typeof window.renderAll === 'function') window.renderAll();
@@ -419,7 +431,7 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
     let saveTimeout = null;
     window.saveData = function() {
         const coinEl = document.getElementById('coin-balance');
-        if (coinEl) coinEl.textContent = _rawState.coins;
+        if (coinEl && window.isServerSynced) coinEl.textContent = _rawState.coins;
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
         
         if (saveTimeout) clearTimeout(saveTimeout);
@@ -438,7 +450,7 @@ console.log('core.js carregado (v4 - Firebase + AdMob)');
 
     window.loadData();
 
-    // ===== ÁUDIO =====
+    // ===== ÁUDIO E EFEITOS =====
     let audioCtx = null;
     window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
