@@ -23,15 +23,25 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # Não precisamos do cap init, pois o capacitor.config.json já existe!
+      # Adiciona a plataforma Android baseada no seu capacitor.config.json
       - name: Add Android
         run: npx cap add android
 
+      # Instala o gerador de ícones, copia a sua logo e gera os ícones do app
+      - name: Generate App Icons
+        run: |
+          npm install @capacitor/assets --save-dev
+          mkdir -p assets
+          cp logo.png assets/icon.png 2>/dev/null || true
+          cp logo.png assets/splash.png 2>/dev/null || true
+          npx capacitor-assets generate --android || true
+
+      # Injeta o SEU ID do aplicativo AdMob no AndroidManifest do APK
       - name: Fix AdMob manifest
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
-            sed -i '/<\/application>/i \    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>\n    <meta-data android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING" android:value="true"/>' "$MANIFEST"
+            sed -i '/<\/application>/i \    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-1466567886645880~6367009472"/>\n    <meta-data android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING" android:value="true"/>' "$MANIFEST"
           fi
 
       - name: Sync Capacitor
