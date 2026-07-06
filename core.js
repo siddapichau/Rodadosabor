@@ -4,11 +4,12 @@ console.log('core.js carregado');
 (function() {
     window.isServerSynced = false;
 
+    // ===== ESTADO INICIAL (com displayName) =====
     const _rawState = {
         coins: 0, 
         vipUntil: 0,
         darkMode: false,
-        displayName: '',
+        displayName: '', // ← armazena o nome do usuário
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -19,6 +20,7 @@ console.log('core.js carregado');
         unlockedRecipes: [], customFoods: []
     };
 
+    // Proxy para acesso imutável
     const proxyState = new Proxy(_rawState, {
         set(target, prop, value) { return false; }, 
         get(target, prop) {
@@ -32,6 +34,7 @@ console.log('core.js carregado');
         value: proxyState, writable: false, configurable: false
     });
 
+    // ===== FUNÇÕES AUXILIARES =====
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
 
     window.isItemLiberado = function(nomeDoArray, idDoItem) {
@@ -46,6 +49,7 @@ console.log('core.js carregado');
         return true;
     };
 
+    // ===== COMPRAS E EQUIPAMENTOS =====
     window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) {
             alert("Aguarde a sincronização com o servidor.");
@@ -105,27 +109,42 @@ console.log('core.js carregado');
         return false;
     };
 
+    // ===== ANÚNCIO (com logs para depuração) =====
     let lastAdTime = 0;
     window.ganharMoedasAnuncio = function() {
-        if (!window.isServerSynced) return false;
+        console.log("📢 ganharMoedasAnuncio chamado");
+        if (!window.isServerSynced) {
+            console.warn("❌ Servidor não sincronizado");
+            return false;
+        }
         const now = Date.now();
-        if (now - lastAdTime < 25000) { console.warn("🛑 SPAM Bloqueado."); return false; }
-        lastAdTime = now; _rawState.coins += 3; window.saveData(); return true;
+        const diff = now - lastAdTime;
+        console.log(`⏱️ Último anúncio há ${Math.round(diff/1000)}s`);
+        if (diff < 25000) {
+            console.warn("🛑 SPAM Bloqueado (menos de 25s desde o último)");
+            return false;
+        }
+        lastAdTime = now;
+        _rawState.coins += 3;
+        window.saveData();
+        console.log(`✅ +3 moedas. Total: ${_rawState.coins}`);
+        return true;
     };
 
+    // ===== FIREBASE =====
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
-    let anonymousSignInAttempted = false; // flag para evitar múltiplos logins anônimos
+    let anonymousSignInAttempted = false;
 
-    // ========== DEFINE PERSISTÊNCIA LOCAL ==========
+    // Persistência LOCAL
     if (auth) {
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
             .catch(err => console.warn("Erro ao definir persistência:", err));
     }
 
-    // ========== FUNÇÃO PARA ATUALIZAR A INTERFACE DO USUÁRIO ==========
+    // ===== FUNÇÃO PARA ATUALIZAR A INTERFACE DO USUÁRIO =====
     function updateUserInterface(user) {
         console.log("🔄 updateUserInterface chamado com user:", user?.uid, user?.isAnonymous);
         const userArea = document.getElementById('userArea');
@@ -164,7 +183,38 @@ console.log('core.js carregado');
         }
     }
 
-    // ========== FUNÇÃO PARA MESCLAR DADOS ==========
+    // ===== FUNÇÃO PARA EDITAR NOME (com validação) =====
+    window.editarNomeUsuario = function(novoNome) {
+        if (!novoNome || typeof novoNome !== 'string') {
+            alert("Nome inválido.");
+            return false;
+        }
+
+        // Sanitização: remove caracteres especiais, permite apenas letras e espaços
+        let nomeLimpo = novoNome.replace(/[^a-zA-Z\s]/g, '').trim();
+        // Remove espaços extras
+        nomeLimpo = nomeLimpo.replace(/\s+/g, ' ');
+
+        // Validação: apenas letras e espaços, mínimo 8, máximo 16 caracteres
+        if (nomeLimpo.length < 8 || nomeLimpo.length > 16) {
+            alert("O nome deve ter entre 8 e 16 caracteres, apenas letras.");
+            return false;
+        }
+
+        // Atualiza o estado e salva
+        _rawState.displayName = nomeLimpo;
+        window.saveData();
+
+        // Atualiza a interface
+        const user = auth?.currentUser;
+        if (user) {
+            updateUserInterface(user);
+        }
+        alert(`✅ Nome atualizado para "${nomeLimpo}"`);
+        return true;
+    };
+
+    // ===== FUNÇÃO PARA MESCLAR DADOS =====
     function _mergeData(anonData, googleData) {
         const mergedCoins = (anonData.coins || 0) + (googleData.coins || 0);
         const mergeArray = (arr1, arr2) => {
@@ -196,7 +246,7 @@ console.log('core.js carregado');
         return merged;
     }
 
-    // ========== FUNÇÃO PARA VINCULAR CONTA GOOGLE COM MESCLAGEM ==========
+    // ===== FUNÇÃO PARA VINCULAR CONTA GOOGLE COM MESCLAGEM =====
     window.conectarGoogle = function() {
         if (!auth) return;
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -207,6 +257,7 @@ console.log('core.js carregado');
             return;
         }
 
+        // Verifica se há dados relevantes na conta anônima
         const hasData = () => {
             if (_rawState.coins > 0) return true;
             const baseItems = ['theme-1', 'effect-1', 'spin-1', 'end-1', 'win-1'];
@@ -242,16 +293,12 @@ console.log('core.js carregado');
                     _rawState.displayName = displayName || 'Usuário';
                     window.saveData();
                     alert("✅ Conta salva e vinculada ao Google com sucesso!");
-                    // Atualiza a UI sem recarregar
-                    updateUserInterface(result.user);
-                    if (typeof window.renderAll === 'function') window.renderAll();
+                    window.location.reload(); // recarrega para sincronizar completamente
                 })
                 .catch((error) => {
                     if (error.code === 'auth/credential-already-in-use') {
                         if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (Seu progresso anônimo será perdido).")) {
-                            auth.signInWithCredential(error.credential).then(() => {
-                                window.location.reload(); // recarrega para sincronizar
-                            });
+                            auth.signInWithCredential(error.credential).then(() => window.location.reload());
                         }
                     } else {
                         console.error("Erro:", error);
@@ -311,9 +358,7 @@ console.log('core.js carregado');
                         Object.assign(_rawState, finalData);
                         window.saveData();
                         alert("✅ Conta vinculada e dados sincronizados!");
-                        // Atualiza UI sem recarregar
-                        updateUserInterface(googleUser);
-                        if (typeof window.renderAll === 'function') window.renderAll();
+                        window.location.reload();
                     }).catch(err => {
                         console.error("Erro ao buscar dados do Google:", err);
                         alert("Erro ao sincronizar dados. Tente novamente.");
@@ -322,9 +367,7 @@ console.log('core.js carregado');
                 .catch((error) => {
                     if (error.code === 'auth/credential-already-in-use') {
                         if (confirm("Esse e-mail já tem dados salvos. Deseja fazer login com essa conta e perder o progresso anônimo?")) {
-                            auth.signInWithCredential(error.credential).then(() => {
-                                window.location.reload();
-                            });
+                            auth.signInWithCredential(error.credential).then(() => window.location.reload());
                         }
                     } else {
                         console.error("Erro:", error);
@@ -343,7 +386,7 @@ console.log('core.js carregado');
         modal.style.display = 'flex';
     };
 
-    // ========== FUNÇÕES DE INICIALIZAÇÃO ==========
+    // ===== FUNÇÕES DE INICIALIZAÇÃO =====
     function reverterItensVencidos() {
         if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
         if (!window.isItemLiberado('unlockedSpinSounds', _rawState.currentSpinSound)) _rawState.currentSpinSound = "spin-1";
@@ -396,14 +439,14 @@ console.log('core.js carregado');
         setTimeout(ativarModoOffline, 4000);
 
         if (auth && database) {
-            // Não chama signInAnonymously aqui – aguarda o listener
+            // Aguarda o listener
             auth.onAuthStateChanged((user) => {
                 console.log("👤 onAuthStateChanged:", user?.uid, user?.isAnonymous);
                 if (user) {
                     currentUserUid = user.uid;
                     updateUserInterface(user);
 
-                    // Escuta as alterações no banco de dados
+                    // Escuta as alterações no banco
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
                         window.isServerSynced = true;
                         if (snapshot.exists()) {
@@ -480,8 +523,7 @@ console.log('core.js carregado');
 
     window.loadData();
 
-    // ========== SINTETIZADOR DE ÁUDIO (mantido) ==========
-    // ... (todo o código de áudio permanece igual) ...
+    // ===== SINTETIZADOR DE ÁUDIO (mantido) =====
     let audioCtx = null;
     window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
