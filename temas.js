@@ -1,269 +1,143 @@
 'use strict';
-console.log('temas.js carregado');
+console.log('temas.js carregado (v2 - Gradientes Modernos)');
 
 window.listTemas = [
-    // ==================== TEMA 1: Clássico ====================
     {
-        id: "theme-1",
-        nome: "Clássico",
-        price: 0,
+        id: "theme-1", nome: "Clássico", price: 0,
         light: {
             style: {
                 bg: 'linear-gradient(145deg, #fdf6f0 0%, #f3e7da 100%)',
-                card: 'rgba(255,255,255,0.92)',
-                text: '#1e2a3a',
-                accent: '#7b9e5a'
+                card: 'rgba(255,255,255,0.85)',
+                text: '#1e2a3a', accent: '#7b9e5a',
+                accentGradient: 'linear-gradient(135deg, #f5b342, #e94b3c)'
             },
-            colors: ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12']
+            colors: ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'],
+            wheelBorder: '#e94b3c', wheelCenter: '#f5d742'
         },
         dark: {
             style: {
                 bg: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)',
-                card: 'rgba(30,30,60,0.92)',
-                text: '#e8e8e8',
-                accent: '#f5b342'
+                card: 'rgba(30,30,60,0.85)',
+                text: '#e8e8e8', accent: '#f5b342',
+                accentGradient: 'linear-gradient(135deg, #f5d742, #e94b3c)'
             },
-            colors: ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12']
+            colors: ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'],
+            wheelBorder: '#9b59b6', wheelCenter: '#f5d742'
         }
     },
-    // ==================== TEMA 2: Natureza ====================
     {
-        id: "theme-2",
-        nome: "Natureza",
-        price: 10,
+        id: "theme-2", nome: "Natureza", price: 10,
         light: {
             style: {
-                bg: 'linear-gradient(145deg, #f0f7ee 0%, #e0ebe0 100%)',
-                card: 'rgba(255,255,255,0.92)',
-                text: '#1e3a2a',
-                accent: '#2e7d32'
+                bg: 'linear-gradient(145deg, #f0f7ee 0%, #d5e8d5 100%)',
+                card: 'rgba(255,255,255,0.85)',
+                text: '#1e3a2a', accent: '#2e7d32',
+                accentGradient: 'linear-gradient(135deg, #4caf50, #2e7d32)'
             },
-            colors: ['#2e7d32', '#66bb6a', '#a5d6a7', '#c8e6c9', '#81c784', '#4caf50']
+            colors: ['#2e7d32', '#66bb6a', '#a5d6a7', '#c8e6c9', '#81c784', '#4caf50'],
+            wheelBorder: '#1b5e20', wheelCenter: '#81c784'
         },
         dark: {
             style: {
-                bg: 'linear-gradient(145deg, #1a2e1a 0%, #0d1f0d 100%)',
-                card: 'rgba(30,50,30,0.92)',
-                text: '#c8e6c9',
-                accent: '#66bb6a'
+                bg: 'linear-gradient(145deg, #0d1f0d 0%, #1a331a 100%)',
+                card: 'rgba(20,40,20,0.85)',
+                text: '#c8e6c9', accent: '#66bb6a',
+                accentGradient: 'linear-gradient(135deg, #81c784, #4caf50)'
             },
-            colors: ['#2e7d32', '#66bb6a', '#a5d6a7', '#c8e6c9', '#81c784', '#4caf50']
+            colors: ['#2e7d32', '#66bb6a', '#a5d6a7', '#c8e6c9', '#81c784', '#4caf50'],
+            wheelBorder: '#a5d6a7', wheelCenter: '#2e7d32'
         }
     },
-    // ==================== TEMA 3: Oceano ====================
     {
-        id: "theme-3",
-        nome: "Oceano",
-        price: 10,
+        id: "theme-3", nome: "Oceano Profundo", price: 15,
         light: {
             style: {
-                bg: 'linear-gradient(145deg, #eaf4fc 0%, #d4e8f5 100%)',
-                card: 'rgba(255,255,255,0.92)',
-                text: '#0d2b4a',
-                accent: '#1565c0'
+                bg: 'linear-gradient(145deg, #eaf4fc 0%, #c4e0f5 100%)',
+                card: 'rgba(255,255,255,0.85)',
+                text: '#0d2b4a', accent: '#1565c0',
+                accentGradient: 'linear-gradient(135deg, #42a5f5, #0d47a1)'
             },
-            colors: ['#1565c0', '#42a5f5', '#64b5f6', '#90caf9', '#1e88e5', '#0d47a1']
+            colors: ['#1565c0', '#42a5f5', '#64b5f6', '#90caf9', '#1e88e5', '#0d47a1'],
+            wheelBorder: '#0d47a1', wheelCenter: '#64b5f6'
         },
         dark: {
             style: {
-                bg: 'linear-gradient(145deg, #0a1e2e 0%, #06131f 100%)',
-                card: 'rgba(10,30,50,0.92)',
-                text: '#bbdefb',
-                accent: '#42a5f5'
+                bg: 'linear-gradient(145deg, #06131f 0%, #0a2036 100%)',
+                card: 'rgba(10,30,50,0.85)',
+                text: '#bbdefb', accent: '#42a5f5',
+                accentGradient: 'linear-gradient(135deg, #64b5f6, #1e88e5)'
             },
-            colors: ['#1565c0', '#42a5f5', '#64b5f6', '#90caf9', '#1e88e5', '#0d47a1']
+            colors: ['#1565c0', '#42a5f5', '#64b5f6', '#90caf9', '#1e88e5', '#0d47a1'],
+            wheelBorder: '#90caf9', wheelCenter: '#1565c0'
         }
     },
-    // ==================== TEMA 4: Solar ====================
     {
-        id: "theme-4",
-        nome: "Solar",
-        price: 15,
+        id: "theme-4", nome: "Fogo & Sangue", price: 15,
         light: {
             style: {
-                bg: 'linear-gradient(145deg, #fff7ed 0%, #fde8d0 100%)',
-                card: 'rgba(255,255,255,0.92)',
-                text: '#4a2a0a',
-                accent: '#e65100'
+                bg: 'linear-gradient(145deg, #fff3e0 0%, #ffcc80 100%)',
+                card: 'rgba(255,255,255,0.85)',
+                text: '#4a1a0a', accent: '#d84315',
+                accentGradient: 'linear-gradient(135deg, #ff9800, #bf360c)'
             },
-            colors: ['#e65100', '#ff9800', '#ffc107', '#ffd54f', '#ffb300', '#f57c00']
+            colors: ['#e65100', '#ff9800', '#ffc107', '#ff5722', '#ffb300', '#f57c00'],
+            wheelBorder: '#bf360c', wheelCenter: '#ffcc80'
         },
         dark: {
             style: {
-                bg: 'linear-gradient(145deg, #2a1a0a 0%, #1a0f05 100%)',
-                card: 'rgba(50,30,10,0.92)',
-                text: '#ffcc80',
-                accent: '#ff9800'
+                bg: 'linear-gradient(145deg, #2a0f05 0%, #4a1a0a 100%)',
+                card: 'rgba(40,15,5,0.85)',
+                text: '#ffe0b2', accent: '#ff9800',
+                accentGradient: 'linear-gradient(135deg, #ffcc80, #e65100)'
             },
-            colors: ['#e65100', '#ff9800', '#ffc107', '#ffd54f', '#ffb300', '#f57c00']
+            colors: ['#e65100', '#ff9800', '#ffc107', '#ff5722', '#ffb300', '#f57c00'],
+            wheelBorder: '#ffcc80', wheelCenter: '#d84315'
         }
     },
-    // ==================== TEMA 5: Neon Roxo ====================
     {
-        id: "theme-5",
-        nome: "Neon Roxo",
-        price: 20,
+        id: "theme-5", nome: "Galáxia Neon", price: 25,
         light: {
             style: {
-                bg: 'linear-gradient(145deg, #f3e8ff 0%, #e8d5f5 100%)',
-                card: 'rgba(255,248,255,0.92)',
-                text: '#2d1b3d',
-                accent: '#9b59b6'
+                bg: 'linear-gradient(145deg, #f3e8ff 0%, #d8b4fe 100%)',
+                card: 'rgba(255,255,255,0.85)',
+                text: '#2d1b3d', accent: '#9333ea',
+                accentGradient: 'linear-gradient(135deg, #c084fc, #7e22ce)'
             },
-            colors: ['#9b59b6', '#c39bd3', '#d7bde2', '#e8daef', '#af7ac5', '#7d3c98']
+            colors: ['#9333ea', '#a855f7', '#c084fc', '#d8b4fe', '#7e22ce', '#6b21a8'],
+            wheelBorder: '#581c87', wheelCenter: '#d8b4fe'
         },
         dark: {
             style: {
-                bg: 'linear-gradient(145deg, #0a0510 0%, #1a0a2a 100%)',
-                card: 'rgba(20,10,30,0.92)',
-                text: '#e8d5f5',
-                accent: '#bb8fce'
+                bg: 'linear-gradient(145deg, #11051f 0%, #2a0a4a 100%)',
+                card: 'rgba(30,10,50,0.85)',
+                text: '#e9d5ff', accent: '#c084fc',
+                accentGradient: 'linear-gradient(135deg, #d8b4fe, #9333ea)'
             },
-            colors: ['#bb8fce', '#c39bd3', '#d7bde2', '#e8daef', '#af7ac5', '#7d3c98']
+            colors: ['#c084fc', '#a855f7', '#9333ea', '#d8b4fe', '#7e22ce', '#6b21a8'],
+            wheelBorder: '#e9d5ff', wheelCenter: '#7e22ce'
         }
     },
-    // ==================== TEMA 6: Neon Rosa ====================
     {
-        id: "theme-6",
-        nome: "Neon Rosa",
-        price: 22,
+        id: "theme-6", nome: "Cyberpunk", price: 30,
         light: {
             style: {
-                bg: 'linear-gradient(145deg, #fce4ec 0%, #f8bbd0 100%)',
-                card: 'rgba(255,245,248,0.92)',
-                text: '#4a1a2a',
-                accent: '#d81b60'
+                bg: 'linear-gradient(145deg, #e0f2fe 0%, #fce4ec 100%)',
+                card: 'rgba(255,255,255,0.85)',
+                text: '#111827', accent: '#e11d48',
+                accentGradient: 'linear-gradient(135deg, #06b6d4, #e11d48)'
             },
-            colors: ['#d81b60', '#f06292', '#f48fb1', '#f8bbd0', '#ec407a', '#c2185b']
+            colors: ['#06b6d4', '#e11d48', '#0ea5e9', '#f43f5e', '#0284c7', '#be123c'],
+            wheelBorder: '#be123c', wheelCenter: '#22d3ee'
         },
         dark: {
             style: {
-                bg: 'linear-gradient(145deg, #1a0a0e 0%, #2d0a18 100%)',
-                card: 'rgba(30,10,18,0.92)',
-                text: '#f8bbd0',
-                accent: '#f06292'
+                bg: 'linear-gradient(145deg, #081121 0%, #210510 100%)',
+                card: 'rgba(15,10,25,0.85)',
+                text: '#f3f4f6', accent: '#06b6d4',
+                accentGradient: 'linear-gradient(135deg, #22d3ee, #fb7185)'
             },
-            colors: ['#f06292', '#f48fb1', '#f8bbd0', '#ec407a', '#d81b60', '#c2185b']
-        }
-    },
-    // ==================== TEMA 7: Neon Verde ====================
-    {
-        id: "theme-7",
-        nome: "Neon Verde",
-        price: 22,
-        light: {
-            style: {
-                bg: 'linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%)',
-                card: 'rgba(245,255,245,0.92)',
-                text: '#1a3a1a',
-                accent: '#2e7d32'
-            },
-            colors: ['#2e7d32', '#66bb6a', '#81c784', '#a5d6a7', '#4caf50', '#1b5e20']
-        },
-        dark: {
-            style: {
-                bg: 'linear-gradient(145deg, #0a1a0a 0%, #1a2e1a 100%)',
-                card: 'rgba(10,30,10,0.92)',
-                text: '#c8e6c9',
-                accent: '#66bb6a'
-            },
-            colors: ['#66bb6a', '#81c784', '#a5d6a7', '#4caf50', '#2e7d32', '#1b5e20']
-        }
-    },
-    // ==================== TEMA 8: Neon Azul ====================
-    {
-        id: "theme-8",
-        nome: "Neon Azul",
-        price: 22,
-        light: {
-            style: {
-                bg: 'linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%)',
-                card: 'rgba(245,250,255,0.92)',
-                text: '#0a1a3a',
-                accent: '#1565c0'
-            },
-            colors: ['#1565c0', '#42a5f5', '#64b5f6', '#90caf9', '#1e88e5', '#0d47a1']
-        },
-        dark: {
-            style: {
-                bg: 'linear-gradient(145deg, #0a0a1a 0%, #0d1a3a 100%)',
-                card: 'rgba(10,10,40,0.92)',
-                text: '#bbdefb',
-                accent: '#42a5f5'
-            },
-            colors: ['#42a5f5', '#64b5f6', '#90caf9', '#1e88e5', '#1565c0', '#0d47a1']
-        }
-    },
-    // ==================== TEMA 9: Neon Laranja ====================
-    {
-        id: "theme-9",
-        nome: "Neon Laranja",
-        price: 24,
-        light: {
-            style: {
-                bg: 'linear-gradient(145deg, #fff3e0 0%, #ffe0b2 100%)',
-                card: 'rgba(255,250,245,0.92)',
-                text: '#3a1a0a',
-                accent: '#e65100'
-            },
-            colors: ['#e65100', '#ff9800', '#ffb300', '#ffcc80', '#f57c00', '#bf360c']
-        },
-        dark: {
-            style: {
-                bg: 'linear-gradient(145deg, #1a0a05 0%, #2d1505 100%)',
-                card: 'rgba(30,15,5,0.92)',
-                text: '#ffcc80',
-                accent: '#ff9800'
-            },
-            colors: ['#ff9800', '#ffb300', '#ffcc80', '#f57c00', '#e65100', '#bf360c']
-        }
-    },
-    // ==================== TEMA 10: Neon Amarelo ====================
-    {
-        id: "theme-10",
-        nome: "Neon Amarelo",
-        price: 20,
-        light: {
-            style: {
-                bg: 'linear-gradient(145deg, #fffde7 0%, #fff9c4 100%)',
-                card: 'rgba(255,255,245,0.92)',
-                text: '#3a3a0a',
-                accent: '#f9a825'
-            },
-            colors: ['#f9a825', '#fdd835', '#ffeb3b', '#fff176', '#fbc02d', '#f57f17']
-        },
-        dark: {
-            style: {
-                bg: 'linear-gradient(145deg, #1a1a05 0%, #2d2d0a 100%)',
-                card: 'rgba(30,30,5,0.92)',
-                text: '#fff9c4',
-                accent: '#fdd835'
-            },
-            colors: ['#fdd835', '#ffeb3b', '#fff176', '#f9a825', '#fbc02d', '#f57f17']
-        }
-    },
-    // ==================== TEMA 11: Neon Ciano ====================
-    {
-        id: "theme-11",
-        nome: "Neon Ciano",
-        price: 25,
-        light: {
-            style: {
-                bg: 'linear-gradient(145deg, #e0f7fa 0%, #b2ebf2 100%)',
-                card: 'rgba(240,255,255,0.92)',
-                text: '#00363a',
-                accent: '#00838f'
-            },
-            colors: ['#00838f', '#26c6da', '#4dd0e1', '#80deea', '#00acc1', '#006064']
-        },
-        dark: {
-            style: {
-                bg: 'linear-gradient(145deg, #051a1a 0%, #0a2a2a 100%)',
-                card: 'rgba(5,30,30,0.92)',
-                text: '#b2ebf2',
-                accent: '#26c6da'
-            },
-            colors: ['#26c6da', '#4dd0e1', '#80deea', '#00acc1', '#00838f', '#006064']
+            colors: ['#06b6d4', '#e11d48', '#0ea5e9', '#f43f5e', '#0284c7', '#be123c'],
+            wheelBorder: '#22d3ee', wheelCenter: '#e11d48'
         }
     }
 ];
