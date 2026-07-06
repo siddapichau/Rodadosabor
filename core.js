@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v8 - Definitivo)');
+console.log('core.js carregado (v9 - Google Login Seguro)');
 
 (function() {
     window.isServerSynced = false;
@@ -96,7 +96,7 @@ console.log('core.js carregado (v8 - Definitivo)');
         return false;
     };
 
-    // ========================== ADMOB ==========================
+    // ========================== ADMOB CONFIG ==========================
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
@@ -111,11 +111,9 @@ console.log('core.js carregado (v8 - Definitivo)');
         try {
             const { AdMob } = window.Capacitor.Plugins;
             AdMob.initialize().then(async () => {
-                console.log("✅ AdMob ligado");
+                console.log("✅ Motor do AdMob ligado");
                 try {
-                    await AdMob.showBanner({
-                        adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0
-                    });
+                    await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 });
                 } catch(e) {}
                 try {
                     await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true });
@@ -127,12 +125,13 @@ console.log('core.js carregado (v8 - Definitivo)');
     window.mostrarIntersticialSeNecessario = async function() {
         if (!window.isAppNativo() || window.isVipAtivo()) return;
         window.spinCounter++;
+        
         if (window.spinCounter % 3 === 0) {
             try {
                 const { AdMob } = window.Capacitor.Plugins;
                 await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true });
                 await AdMob.showInterstitial();
-            } catch(e) {}
+            } catch(e) { console.warn("Erro Intersticial", e); }
         }
     };
 
@@ -148,17 +147,22 @@ console.log('core.js carregado (v8 - Definitivo)');
         try {
             const { AdMob } = window.Capacitor.Plugins;
             try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
+
             return new Promise((resolve) => {
                 const rewardListener = AdMob.addListener('rewardedVideoAdRewarded', (reward) => {
                     _rawState.coins += (reward.amount || 3);
                     window.saveData();
                     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                    rewardListener.remove(); resolve(true);
+                    rewardListener.remove(); 
+                    resolve(true);
                 });
+                
                 const closeListener = AdMob.addListener('rewardedVideoAdClosed', () => {
-                    closeListener.remove(); resolve(false);
+                    closeListener.remove(); 
+                    resolve(false);
                     AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{});
                 });
+                
                 AdMob.showRewardVideoAd().catch((err) => {
                     _rawState.coins += 3; window.saveData(); 
                     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
@@ -233,45 +237,49 @@ console.log('core.js carregado (v8 - Definitivo)');
     window.conectarGoogle = function() {
         if (!auth) return;
         if (window.isAppNativo()) {
-            alert("⚠️ Segurança Android:\n\nPara vincular sua conta ao Google, acesse nosso site pelo navegador do celular ou PC. Seus dados vão sincronizar com o aplicativo automaticamente!");
+            alert("⚠️ Segurança Android:\n\nPara vincular a sua conta ao Google, aceda ao nosso site pelo navegador do telemóvel ou PC. Os seus dados vão sincronizar com a aplicação automaticamente!");
             return;
         }
 
         const provider = new firebase.auth.GoogleAuthProvider();
         const currentUser = auth.currentUser;
-        if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
+        if (!currentUser || !currentUser.isAnonymous) { alert("A sua conta já está protegida!"); return; }
 
         const modal = document.getElementById('mergeAccountModal');
         if (!modal) return;
         
-        const anonSummary = document.getElementById('anonSummary');
-        if (anonSummary) anonSummary.textContent = `${_rawState.coins} moedas`;
+        document.getElementById('anonSummary').textContent = `${_rawState.coins} moedas`;
         
         function proceedWithChoice(choice) {
             modal.style.display = 'none';
-            currentUser.linkWithPopup(provider).then((result) => {
+            
+            // 1. Guarda o estado anónimo na memória para não ser apagado
+            const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
+            
+            // 2. Faz login forçado com a nova conta Google
+            auth.signInWithPopup(provider).then((result) => {
                 const googleUser = result.user;
+                
+                // 3. Puxa os dados que o utilizador tiver guardado no Google e faz a mesclagem
                 database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
                     const googleData = snapshot.val() || {};
                     let finalData;
-                    if (choice === 'keep') finalData = { ..._rawState };
+                    
+                    if (choice === 'keep') finalData = { ...estadoAnonimo };
                     else if (choice === 'overwrite') finalData = { ...googleData };
-                    else if (choice === 'merge') finalData = _mergeData(_rawState, googleData);
+                    else if (choice === 'merge') finalData = _mergeData(estadoAnonimo, googleData);
                     
                     finalData.displayName = googleUser.displayName || 'Usuário';
-                    Object.assign(_rawState, finalData);
-                    window.saveData();
-                    alert("✅ Conta vinculada e dados sincronizados!");
-                    window.location.reload(); 
+                    
+                    // 4. Guarda tudo na nova conta Google e recarrega a página
+                    database.ref('users/' + googleUser.uid + '/appState').set(finalData).then(() => {
+                        alert("✅ Conta vinculada e dados sincronizados com sucesso!");
+                        window.location.reload(); 
+                    });
                 });
             }).catch((error) => {
-                if (error.code === 'auth/credential-already-in-use') {
-                    if (confirm("Esse e-mail já tem dados salvos.\n\nDeseja entrar com ele agora? (O progresso de Convidado será perdido).")) {
-                        auth.signInWithPopup(provider).then(() => {
-                            window.location.reload(); 
-                        }).catch(() => alert("❌ Erro ao tentar entrar."));
-                    }
-                } else { alert("❌ Erro ao conectar com o Google."); }
+                console.error("Erro no Login com Google:", error);
+                alert("❌ Erro ao ligar ao Google: " + error.message);
             });
         }
 
