@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (fix)');
+console.log('roleta.js carregado (v4)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -9,8 +9,6 @@ let spinTimeCount = 0;
 let lastSoundAngle = 0;
 
 // ========================== CONTROLE DE TAMANHO DO CANVAS ==========================
-let canvasSize = 600;
-
 function updateCanvasSize() {
     const canvas = document.getElementById('rouletteCanvas');
     if (!canvas) return;
@@ -20,7 +18,6 @@ function updateCanvasSize() {
     if (canvas.width !== size || canvas.height !== size) {
         canvas.width = size;
         canvas.height = size;
-        canvasSize = size;
     }
 }
 
@@ -124,7 +121,7 @@ window.drawRoulette = function() {
         let textWidth = ctx.measureText(items[i]).width;
         if (textWidth > maxTextWidth && fontSize > 6) {
             fontSize = Math.max(6, fontSize * (maxTextWidth / textWidth));
-            ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
+            ctx.font = `bold ${fontSize}px 'Inter', sans-serif';
         }
 
         ctx.fillStyle = '#ffffff';
@@ -183,12 +180,17 @@ function animateSpin() {
     requestAnimationFrame(animateSpin);
 }
 
+// ========================== FINALIZAÇÃO (SEM ALERT, COM MODAL) ==========================
 function finalizeSpin() {
+    console.log('🎯 finalizeSpin iniciada');
     try {
         const numSegments = window.appState.foods.length;
-        if (numSegments === 0) return;
-        const arcSize = (2 * Math.PI) / numSegments;
+        if (numSegments === 0) {
+            console.warn('⚠️ Nenhuma comida na roleta.');
+            return;
+        }
 
+        const arcSize = (2 * Math.PI) / numSegments;
         let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
         if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
         let index = Math.floor(angleFromStart / arcSize);
@@ -196,25 +198,63 @@ function finalizeSpin() {
         if (index < 0) index = numSegments - 1;
 
         const winningFood = window.appState.foods[index];
+        console.log('🏆 Comida sorteada:', winningFood);
 
-        // 1. Toca o som de fim
+        // --- Toca som de fim ---
         const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
         window.playSynthesizedSound(activeEndSound.type);
 
-        // 2. Exibe o modal do resultado imediatamente
+        // --- Exibe o resultado ---
         const nameEl = document.getElementById('modalFoodName');
         const emojiEl = document.getElementById('modalEmoji');
         const overlay = document.getElementById('resultOverlay');
+
         if (nameEl && emojiEl && overlay) {
+            console.log('✅ Elementos do modal encontrados, exibindo...');
             nameEl.textContent = winningFood;
             const emojiMatch = winningFood.match(/\p{Emoji}/u);
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
+            // Força a exibição
             overlay.style.display = 'flex';
+            console.log('📦 Modal exibido com sucesso');
+        } else {
+            console.error('❌ Modal não encontrado! IDs: modalFoodName, modalEmoji, resultOverlay');
+            // Fallback: tenta criar um modal temporário via DOM (opção segura)
+            try {
+                const tempModal = document.createElement('div');
+                tempModal.className = 'result-overlay';
+                tempModal.style.display = 'flex';
+                tempModal.innerHTML = `
+                    <div class="result-modal">
+                        <h3>Refeição Sorteada!</h3>
+                        <span class="food-emoji" style="font-size:4rem;">${winningFood.match(/\p{Emoji}/u)?.[0] || '🍽️'}</span>
+                        <div class="food-name" style="font-size:1.2rem;font-weight:700;color:var(--gold);">${winningFood}</div>
+                        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.5rem;">Bom apetite!</p>
+                        <button class="btn-close-modal" onclick="this.closest('.result-overlay').style.display='none'">Maravilha!</button>
+                    </div>
+                `;
+                document.body.appendChild(tempModal);
+                // Remove após clique
+                tempModal.addEventListener('click', function(e) {
+                    if (e.target === this) this.style.display = 'none';
+                });
+                // Botão de fechar
+                const closeBtn = tempModal.querySelector('.btn-close-modal');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        tempModal.style.display = 'none';
+                    });
+                }
+                console.log('🆘 Modal temporário criado como fallback');
+            } catch (e) {
+                console.error('❌ Falha ao criar modal temporário:', e);
+            }
         }
 
-        // 3. Pequeno delay antes de lançar o efeito para garantir que o modal foi renderizado
+        // --- Efeito visual e som de vitória (com delay) ---
         setTimeout(() => {
             try {
+                console.log('🎆 Lançando efeito de vitória');
                 const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
                 window.playSynthesizedSound(activeWinSound.type);
 
@@ -224,26 +264,18 @@ function finalizeSpin() {
                     window.launchConfetti();
                 }
             } catch (e) {
-                console.error('Erro ao lançar efeito de vitória:', e);
-                // Se falhar, tenta confetti simples
+                console.error('❌ Erro ao lançar efeito:', e);
                 try { window.launchConfetti(); } catch(e2) {}
             }
-        }, 200);
+        }, 300);
 
+        // Reativa o botão
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
 
     } catch (error) {
-        console.error('Erro em finalizeSpin:', error);
-        // Tenta exibir o modal mesmo com erro
-        const nameEl = document.getElementById('modalFoodName');
-        const emojiEl = document.getElementById('modalEmoji');
-        const overlay = document.getElementById('resultOverlay');
-        if (nameEl && emojiEl && overlay) {
-            nameEl.textContent = 'Algo deu errado, tente novamente!';
-            emojiEl.textContent = '⚠️';
-            overlay.style.display = 'flex';
-        }
+        console.error('❌ Erro grave em finalizeSpin:', error);
+        // Não usa alert, apenas log
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
     }
