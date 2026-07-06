@@ -79,10 +79,8 @@ console.log('core.js carregado (v7 - AdMob Full + Google Popup)');
         return false;
     };
 
-    // ========================== ADMOB CONFIG ==========================
-    // ⚠️ ATENÇÃO: Estes são IDs de TESTE da Google. 
-    // Troque pelos seus IDs reais apenas quando for publicar na PlayStore.
-    const ADMOB_APP_OPEN = 'ca-app-pub-3940256099942544/9257395921';
+    // ========================== ADMOB CONFIG (v5 Syntax) ==========================
+    // IDs de TESTE da Google
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
@@ -91,50 +89,49 @@ console.log('core.js carregado (v7 - AdMob Full + Google Popup)');
         return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
     };
 
-    window.spinCounter = 0; // Contador de giros para o anúncio Intersticial
+    window.spinCounter = 0; // Contador para o anúncio de tela cheia
 
     if (window.isAppNativo()) {
         try {
-            const { AdMob, BannerPosition } = window.Capacitor.Plugins;
-            AdMob.initialize({ initializeForTesting: true }).then(async () => {
+            const { AdMob } = window.Capacitor.Plugins;
+            AdMob.initialize().then(async () => {
                 console.log("✅ Motor do AdMob ligado");
 
-                // 1. App Open Ad (Abertura)
-                try {
-                    await AdMob.prepareAppOpenAd({ adId: ADMOB_APP_OPEN, isTest: true });
-                    await AdMob.showAppOpenAd();
-                } catch(e) { console.warn("Erro App Open", e); }
-
-                // 2. Banner no Rodapé
+                // 1. Banner no Rodapé
                 try {
                     await AdMob.showBanner({
                         adId: ADMOB_BANNER,
                         adPosition: 'BOTTOM_CENTER',
-                        isTest: true,
+                        isTesting: true,
                         margin: 0
                     });
                 } catch(e) { console.warn("Erro Banner", e); }
+
+                // 2. Pré-carrega o Anúncio Premiado (Deixa ele engatilhado para abrir rápido)
+                try {
+                    await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true });
+                } catch(e) {}
 
             }).catch(console.error);
         } catch(e) {}
     }
 
-    // 3. Intersticial (A cada 5 rodadas)
+    // Intersticial (A cada 3 rodadas)
     window.mostrarIntersticialSeNecessario = async function() {
         if (!window.isAppNativo() || window.isVipAtivo()) return;
         window.spinCounter++;
         
-        if (window.spinCounter % 5 === 0) {
+        if (window.spinCounter % 3 === 0) {
             try {
                 const { AdMob } = window.Capacitor.Plugins;
-                await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTest: true });
+                await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true });
                 await AdMob.showInterstitial();
             } catch(e) { console.warn("Erro Intersticial", e); }
         }
     };
 
-    // 4. Premiado
-    let lastAdTime = 0; let rewardedAdLoaded = false;
+    // Premiado (Botão de +3 Moedas)
+    let lastAdTime = 0;
     window.ganharMoedasAnuncioWeb = function() {
         if (!window.isServerSynced) return false;
         const now = Date.now();
@@ -145,28 +142,46 @@ console.log('core.js carregado (v7 - AdMob Full + Google Popup)');
     window.mostrarAdMobNativo = async function() {
         try {
             const { AdMob } = window.Capacitor.Plugins;
-            if (!rewardedAdLoaded) {
-                await AdMob.loadRewardedAd({ adId: ADMOB_REWARDED, isTest: true });
-                rewardedAdLoaded = true;
-            }
+            
+            // Tenta preparar o anúncio novamente caso a internet tenha falhado na abertura do app
+            try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
+
             return new Promise((resolve) => {
-                const rewardListener = AdMob.addListener('rewardedAdReward', (reward) => {
-                    _rawState.coins += reward.amount || 3;
+                // Escuta o momento em que o vídeo termina e entrega a recompensa
+                const rewardListener = AdMob.addListener('rewardedVideoAdRewarded', (reward) => {
+                    _rawState.coins += (reward.amount || 3);
                     window.saveData();
                     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                    rewardListener.remove(); resolve(true);
+                    rewardListener.remove(); 
+                    resolve(true);
                 });
-                const closeListener = AdMob.addListener('rewardedAdClosed', () => {
-                    closeListener.remove(); rewardedAdLoaded = false; resolve(false);
+                
+                // Escuta se o usuário fechou o vídeo (sem ganhar ou após ganhar)
+                const closeListener = AdMob.addListener('rewardedVideoAdClosed', () => {
+                    closeListener.remove(); 
+                    resolve(false);
+                    // Prepara o próximo vídeo silenciosamente
+                    AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{});
                 });
-                AdMob.showRewardedAd().catch((err) => {
-                    _rawState.coins += 3; window.saveData(); rewardedAdLoaded = false; resolve(true);
+                
+                // Exibe o vídeo
+                AdMob.showRewardVideoAd().catch((err) => {
+                    console.error('Erro ao exibir Premiado:', err);
+                    // Failsafe: Se der erro, dá a moeda por causa do transtorno
+                    _rawState.coins += 3; window.saveData(); 
+                    if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+                    resolve(true);
                 });
             });
-        } catch (error) { _rawState.coins += 3; window.saveData(); return true; }
+        } catch (error) { 
+            // Failsafe absoluto
+            _rawState.coins += 3; window.saveData(); 
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            return true; 
+        }
     };
-
-    // ========================== FIREBASE & GOOGLE (Popup Correto) ==========================
+    // ========================== FIREBASE & GOOGLE ==========================
+    // (O resto do seu core.js continua igual daqui para baixo)
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
