@@ -264,14 +264,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.renderAll();
 
-    // 👇 CHAMA A FUNÇÃO DE LOGIN DO GOOGLE
     document.getElementById('btnGoogleLogin')?.addEventListener('click', function() {
         if (typeof window.conectarGoogle === 'function') {
             window.conectarGoogle();
         }
     });
 
-    // 👇 BOTÃO PARA EDITAR NOME
+    // Botão editar nome
     document.getElementById('btnEditName')?.addEventListener('click', function() {
         const nomeAtual = document.getElementById('userName')?.textContent?.replace(' ✓', '').trim() || '';
         const novoNome = prompt('Digite seu novo nome (8 a 16 caracteres, apenas letras):', nomeAtual);
@@ -395,23 +394,19 @@ document.addEventListener('DOMContentLoaded', function() {
     resultOverlay?.addEventListener('click', (e) => { if (e.target === resultOverlay) resultOverlay.style.display = 'none'; });
 });
 
-// ========== LÓGICA DO POP-UP DIÁRIO DO GOOGLE ==========
+// ========== AVISO DIÁRIO ==========
 const checarAvisoDiarioGoogle = () => {
     if (!window.isServerSynced) {
         setTimeout(checarAvisoDiarioGoogle, 1000);
         return;
     }
-
     if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
         return;
     }
-
     const AGORA = Date.now();
     const UMA_HORA_EM_MS = 60 * 60 * 1000;
     const VINTE_QUATRO_HORAS = 24 * UMA_HORA_EM_MS;
-    
     const ultimoAviso = localStorage.getItem('rodaSabor_ultimoAvisoGoogle');
-    
     if (!ultimoAviso || (AGORA - parseInt(ultimoAviso)) > VINTE_QUATRO_HORAS) {
         setTimeout(() => {
             const modalGoogle = document.getElementById('googleReminderModal');
