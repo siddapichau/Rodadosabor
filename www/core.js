@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado');
+console.log('core.js carregado (v4 - Firebase + AdMob)');
 
 (function() {
     window.isServerSynced = false;
@@ -8,6 +8,7 @@ console.log('core.js carregado');
         coins: 0, 
         vipUntil: 0,
         darkMode: false,
+        displayName: '',
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -45,17 +46,16 @@ console.log('core.js carregado');
         return true;
     };
 
+    // ===== COMPRAS =====
     window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) {
             alert("Aguarde a sincronização com o servidor.");
             return false; 
         }
-
         if (window.isVipAtivo()) {
             alert("Você é VIP! Não precisa gastar moedas. O item já está liberado.");
             return false;
         }
-
         let preco = 0; let arrayDestravados = ''; let itemAtual = '';
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
@@ -95,7 +95,6 @@ console.log('core.js carregado');
     window.gastarMoedaGiro = function() {
         if (window.isVipAtivo()) return true; 
         if (!window.isServerSynced) return false;
-        
         if (_rawState.coins >= 1) { 
             _rawState.coins -= 1; 
             window.saveData(); 
@@ -104,115 +103,227 @@ console.log('core.js carregado');
         return false;
     };
 
-    // ========================== ADMOB E RECOMPENSAS ==========================
+    // ===== ANÚNCIO (ADMOB NATIVO + FALLBACK WEB) =====
     let lastAdTime = 0;
     let rewardedAdLoaded = false;
-    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; // ID de teste
+    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; // ID Teste - Mude no futuro para o oficial
 
-    window.ganharMoedasAnuncio = async function() {
-        console.log("📢 ganharMoedasAnuncio chamado");
+    window.isAppNativo = function() {
+        return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
+    };
 
-        // Verifica se está no Capacitor (app nativo Android/iOS)
-        const isNative = typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
+    // Apenas para PC/Web
+    window.ganharMoedasAnuncioWeb = function() {
+        if (!window.isServerSynced) return false;
+        const now = Date.now();
+        if (now - lastAdTime < 25000) return false;
+        lastAdTime = now;
+        _rawState.coins += 3;
+        window.saveData();
+        return true;
+    };
 
-        if (!isNative) {
-            // === MODO WEB (SIMULAÇÃO DE 30s) ===
-            if (!window.isServerSynced) {
-                console.warn("❌ Servidor não sincronizado");
-                return false;
-            }
-            const now = Date.now();
-            const diff = now - lastAdTime;
-            if (diff < 25000) {
-                console.warn("🛑 SPAM Bloqueado (menos de 25s)");
-                return false;
-            }
-            lastAdTime = now;
-            _rawState.coins += 3;
-            window.saveData();
-            return true;
-        }
-
-        // === MODO NATIVO (ADMOB REAL) ===
+    // Apenas para Celular (AdMob)
+    window.mostrarAdMobNativo = async function() {
         try {
-            // Carrega o anúncio se não estiver carregado
+            const { AdMob } = window.Capacitor.Plugins;
             if (!rewardedAdLoaded) {
-                const { AdMob } = window.Capacitor.Plugins;
-                await AdMob.loadRewardedAd({
-                    adId: ADMOB_REWARDED_ID,
-                    isTest: true, // Mude para false em produção quando publicar nas lojas
-                });
+                await AdMob.loadRewardedAd({ adId: ADMOB_REWARDED_ID, isTest: true });
                 rewardedAdLoaded = true;
-                console.log('✅ Anúncio recompensado carregado');
             }
-
-            // Exibe o anúncio e aguarda recompensa
             return new Promise((resolve) => {
-                const { AdMob } = window.Capacitor.Plugins;
-
-                // Listener para recompensa
                 const rewardListener = AdMob.addListener('rewardedAdReward', (reward) => {
-                    console.log('🎁 Recompensa concedida:', reward.amount);
                     _rawState.coins += reward.amount || 3;
                     window.saveData();
-                    window.updateCoinsDisplay();
+                    if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
                     rewardListener.remove();
-                    resolve(true); // Retorna true para o app.js exibir o alerta de sucesso
+                    resolve(true);
                 });
-
-                // Listener para fechamento sem recompensa
                 const closeListener = AdMob.addListener('rewardedAdClosed', () => {
-                    console.log('🚪 Anúncio fechado sem recompensa');
                     closeListener.remove();
-                    resolve(false); // Retorna false para não dar moedas
+                    rewardedAdLoaded = false; // Força carregar um novo no próximo clique
+                    resolve(false);
                 });
-
                 AdMob.showRewardedAd().catch((err) => {
-                    console.error('Erro ao exibir anúncio:', err);
+                    console.error('Erro ao exibir AdMob:', err);
                     _rawState.coins += 3; // Fallback
                     window.saveData();
-                    window.updateCoinsDisplay();
+                    if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+                    rewardedAdLoaded = false;
                     resolve(true);
                 });
             });
         } catch (error) {
-            console.error('❌ Erro no AdMob:', error);
-            _rawState.coins += 3; // Fallback se o plugin falhar
+            console.error('❌ Erro crítico no AdMob:', error);
+            _rawState.coins += 3; // Fallback
             window.saveData();
-            window.updateCoinsDisplay();
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             return true;
         }
     };
 
-    // ========================== FIREBASE & DADOS ==========================
+    // ===== FIREBASE & SINCROMIZAÇÃO =====
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
+    let anonymousSignInAttempted = false;
+
+    if (auth) {
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .catch(err => console.warn("Erro persistência:", err));
+    }
+
+    function updateUserInterface(user) {
+        const userArea = document.getElementById('userArea');
+        const userName = document.getElementById('userName');
+        const userAvatar = document.getElementById('userAvatar');
+        const btnGoogle = document.getElementById('btnGoogleLogin');
+        const reminderModal = document.getElementById('googleReminderModal');
+        const btnEdit = document.getElementById('btnEditName');
+
+        if (!user) {
+            if (userArea) userArea.style.display = 'none';
+            return;
+        }
+
+        let displayName = _rawState.displayName || user.displayName || '';
+        if (!displayName && !user.isAnonymous) displayName = 'Usuário';
+        if (!displayName && user.isAnonymous) displayName = 'Convidado';
+
+        const firstName = displayName.split(' ')[0];
+
+        if (userArea) {
+            userArea.style.display = 'flex';
+            if (userAvatar) userAvatar.textContent = firstName.charAt(0).toUpperCase();
+            if (userName) {
+                userName.textContent = firstName;
+                if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;"></i>';
+            }
+        }
+
+        if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
+        if (reminderModal && !user.isAnonymous) reminderModal.style.display = 'none';
+        if (btnEdit) btnEdit.style.display = 'flex';
+    }
+
+    window.editarNomeUsuario = function(novoNome) {
+        if (!novoNome || typeof novoNome !== 'string') { alert("Nome inválido."); return false; }
+        let nomeLimpo = novoNome.replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
+        if (nomeLimpo.length < 3 || nomeLimpo.length > 16) { alert("O nome deve ter entre 3 e 16 caracteres, apenas letras."); return false; }
+        
+        _rawState.displayName = nomeLimpo;
+        window.saveData();
+        const user = auth?.currentUser;
+        if (user) updateUserInterface(user);
+        alert(`✅ Nome atualizado para "${nomeLimpo}"`);
+        return true;
+    };
+
+    function _mergeData(anonData, googleData) {
+        const mergedCoins = (anonData.coins || 0) + (googleData.coins || 0);
+        const mergeArray = (arr1, arr2) => Array.from(new Set([...(arr1 || []), ...(arr2 || [])]));
+        const arrayFields = ['foods', 'customFoods', 'unlockedPageThemes', 'unlockedRouletteThemes', 'unlockedSpinSounds', 'unlockedEndSounds', 'unlockedWinSounds', 'unlockedEffects', 'unlockedRecipes'];
+        const merged = { ...anonData };
+        merged.coins = mergedCoins;
+        if (googleData.vipUntil && googleData.vipUntil > (merged.vipUntil || 0)) merged.vipUntil = googleData.vipUntil;
+        if (googleData.darkMode !== undefined) merged.darkMode = googleData.darkMode;
+        if (googleData.displayName) merged.displayName = googleData.displayName;
+        arrayFields.forEach(field => { merged[field] = mergeArray(anonData[field], googleData[field]); });
+        const currentFields = ['currentPageTheme', 'currentRouletteTheme', 'currentSpinSound', 'currentEndSound', 'currentWinSound', 'currentEffect'];
+        currentFields.forEach(field => { if (googleData[field]) merged[field] = googleData[field]; });
+        return merged;
+    }
 
     window.conectarGoogle = function() {
         if (!auth) return;
         const provider = new firebase.auth.GoogleAuthProvider();
-        
-        if (auth.currentUser && auth.currentUser.isAnonymous) {
-            auth.currentUser.linkWithPopup(provider).then((result) => {
-                alert("✅ Conta salva e vinculada ao Google com sucesso!");
-                window.location.reload(); 
+        const currentUser = auth.currentUser;
+
+        if (!currentUser || !currentUser.isAnonymous) {
+            alert("Sua conta já está protegida pelo Google!");
+            return;
+        }
+
+        const hasData = () => {
+            if (_rawState.coins > 0) return true;
+            const baseItems = ['theme-1', 'effect-1', 'spin-1', 'end-1', 'win-1'];
+            const allUnlocked = [..._rawState.unlockedPageThemes, ..._rawState.unlockedRouletteThemes, ..._rawState.unlockedSpinSounds, ..._rawState.unlockedEndSounds, ..._rawState.unlockedWinSounds, ..._rawState.unlockedEffects, ..._rawState.unlockedRecipes];
+            for (let item of allUnlocked) if (!baseItems.includes(item)) return true;
+            if (_rawState.customFoods?.length > 0) return true;
+            if (_rawState.foods?.length > 4) return true;
+            return false;
+        };
+
+        if (!hasData()) {
+            currentUser.linkWithPopup(provider).then((result) => {
+                const profile = result.additionalUserInfo?.profile;
+                let displayName = result.user.displayName;
+                if (!displayName && profile) displayName = profile.name || profile.given_name || 'Usuário';
+                if (displayName && displayName !== result.user.displayName) result.user.updateProfile({ displayName }).catch(console.warn);
+                _rawState.displayName = displayName || 'Usuário';
+                window.saveData();
+                result.user.reload().then(() => {
+                    updateUserInterface(result.user);
+                    alert("✅ Conta salva e vinculada ao Google com sucesso!");
+                    if (typeof window.renderAll === 'function') window.renderAll();
+                });
             }).catch((error) => {
                 if (error.code === 'auth/credential-already-in-use') {
-                    if (confirm("Esse e-mail do Google já tem um progresso salvo. Deseja trocar para ele? (Você perderá o progresso anônimo atual).")) {
-                        auth.signInWithCredential(error.credential).then(() => {
-                            window.location.reload();
-                        });
+                    if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (Seu progresso anônimo será perdido).")) {
+                        auth.signInWithCredential(error.credential).then(() => window.location.reload());
                     }
-                } else {
-                    console.error("Erro no Login com Google:", error);
-                    alert("❌ Ocorreu um erro ao conectar com o Google. Certifique-se de ter adicionado os domínios autorizados no Firebase.");
-                }
+                } else { alert("❌ Erro ao conectar com Google."); }
             });
-        } else {
-            alert("Sua conta já está protegida pelo Google!");
+            return;
         }
+
+        const modal = document.getElementById('mergeAccountModal');
+        if (!modal) return;
+        const anonSummary = document.getElementById('anonSummary');
+        if (anonSummary) anonSummary.textContent = `${_rawState.coins} moedas, ${_rawState.unlockedEffects.length} efeitos`;
+        const googleSummary = document.getElementById('googleSummary');
+        if (googleSummary) googleSummary.textContent = "Carregando após login...";
+
+        function proceedWithChoice(choice) {
+            modal.style.display = 'none';
+            currentUser.linkWithPopup(provider).then((result) => {
+                const googleUser = result.user;
+                const profile = result.additionalUserInfo?.profile;
+                let displayName = googleUser.displayName;
+                if (!displayName && profile) displayName = profile.name || profile.given_name || 'Usuário';
+                if (displayName && displayName !== googleUser.displayName) googleUser.updateProfile({ displayName }).catch(console.warn);
+                
+                database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
+                    const googleData = snapshot.val() || {};
+                    let finalData;
+                    if (choice === 'keep') finalData = { ..._rawState };
+                    else if (choice === 'overwrite') finalData = { ...googleData };
+                    else if (choice === 'merge') finalData = _mergeData(_rawState, googleData);
+                    
+                    finalData.displayName = displayName || 'Usuário';
+                    Object.assign(_rawState, finalData);
+                    window.saveData();
+                    googleUser.reload().then(() => {
+                        updateUserInterface(googleUser);
+                        alert("✅ Conta vinculada e dados sincronizados!");
+                        if (typeof window.renderAll === 'function') window.renderAll();
+                    });
+                }).catch(() => alert("Erro ao sincronizar dados."));
+            }).catch((error) => {
+                if (error.code === 'auth/credential-already-in-use') {
+                    if (confirm("Esse e-mail já tem dados salvos. Entrar com essa conta e perder o anônimo?")) {
+                        auth.signInWithCredential(error.credential).then(() => window.location.reload());
+                    }
+                } else alert("❌ Erro ao conectar com Google.");
+            });
+        }
+
+        document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep');
+        document.getElementById('mergeOverwrite').onclick = () => proceedWithChoice('overwrite');
+        document.getElementById('mergeCombine').onclick = () => proceedWithChoice('merge');
+        document.getElementById('btnMergeCancel').onclick = () => modal.style.display = 'none';
+        modal.style.display = 'flex';
     };
 
     function reverterItensVencidos() {
@@ -239,7 +350,6 @@ console.log('core.js carregado');
 
     function ativarModoOffline() {
         if (!window.isServerSynced) {
-            console.warn("⚠️ Firebase não respondeu a tempo. Entrando no modo Offline.");
             window.isServerSynced = true; 
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             if (typeof window.renderAll === 'function') window.renderAll();
@@ -251,49 +361,54 @@ console.log('core.js carregado');
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) {
                 const parsed = JSON.parse(saved);
-                delete parsed.coins;
-                delete parsed.vipUntil;
                 Object.assign(_rawState, parsed);
             }
             garantirArraysNoEstado();
-            
             const coinEl = document.getElementById('coin-balance');
-            if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if (coinEl) coinEl.textContent = _rawState.coins;
         } catch (e) {}
 
         setTimeout(ativarModoOffline, 4000);
 
         if (auth && database) {
-            auth.signInAnonymously().catch(err => {
-                console.error("🛑 Erro Auth:", err);
-                ativarModoOffline(); 
-            });
-
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserUid = user.uid;
-                    
-                    const btnGoogle = document.getElementById('btnGoogleLogin');
-                    if (btnGoogle) {
-                        btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
-                    }
+                    if (!_rawState.displayName && user.displayName) _rawState.displayName = user.displayName;
+                    updateUserInterface(user);
 
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
-                        window.isServerSynced = true; 
-                        
+                        window.isServerSynced = true;
                         if (snapshot.exists()) {
                             const serverData = snapshot.val();
-                            Object.assign(_rawState, serverData); 
+                            const localCoins = _rawState.coins;
+                            const localName = _rawState.displayName;
+                            Object.assign(_rawState, serverData);
+                            if (serverData.coins === 0 && localCoins > 0) _rawState.coins = localCoins;
+                            if (!_rawState.displayName && localName) _rawState.displayName = localName;
+                            else if (!_rawState.displayName && user.displayName) _rawState.displayName = user.displayName;
+                            else if (!_rawState.displayName) _rawState.displayName = user.isAnonymous ? '' : 'Usuário';
                             garantirArraysNoEstado();
                             if (typeof window.renderAll === 'function') window.renderAll();
+                            updateUserInterface(user);
                         } else {
-                            _rawState.coins = 20; _rawState.vipUntil = 0;
-                            _rawState.unlockedPageThemes = ["theme-1"]; _rawState.unlockedEffects = ["effect-1"];
+                            if (_rawState.coins === 0) _rawState.coins = 20;
+                            if (!_rawState.unlockedPageThemes || _rawState.unlockedPageThemes.length === 0) {
+                                _rawState.unlockedPageThemes = ["theme-1"]; _rawState.unlockedEffects = ["effect-1"];
+                            }
+                            if (user.displayName) _rawState.displayName = user.displayName;
+                            if (!_rawState.displayName && !user.isAnonymous) _rawState.displayName = 'Usuário';
                             garantirArraysNoEstado();
-                            window.saveData(); 
+                            window.saveData();
                             if (typeof window.renderAll === 'function') window.renderAll();
+                            updateUserInterface(user);
                         }
                     });
+                } else {
+                    if (!anonymousSignInAttempted) {
+                        anonymousSignInAttempted = true;
+                        auth.signInAnonymously().catch(() => ativarModoOffline());
+                    }
                 }
             });
         } else {
@@ -304,8 +419,7 @@ console.log('core.js carregado');
     let saveTimeout = null;
     window.saveData = function() {
         const coinEl = document.getElementById('coin-balance');
-        if (coinEl && window.isServerSynced) coinEl.textContent = _rawState.coins;
-        
+        if (coinEl) coinEl.textContent = _rawState.coins;
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
         
         if (saveTimeout) clearTimeout(saveTimeout);
@@ -314,8 +428,8 @@ console.log('core.js carregado');
                 database.ref('users/' + currentUserUid + '/appState').set(_rawState)
                     .catch((error) => {
                         if (error.code === "PERMISSION_DENIED") {
-                            console.warn("Transação negada pelo servidor.");
-                            localStorage.removeItem('rodaDoSaborState'); window.location.reload(); 
+                            localStorage.removeItem('rodaDoSaborState');
+                            window.location.reload();
                         }
                     });
             }
@@ -324,7 +438,7 @@ console.log('core.js carregado');
 
     window.loadData();
 
-    // ========================== SINTETIZADOR DE ÁUDIO ==========================
+    // ===== ÁUDIO =====
     let audioCtx = null;
     window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
@@ -360,7 +474,6 @@ console.log('core.js carregado');
         const g = ctx.createGain(); g.gain.setValueAtTime(gainValue, start); g.gain.exponentialRampToValueAtTime(0.01, start + duration);
         noise.connect(filter); filter.connect(g); g.connect(ctx.destination); noise.start(start);
     }
-
     function osc(ctx, start, fStart, fEnd, duration, type, gain) {
         const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = type;
         o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
@@ -379,7 +492,6 @@ console.log('core.js carregado');
         const pageTheme = themes.find(t => t.id === _rawState.currentPageTheme) || themes[0];
         const rouletteTheme = themes.find(t => t.id === _rawState.currentRouletteTheme) || themes[0];
         const mode = _rawState.darkMode ? 'dark' : 'light';
-        
         const pageData = pageTheme[mode];
         if (pageData && pageData.style) {
             const root = document.documentElement;
@@ -387,13 +499,11 @@ console.log('core.js carregado');
             root.style.setProperty('--text-primary', pageData.style.text); root.style.setProperty('--accent', pageData.style.accent);
             root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${pageData.colors[0] || '#f5d742'}, ${pageData.colors[1] || '#7b9e5a'})`);
         }
-
         const rouletteData = rouletteTheme[mode];
         if (rouletteData && rouletteData.colors) {
             const root = document.documentElement;
             root.style.setProperty('--wheel-border', rouletteData.colors[0]); root.style.setProperty('--wheel-center', rouletteData.colors[2] || rouletteData.colors[1] || '#f5d742');
         }
-
         if (typeof window.drawRoulette === 'function') window.drawRoulette();
     };
 })();
