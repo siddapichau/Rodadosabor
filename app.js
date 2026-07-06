@@ -1,9 +1,10 @@
 'use strict';
-console.log('app.js carregado (v5)');
+console.log('app.js carregado (v6)');
 
 window.updateCoinsDisplay = function() {
+    // Agora ele apenas joga o valor na tela imediatamente sem checar isServerSynced (Otimista)
     const coinBalance = document.getElementById('coin-balance');
-    if (coinBalance && window.isServerSynced) coinBalance.textContent = window.appState.coins;
+    if (coinBalance) coinBalance.textContent = window.appState.coins;
 };
 
 window.launchCurrentEffect = function() {
@@ -248,10 +249,8 @@ window.renderAll = function() {
 
 // ========================== EVENTOS PRINCIPAIS ==========================
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Inicia renderização
     window.renderAll();
 
-    // 2. Botão VIP para testes
     const actionRow = document.querySelector('.action-row-buttons');
     if (actionRow) {
         const btnVip = document.createElement('button');
@@ -267,9 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
         actionRow.appendChild(btnVip);
     }
 
-    // 3. EDITAR NOME DO USUÁRIO (Restauração da função)
     document.getElementById('btnEditName')?.addEventListener('click', function() {
-        // Pega o nome atual ignorando o ícone de check se ele existir
         const nomeAtual = document.getElementById('userName')?.textContent?.replace(' ✓', '').trim() || '';
         const novoNome = prompt('Digite seu novo nome (3 a 16 caracteres, apenas letras):', nomeAtual);
         if (novoNome !== null && novoNome.trim() !== '') {
@@ -277,14 +274,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 4. Conectar com o Google
     document.getElementById('btnGoogleLogin')?.addEventListener('click', function() {
         if (typeof window.conectarGoogle === 'function') {
             window.conectarGoogle();
         }
     });
 
-    // 5. Girar Roleta
     document.getElementById('btnSpin')?.addEventListener('click', function() {
         if (!window.gastarMoedaGiro()) {
             if(!window.isServerSynced) {
@@ -298,17 +293,13 @@ document.addEventListener('DOMContentLoaded', function() {
         window.spinRoulette();
     });
     
-    // 6. Modo Noturno
+    // 👇 O SEGREDO DO MODO NOTURNO RÁPIDO ESTÁ AQUI 👇
     document.getElementById('btnModeToggle')?.addEventListener('click', () => {
-        const currentData = JSON.parse(localStorage.getItem('rodaDoSaborState'));
-        if(currentData) {
-            currentData.darkMode = !currentData.darkMode;
-            localStorage.setItem('rodaDoSaborState', JSON.stringify(currentData));
-            window.location.reload(); 
+        if (typeof window.toggleDarkModeSeguro === 'function') {
+            window.toggleDarkModeSeguro(); // Chama a porta segura sem recarregar a tela!
         }
     });
 
-    // 7. Assistir Anúncio (AdMob/Celular vs Web/PC)
     const btnWatchAd = document.getElementById('btnWatchAd');
     btnWatchAd?.addEventListener('click', async function() {
         if (!window.isServerSynced) {
@@ -316,7 +307,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // --- Celular (AdMob) ---
         if (window.isAppNativo && window.isAppNativo()) {
             btnWatchAd.disabled = true;
             const textoOriginal = btnWatchAd.innerHTML;
@@ -332,7 +322,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // --- PC (Web / Timer Falso) ---
         const overlay = document.getElementById('adOverlay');
         const countdownSpan = document.getElementById('adCountdown');
         
@@ -366,7 +355,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     });
 
-    // 8. Modais de Comida
     const foodModal = document.getElementById('foodSelectionModal');
     document.getElementById('btnOpenFoodModal')?.addEventListener('click', () => {
         if (window.appState) {
@@ -425,7 +413,6 @@ const checarAvisoDiarioGoogle = () => {
         setTimeout(checarAvisoDiarioGoogle, 1000);
         return;
     }
-    // Se o usuário não é anônimo (já tá no Google), ignora o aviso!
     if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
         return;
     }
