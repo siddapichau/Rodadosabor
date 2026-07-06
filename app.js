@@ -1,8 +1,7 @@
 'use strict';
-console.log('app.js carregado (v6)');
+console.log('app.js carregado (v7)');
 
 window.updateCoinsDisplay = function() {
-    // Agora ele apenas joga o valor na tela imediatamente sem checar isServerSynced (Otimista)
     const coinBalance = document.getElementById('coin-balance');
     if (coinBalance) coinBalance.textContent = window.appState.coins;
 };
@@ -247,7 +246,6 @@ window.renderAll = function() {
     }
 };
 
-// ========================== EVENTOS PRINCIPAIS ==========================
 document.addEventListener('DOMContentLoaded', function() {
     window.renderAll();
 
@@ -269,18 +267,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnEditName')?.addEventListener('click', function() {
         const nomeAtual = document.getElementById('userName')?.textContent?.replace(' ✓', '').trim() || '';
         const novoNome = prompt('Digite seu novo nome (3 a 16 caracteres, apenas letras):', nomeAtual);
-        if (novoNome !== null && novoNome.trim() !== '') {
-            window.editarNomeUsuario(novoNome.trim());
-        }
+        if (novoNome !== null && novoNome.trim() !== '') { window.editarNomeUsuario(novoNome.trim()); }
     });
 
     document.getElementById('btnGoogleLogin')?.addEventListener('click', function() {
-        if (typeof window.conectarGoogle === 'function') {
-            window.conectarGoogle();
-        }
+        if (typeof window.conectarGoogle === 'function') window.conectarGoogle();
     });
 
-    document.getElementById('btnSpin')?.addEventListener('click', function() {
+    // 👇 EVENTO DO GIRO (Agora dispara anúncio a cada 5 giros) 👇
+    document.getElementById('btnSpin')?.addEventListener('click', async function() {
+        // Se for no Celular e não for VIP, checa e mostra anúncio a cada 5 rodadas
+        if (window.isAppNativo && window.isAppNativo()) {
+            await window.mostrarIntersticialSeNecessario();
+        }
+
         if (!window.gastarMoedaGiro()) {
             if(!window.isServerSynced) {
                 alert("⏳ Conectando ao servidor... Aguarde um instante.");
@@ -293,19 +293,13 @@ document.addEventListener('DOMContentLoaded', function() {
         window.spinRoulette();
     });
     
-    // 👇 O SEGREDO DO MODO NOTURNO RÁPIDO ESTÁ AQUI 👇
     document.getElementById('btnModeToggle')?.addEventListener('click', () => {
-        if (typeof window.toggleDarkModeSeguro === 'function') {
-            window.toggleDarkModeSeguro(); // Chama a porta segura sem recarregar a tela!
-        }
+        if (typeof window.toggleDarkModeSeguro === 'function') window.toggleDarkModeSeguro(); 
     });
 
     const btnWatchAd = document.getElementById('btnWatchAd');
     btnWatchAd?.addEventListener('click', async function() {
-        if (!window.isServerSynced) {
-            alert("⏳ Conectando ao servidor... Tente novamente em alguns instantes.");
-            return;
-        }
+        if (!window.isServerSynced) { alert("⏳ Conectando ao servidor..."); return; }
 
         if (window.isAppNativo && window.isAppNativo()) {
             btnWatchAd.disabled = true;
@@ -316,9 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             btnWatchAd.innerHTML = textoOriginal;
             btnWatchAd.disabled = false;
-            if (recompensaGanha) {
-                alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
-            }
+            if (recompensaGanha) alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
             return;
         }
 
@@ -409,17 +401,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ========================== AVISO DIÁRIO DO GOOGLE ==========================
 const checarAvisoDiarioGoogle = () => {
-    if (!window.isServerSynced) {
-        setTimeout(checarAvisoDiarioGoogle, 1000);
-        return;
-    }
-    if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
-        return;
-    }
+    if (!window.isServerSynced) { setTimeout(checarAvisoDiarioGoogle, 1000); return; }
+    if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) return;
+    
     const AGORA = Date.now();
-    const UMA_HORA_EM_MS = 60 * 60 * 1000;
-    const VINTE_QUATRO_HORAS = 24 * UMA_HORA_EM_MS;
+    const VINTE_QUATRO_HORAS = 24 * 60 * 60 * 1000;
     const ultimoAviso = localStorage.getItem('rodaSabor_ultimoAvisoGoogle');
+    
     if (!ultimoAviso || (AGORA - parseInt(ultimoAviso)) > VINTE_QUATRO_HORAS) {
         setTimeout(() => {
             const modalGoogle = document.getElementById('googleReminderModal');
@@ -430,14 +418,11 @@ const checarAvisoDiarioGoogle = () => {
         }, 2000);
     }
 };
-
 checarAvisoDiarioGoogle();
 
 document.getElementById('btnGoogleModalLogin')?.addEventListener('click', function() {
     document.getElementById('googleReminderModal').style.display = 'none';
-    if (typeof window.conectarGoogle === 'function') {
-        window.conectarGoogle();
-    }
+    if (typeof window.conectarGoogle === 'function') window.conectarGoogle();
 });
 
 document.getElementById('btnGoogleModalClose')?.addEventListener('click', function() {
