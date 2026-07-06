@@ -1,5 +1,6 @@
 {
   "appId": "com.siddapichau.rodasabor",
   "appName": "Roda do Sabor",
-  "webDir": "."
+  "webDir": "www",
+  "bundledWebRuntime": false
 }
