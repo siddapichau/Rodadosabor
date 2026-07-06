@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (v4)');
+console.log('roleta.js carregado (v5 - estável)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -180,15 +180,11 @@ function animateSpin() {
     requestAnimationFrame(animateSpin);
 }
 
-// ========================== FINALIZAÇÃO (SEM ALERT, COM MODAL) ==========================
+// ========================== FINALIZAÇÃO (SEM ALERT) ==========================
 function finalizeSpin() {
-    console.log('🎯 finalizeSpin iniciada');
     try {
         const numSegments = window.appState.foods.length;
-        if (numSegments === 0) {
-            console.warn('⚠️ Nenhuma comida na roleta.');
-            return;
-        }
+        if (numSegments === 0) return;
 
         const arcSize = (2 * Math.PI) / numSegments;
         let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
@@ -198,63 +194,26 @@ function finalizeSpin() {
         if (index < 0) index = numSegments - 1;
 
         const winningFood = window.appState.foods[index];
-        console.log('🏆 Comida sorteada:', winningFood);
 
-        // --- Toca som de fim ---
+        // Toca som de fim
         const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
         window.playSynthesizedSound(activeEndSound.type);
 
-        // --- Exibe o resultado ---
+        // Exibe modal
         const nameEl = document.getElementById('modalFoodName');
         const emojiEl = document.getElementById('modalEmoji');
         const overlay = document.getElementById('resultOverlay');
 
         if (nameEl && emojiEl && overlay) {
-            console.log('✅ Elementos do modal encontrados, exibindo...');
             nameEl.textContent = winningFood;
             const emojiMatch = winningFood.match(/\p{Emoji}/u);
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
-            // Força a exibição
             overlay.style.display = 'flex';
-            console.log('📦 Modal exibido com sucesso');
-        } else {
-            console.error('❌ Modal não encontrado! IDs: modalFoodName, modalEmoji, resultOverlay');
-            // Fallback: tenta criar um modal temporário via DOM (opção segura)
-            try {
-                const tempModal = document.createElement('div');
-                tempModal.className = 'result-overlay';
-                tempModal.style.display = 'flex';
-                tempModal.innerHTML = `
-                    <div class="result-modal">
-                        <h3>Refeição Sorteada!</h3>
-                        <span class="food-emoji" style="font-size:4rem;">${winningFood.match(/\p{Emoji}/u)?.[0] || '🍽️'}</span>
-                        <div class="food-name" style="font-size:1.2rem;font-weight:700;color:var(--gold);">${winningFood}</div>
-                        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.5rem;">Bom apetite!</p>
-                        <button class="btn-close-modal" onclick="this.closest('.result-overlay').style.display='none'">Maravilha!</button>
-                    </div>
-                `;
-                document.body.appendChild(tempModal);
-                // Remove após clique
-                tempModal.addEventListener('click', function(e) {
-                    if (e.target === this) this.style.display = 'none';
-                });
-                // Botão de fechar
-                const closeBtn = tempModal.querySelector('.btn-close-modal');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', function() {
-                        tempModal.style.display = 'none';
-                    });
-                }
-                console.log('🆘 Modal temporário criado como fallback');
-            } catch (e) {
-                console.error('❌ Falha ao criar modal temporário:', e);
-            }
         }
 
-        // --- Efeito visual e som de vitória (com delay) ---
+        // Efeito e som de vitória (após delay)
         setTimeout(() => {
             try {
-                console.log('🎆 Lançando efeito de vitória');
                 const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
                 window.playSynthesizedSound(activeWinSound.type);
 
@@ -264,18 +223,17 @@ function finalizeSpin() {
                     window.launchConfetti();
                 }
             } catch (e) {
-                console.error('❌ Erro ao lançar efeito:', e);
+                console.warn('Erro no efeito, usando fallback:', e);
                 try { window.launchConfetti(); } catch(e2) {}
             }
         }, 300);
 
-        // Reativa o botão
+        // Reativa botão
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
 
     } catch (error) {
-        console.error('❌ Erro grave em finalizeSpin:', error);
-        // Não usa alert, apenas log
+        console.error('Erro em finalizeSpin:', error);
         const btn = document.getElementById('btnSpin');
         if (btn) btn.disabled = false;
     }
