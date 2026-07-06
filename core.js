@@ -117,34 +117,230 @@ console.log('core.js carregado');
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
 
-    // 👇 NOVA FUNÇÃO: VINCULAR CONTA GOOGLE 👇
+    // ----- FUNÇÃO AUXILIAR PARA MESCLAR DADOS -----
+    function _mergeData(anonData, googleData) {
+        // Soma moedas
+        const mergedCoins = (anonData.coins || 0) + (googleData.coins || 0);
+        
+        // Une arrays (sem duplicatas)
+        const mergeArray = (arr1, arr2) => {
+            const set = new Set([...(arr1 || []), ...(arr2 || [])]);
+            return Array.from(set);
+        };
+
+        // Campos que são arrays
+        const arrayFields = [
+            'foods', 'customFoods', 'unlockedPageThemes', 'unlockedRouletteThemes',
+            'unlockedSpinSounds', 'unlockedEndSounds', 'unlockedWinSounds',
+            'unlockedEffects', 'unlockedRecipes'
+        ];
+
+        const merged = { ...anonData }; // começa com anônimo
+        // Soma moedas
+        merged.coins = mergedCoins;
+        // VIP: mantém o maior tempo (o mais longe)
+        if (googleData.vipUntil && googleData.vipUntil > (merged.vipUntil || 0)) {
+            merged.vipUntil = googleData.vipUntil;
+        }
+        // Dark mode: prefere o do Google se existir, senão mantém
+        if (googleData.darkMode !== undefined) {
+            merged.darkMode = googleData.darkMode;
+        }
+        // Arrays: união
+        arrayFields.forEach(field => {
+            merged[field] = mergeArray(anonData[field], googleData[field]);
+        });
+        // Itens atuais (current*): prefere o do Google se existir, senão mantém o anônimo
+        const currentFields = [
+            'currentPageTheme', 'currentRouletteTheme', 'currentSpinSound',
+            'currentEndSound', 'currentWinSound', 'currentEffect'
+        ];
+        currentFields.forEach(field => {
+            if (googleData[field]) {
+                merged[field] = googleData[field];
+            }
+        });
+        return merged;
+    }
+
+    // ----- FUNÇÃO PARA VINCULAR CONTA GOOGLE (COM MODAL DE MESCLAGEM) -----
     window.conectarGoogle = function() {
         if (!auth) return;
         const provider = new firebase.auth.GoogleAuthProvider();
-        
-        // Se já for anônimo, tenta fazer o "Upgrade" fundindo os dados
-        if (auth.currentUser && auth.currentUser.isAnonymous) {
-            auth.currentUser.linkWithPopup(provider).then((result) => {
-                alert("✅ Conta salva e vinculada ao Google com sucesso!");
-                window.location.reload(); // Recarrega para aplicar a mudança visual do botão
-            }).catch((error) => {
-                // Se a conta do Google que a pessoa clicou JÁ TIVER dados antigos salvos no app
-                if (error.code === 'auth/credential-already-in-use') {
-                    if (confirm("Esse e-mail do Google já tem um progresso salvo. Deseja trocar para ele? (Você perderá o progresso anônimo atual).")) {
-                        auth.signInWithCredential(error.credential).then(() => {
-                            window.location.reload();
-                        });
-                    }
-                } else {
-                    console.error("Erro no Login com Google:", error);
-                    alert("❌ Ocorreu um erro ao conectar com o Google.");
-                }
-            });
-        } else {
-            // Se por algum milagre ele clicou no botão e já estava logado, apenas ignora
+        const currentUser = auth.currentUser;
+
+        // Se não estiver anônimo, já está logado com Google
+        if (!currentUser || !currentUser.isAnonymous) {
             alert("Sua conta já está protegida pelo Google!");
+            return;
         }
+
+        // Verifica se há dados relevantes na conta anônima
+        const hasData = () => {
+            // Moedas > 0 ou itens desbloqueados além do padrão
+            if (_rawState.coins > 0) return true;
+            // Verifica se há mais temas, sons, efeitos além do padrão (theme-1, effect-1, etc.)
+            const baseItems = ['theme-1', 'effect-1', 'spin-1', 'end-1', 'win-1'];
+            const allUnlocked = [
+                ..._rawState.unlockedPageThemes,
+                ..._rawState.unlockedRouletteThemes,
+                ..._rawState.unlockedSpinSounds,
+                ..._rawState.unlockedEndSounds,
+                ..._rawState.unlockedWinSounds,
+                ..._rawState.unlockedEffects,
+                ..._rawState.unlockedRecipes
+            ];
+            for (let item of allUnlocked) {
+                if (!baseItems.includes(item)) return true;
+            }
+            if (_rawState.customFoods && _rawState.customFoods.length > 0) return true;
+            if (_rawState.foods && _rawState.foods.length > 4) return true; // mais que o padrão
+            return false;
+        };
+
+        // Se não tiver dados, faz link direto
+        if (!hasData()) {
+            currentUser.linkWithPopup(provider)
+                .then(() => {
+                    alert("✅ Conta salva e vinculada ao Google com sucesso!");
+                    window.location.reload();
+                })
+                .catch((error) => {
+                    if (error.code === 'auth/credential-already-in-use') {
+                        if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (Seu progresso anônimo será perdido).")) {
+                            auth.signInWithCredential(error.credential).then(() => window.location.reload());
+                        }
+                    } else {
+                        console.error("Erro:", error);
+                        alert("❌ Erro ao conectar com Google.");
+                    }
+                });
+            return;
+        }
+
+        // ----- TEM DADOS: EXIBE MODAL DE MESCLAGEM -----
+        const modal = document.getElementById('mergeAccountModal');
+        if (!modal) return;
+
+        // Preencher resumo
+        const anonSummary = document.getElementById('anonSummary');
+        const googleSummary = document.getElementById('googleSummary');
+        if (anonSummary) {
+            anonSummary.textContent = `${_rawState.coins} moedas, ${_rawState.unlockedEffects.length} efeitos, ${_rawState.foods.length} comidas`;
+        }
+        // Tentar buscar dados do Google (se houver) para mostrar resumo
+        // Como ainda não temos o UID do Google, vamos buscar do Firebase usando o email?
+        // Na prática, precisamos fazer uma consulta separada. Para simplificar, vamos mostrar "Dados do Google" apenas após login.
+        // Aqui podemos fazer uma consulta ao Firebase para pegar os dados do Google se já existirem.
+        // Mas como ainda não temos a credencial, faremos uma abordagem: após o usuário escolher "Sobrescrever" ou "Mesclar", 
+        // faremos o link e depois aplicamos a lógica.
+        if (googleSummary) googleSummary.textContent = "Carregando após login...";
+
+        // Armazenar a escolha
+        let mergeChoice = null;
+
+        // Função para continuar com a escolha
+        function proceedWithChoice(choice) {
+            modal.style.display = 'none';
+            // Agora faz o link e depois aplica a escolha
+            currentUser.linkWithPopup(provider)
+                .then((result) => {
+                    const googleUser = result.user;
+                    // Agora temos o usuário Google. Buscar dados dele no Firebase.
+                    const googleUid = googleUser.uid;
+                    if (database) {
+                        database.ref('users/' + googleUid + '/appState').once('value').then((snapshot) => {
+                            const googleData = snapshot.val() || {};
+                            let finalData;
+                            if (choice === 'keep') {
+                                // Manter anônimo: não mescla, apenas mantém o estado atual e não salva no Google? 
+                                // Na verdade, se escolheu "manter", não deve vincular? Mas o link já foi feito.
+                                // Vamos interpretar "manter" como: manter os dados anônimos como estado atual e sobrescrever o Google com eles.
+                                finalData = { ..._rawState };
+                            } else if (choice === 'overwrite') {
+                                // Sobrescrever com dados do Google
+                                finalData = { ...googleData };
+                            } else if (choice === 'merge') {
+                                // Mesclar
+                                finalData = _mergeData(_rawState, googleData);
+                            }
+                            // Salvar finalData no Firebase e local
+                            Object.assign(_rawState, finalData);
+                            window.saveData();
+                            alert("✅ Conta vinculada e dados sincronizados!");
+                            window.location.reload();
+                        }).catch(err => {
+                            console.error("Erro ao buscar dados do Google:", err);
+                            alert("Erro ao sincronizar dados. Tente novamente.");
+                        });
+                    } else {
+                        alert("Banco de dados indisponível.");
+                    }
+                })
+                .catch((error) => {
+                    if (error.code === 'auth/credential-already-in-use') {
+                        if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (Seu progresso anônimo será perdido).")) {
+                            auth.signInWithCredential(error.credential).then(() => window.location.reload());
+                        }
+                    } else {
+                        console.error("Erro:", error);
+                        alert("❌ Erro ao conectar com Google.");
+                    }
+                });
+        }
+
+        // Configurar eventos dos botões do modal
+        document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep');
+        document.getElementById('mergeOverwrite').onclick = () => proceedWithChoice('overwrite');
+        document.getElementById('mergeCombine').onclick = () => proceedWithChoice('merge');
+        document.getElementById('btnMergeCancel').onclick = () => {
+            modal.style.display = 'none';
+        };
+
+        // Mostrar modal
+        modal.style.display = 'flex';
     };
+
+    // ===== FUNÇÃO PARA ATUALIZAR A INTERFACE DO USUÁRIO =====
+    function updateUserInterface(user) {
+        const userArea = document.getElementById('userArea');
+        const userName = document.getElementById('userName');
+        const userAvatar = document.getElementById('userAvatar');
+        const btnGoogle = document.getElementById('btnGoogleLogin');
+        const reminderModal = document.getElementById('googleReminderModal');
+
+        if (!user) {
+            if (userArea) userArea.style.display = 'none';
+            return;
+        }
+
+        if (!user.isAnonymous) {
+            // Logado com Google (ou email)
+            if (userArea) {
+                userArea.style.display = 'flex';
+                const displayName = user.displayName || 'Usuário';
+                const firstName = displayName.split(' ')[0];
+                userName.textContent = firstName + ' ✓';
+                userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;"></i>';
+                if (userAvatar) {
+                    userAvatar.textContent = firstName.charAt(0).toUpperCase();
+                }
+            }
+            // Ocultar botão Google e aviso diário
+            if (btnGoogle) btnGoogle.style.display = 'none';
+            if (reminderModal) reminderModal.style.display = 'none';
+        } else {
+            // Anônimo
+            if (userArea) {
+                userArea.style.display = 'flex';
+                userName.textContent = 'Convidado';
+                userAvatar.textContent = '?';
+            }
+            // Mostrar botão Google
+            if (btnGoogle) btnGoogle.style.display = 'flex';
+            // O aviso diário é controlado separadamente (app.js)
+        }
+    }
 
     function reverterItensVencidos() {
         if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
@@ -204,11 +400,8 @@ console.log('core.js carregado');
                 if (user) {
                     currentUserUid = user.uid;
                     
-                    // Mostra o botão do Google apenas se o usuário for Anônimo
-                    const btnGoogle = document.getElementById('btnGoogleLogin');
-                    if (btnGoogle) {
-                        btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
-                    }
+                    // Atualizar interface do usuário
+                    updateUserInterface(user);
 
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
                         window.isServerSynced = true; 
