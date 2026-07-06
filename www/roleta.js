@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (v6 - estável)');
+console.log('roleta.js carregado');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -8,35 +8,19 @@ let spinTimeTotal = 0;
 let spinTimeCount = 0;
 let lastSoundAngle = 0;
 
-// ========================== TAMANHO DO CANVAS ==========================
-function updateCanvasSize() {
-    const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) return;
-    // Tenta obter o tamanho do container, se falhar usa 300px
-    const rect = canvas.getBoundingClientRect();
-    let size = Math.min(rect.width, rect.height, 600);
-    if (size < 50) size = 300; // fallback
-    if (canvas.width !== size || canvas.height !== size) {
-        canvas.width = size;
-        canvas.height = size;
-    }
-}
-
 // ========================== DESENHO ==========================
 window.drawRoulette = function() {
     const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) {
-        console.warn('Canvas não encontrado');
-        return;
-    }
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.warn('Contexto 2D não disponível');
-        return;
-    }
+    if (!ctx) return;
 
-    // Garante que o canvas tenha tamanho
-    updateCanvasSize();
+    // Ajusta o tamanho do canvas para corresponder ao CSS
+    const rect = canvas.getBoundingClientRect();
+    if (canvas.width !== rect.width || canvas.height !== rect.height) {
+        canvas.width = rect.width || 600;
+        canvas.height = rect.height || 600;
+    }
 
     const width = canvas.width;
     const height = canvas.height;
@@ -46,12 +30,11 @@ window.drawRoulette = function() {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Obtém as comidas com fallback
-    const foods = window.appState?.foods || ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
-    const items = foods;
+    // ----- OBTÉM AS COMIDAS -----
+    const items = window.appState?.foods || [];
     const numSegments = items.length;
 
-    // Cores
+    // ----- CORES (fallback) -----
     const fallbackColors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
     let colors = fallbackColors;
     let wheelBorder = '#f5b342';
@@ -59,8 +42,8 @@ window.drawRoulette = function() {
 
     try {
         if (window.listTemas && window.listTemas.length > 0) {
-            const theme = window.listTemas.find(t => t.id === window.appState?.currentRouletteTheme) || window.listTemas[0];
-            const mode = window.appState?.darkMode ? 'dark' : 'light';
+            const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
+            const mode = window.appState.darkMode ? 'dark' : 'light';
             const themeData = theme[mode];
             if (themeData && themeData.colors) {
                 colors = themeData.colors;
@@ -69,7 +52,7 @@ window.drawRoulette = function() {
             }
         }
     } catch (e) {
-        // fallback
+        console.warn('Erro ao carregar tema, usando fallback:', e);
     }
 
     if (numSegments === 0) {
@@ -88,7 +71,7 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
-    // Borda
+    // Borda externa
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
     ctx.fillStyle = wheelBorder;
@@ -97,7 +80,7 @@ window.drawRoulette = function() {
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // Bolinhas
+    // Bolinhas decorativas
     for (let b = 0; b < 20; b++) {
         const bAngle = (b * 2 * Math.PI) / 20;
         const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
@@ -108,11 +91,12 @@ window.drawRoulette = function() {
         ctx.fill();
     }
 
-    // Segmentos
+    // Desenha os segmentos e textos
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
         const color = colors[i % colors.length];
 
+        // Segmento
         ctx.beginPath();
         ctx.fillStyle = color;
         ctx.moveTo(centerX, centerY);
@@ -123,14 +107,19 @@ window.drawRoulette = function() {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Texto
+        // ---------- TEXTO AJUSTADO (sem vazamento) ----------
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(currentArc + arcSize / 2);
 
+        // Alinha o texto à direita para que a extremidade final toque a borda
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        const textRadius = radius * 0.82;
+
+        // Posiciona o texto no raio **com uma pequena margem** para não encostar na borda
+        const textRadius = radius * 0.82; // 82% do raio, dá folga
+
+        // Calcula o tamanho máximo da fonte
         const maxTextWidth = (2 * Math.PI * textRadius) / numSegments * 0.75;
         let fontSize = Math.min(radius * 0.13, 26);
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
@@ -138,18 +127,19 @@ window.drawRoulette = function() {
         let textWidth = ctx.measureText(items[i]).width;
         if (textWidth > maxTextWidth && fontSize > 6) {
             fontSize = Math.max(6, fontSize * (maxTextWidth / textWidth));
-            ctx.font = `bold ${fontSize}px 'Inter', sans-serif';
+            ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         }
 
         ctx.fillStyle = '#ffffff';
         ctx.shadowColor = 'rgba(0,0,0,0.6)';
         ctx.shadowBlur = 8;
+        // Desenha o texto: a coordenada X é o raio, e como textAlign é 'right', o texto termina nesse ponto
         ctx.fillText(items[i], textRadius, 0);
         ctx.shadowBlur = 0;
         ctx.restore();
     }
 
-    // Centro
+    // Centro da roleta
     const centerRadius = radius * 0.16;
     ctx.beginPath();
     ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
@@ -162,7 +152,7 @@ window.drawRoulette = function() {
 
 // ========================== GIRO ==========================
 window.spinRoulette = function() {
-    if (isSpinning || window.appState?.foods?.length === 0) return;
+    if (isSpinning || window.appState.foods.length === 0) return;
 
     const btn = document.getElementById('btnSpin');
     if (btn) btn.disabled = true;
@@ -189,9 +179,9 @@ function animateSpin() {
     startAngle += currentVelocity;
     window.drawRoulette();
 
-    const arcSize = (2 * Math.PI) / (window.appState?.foods?.length || 4);
+    const arcSize = (2 * Math.PI) / window.appState.foods.length;
     if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState?.currentSpinSound)) || { type: 'click' };
+        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
         window.playSynthesizedSound(activeSpinSound.type);
         lastSoundAngle = startAngle;
     }
@@ -199,14 +189,10 @@ function animateSpin() {
 }
 
 function finalizeSpin() {
-    const numSegments = window.appState?.foods?.length || 0;
-    if (numSegments === 0) {
-        const btn = document.getElementById('btnSpin');
-        if (btn) btn.disabled = false;
-        return;
-    }
-
+    const numSegments = window.appState.foods.length;
+    if (numSegments === 0) return;
     const arcSize = (2 * Math.PI) / numSegments;
+
     let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
     if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
     let index = Math.floor(angleFromStart / arcSize);
@@ -243,38 +229,8 @@ function finalizeSpin() {
     }, 1000);
 }
 
-// ========================== INICIALIZAÇÃO ROBUSTA ==========================
-function initRoulette() {
-    updateCanvasSize();
-    window.drawRoulette();
-}
-
-// Tenta desenhar várias vezes até conseguir
-let attemptCount = 0;
-const maxAttempts = 10;
-
-function tryDraw() {
-    attemptCount++;
-    if (attemptCount > maxAttempts) return;
-    const canvas = document.getElementById('rouletteCanvas');
-    if (canvas && canvas.width > 10 && canvas.height > 10) {
-        initRoulette();
-        return;
-    }
-    setTimeout(tryDraw, 300);
-}
-
-// Quando a página carregar, tenta desenhar
+// ========================== EVENTOS ==========================
 window.addEventListener('load', function() {
-    // Aguarda um pouco para o DOM e o estado carregarem
-    setTimeout(tryDraw, 300);
+    setTimeout(window.drawRoulette, 100);
 });
-
-// Também redesenha ao redimensionar
-window.addEventListener('resize', function() {
-    updateCanvasSize();
-    window.drawRoulette();
-});
-
-// Se o estado mudar (ex: comidas atualizadas), redesenha
-// (o app.js já chama drawRoulette quando necessário)
+window.addEventListener('resize', window.drawRoulette);
