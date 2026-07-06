@@ -271,6 +271,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // 👇 BOTÃO PARA EDITAR NOME
+    document.getElementById('btnEditName')?.addEventListener('click', function() {
+        const nomeAtual = document.getElementById('userName')?.textContent?.replace(' ✓', '').trim() || '';
+        const novoNome = prompt('Digite seu novo nome (8 a 16 caracteres, apenas letras):', nomeAtual);
+        if (novoNome !== null && novoNome.trim() !== '') {
+            window.editarNomeUsuario(novoNome.trim());
+        }
+    });
+
     document.getElementById('btnSpin')?.addEventListener('click', function() {
         if (!window.gastarMoedaGiro()) {
             if(!window.isServerSynced) {
@@ -385,50 +394,44 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnCloseModal')?.addEventListener('click', () => resultOverlay.style.display = 'none');
     resultOverlay?.addEventListener('click', (e) => { if (e.target === resultOverlay) resultOverlay.style.display = 'none'; });
 });
+
 // ========== LÓGICA DO POP-UP DIÁRIO DO GOOGLE ==========
-    const checarAvisoDiarioGoogle = () => {
-        // Se a sincronização do servidor ainda não ocorreu, espera mais um pouco
-        if (!window.isServerSynced) {
-            setTimeout(checarAvisoDiarioGoogle, 1000);
-            return;
-        }
+const checarAvisoDiarioGoogle = () => {
+    if (!window.isServerSynced) {
+        setTimeout(checarAvisoDiarioGoogle, 1000);
+        return;
+    }
 
-        // Se o usuário já se logou com o Google anteriormente, nunca exibe o modal
-        if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
-            return;
-        }
+    if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
+        return;
+    }
 
-        const AGORA = Date.now();
-        const UMA_HORA_EM_MS = 60 * 60 * 1000;
-        const VINTE_QUATRO_HORAS = 24 * UMA_HORA_EM_MS;
-        
-        const ultimoAviso = localStorage.getItem('rodaSabor_ultimoAvisoGoogle');
-        
-        // Se for a primeira vez rodando ou se já passaram 24 horas desde o último aviso
-        if (!ultimoAviso || (AGORA - parseInt(ultimoAviso)) > VINTE_QUATRO_HORAS) {
-            // Dá uma folga de 2 segundos depois que o app abriu para exibir o aviso suavemente
-            setTimeout(() => {
-                const modalGoogle = document.getElementById('googleReminderModal');
-                if (modalGoogle) {
-                    modalGoogle.style.display = 'flex';
-                    // Atualiza o carimbo de data para contar +24h a partir de agora
-                    localStorage.setItem('rodaSabor_ultimoAvisoGoogle', AGORA.toString());
-                }
-            }, 2000);
-        }
-    };
+    const AGORA = Date.now();
+    const UMA_HORA_EM_MS = 60 * 60 * 1000;
+    const VINTE_QUATRO_HORAS = 24 * UMA_HORA_EM_MS;
+    
+    const ultimoAviso = localStorage.getItem('rodaSabor_ultimoAvisoGoogle');
+    
+    if (!ultimoAviso || (AGORA - parseInt(ultimoAviso)) > VINTE_QUATRO_HORAS) {
+        setTimeout(() => {
+            const modalGoogle = document.getElementById('googleReminderModal');
+            if (modalGoogle) {
+                modalGoogle.style.display = 'flex';
+                localStorage.setItem('rodaSabor_ultimoAvisoGoogle', AGORA.toString());
+            }
+        }, 2000);
+    }
+};
 
-    // Executa a checagem diária
-    checarAvisoDiarioGoogle();
+checarAvisoDiarioGoogle();
 
-    // Ações dos botões de dentro do Pop-up
-    document.getElementById('btnGoogleModalLogin')?.addEventListener('click', function() {
-        document.getElementById('googleReminderModal').style.display = 'none';
-        if (typeof window.conectarGoogle === 'function') {
-            window.conectarGoogle();
-        }
-    });
+document.getElementById('btnGoogleModalLogin')?.addEventListener('click', function() {
+    document.getElementById('googleReminderModal').style.display = 'none';
+    if (typeof window.conectarGoogle === 'function') {
+        window.conectarGoogle();
+    }
+});
 
-    document.getElementById('btnGoogleModalClose')?.addEventListener('click', function() {
-        document.getElementById('googleReminderModal').style.display = 'none';
-    });
+document.getElementById('btnGoogleModalClose')?.addEventListener('click', function() {
+    document.getElementById('googleReminderModal').style.display = 'none';
+});
