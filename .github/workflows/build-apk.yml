@@ -15,6 +15,14 @@ jobs:
         with:
           node-version: 22
 
+      # 👇 PASSO CRUCIAL: Copia os arquivos da raiz para a pasta www
+      - name: Prepare www folder
+        run: |
+          mkdir -p www
+          cp -f *.html *.css *.js *.json *.png *.webmanifest sw.js www/ 2>/dev/null || true
+          echo "📁 Conteúdo da pasta www:"
+          ls -la www/
+
       - name: Install dependencies
         run: npm install
 
