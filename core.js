@@ -1,14 +1,11 @@
 'use strict';
-console.log('core.js carregado (v9 - Google Login Seguro)');
+console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
 
 (function() {
     window.isServerSynced = false;
 
     const _rawState = {
-        coins: 0, 
-        vipUntil: 0,
-        darkMode: false,
-        displayName: '',
+        coins: 0, vipUntil: 0, darkMode: false, displayName: '',
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -28,30 +25,13 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
         }
     });
 
-    Object.defineProperty(window, 'appState', {
-        value: proxyState, writable: false, configurable: false
-    });
+    Object.defineProperty(window, 'appState', { value: proxyState, writable: false, configurable: false });
 
-    window.toggleDarkModeSeguro = function() {
-        _rawState.darkMode = !_rawState.darkMode;
-        window.saveData();
-        window.applyThemes();
-    };
-
+    window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
-    window.isItemLiberado = function(nomeDoArray, idDoItem) {
-        if (window.isVipAtivo()) return true; 
-        return _rawState[nomeDoArray].includes(idDoItem);
-    };
+    window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
+    window.ativarVipMensal = function() { _rawState.vipUntil = Date.now() + (30 * 24 * 60 * 60 * 1000); window.saveData(); return true; };
 
-    window.ativarVipMensal = function() {
-        const trintaDiasEmMs = 30 * 24 * 60 * 60 * 1000;
-        _rawState.vipUntil = Date.now() + trintaDiasEmMs;
-        window.saveData();
-        return true;
-    };
-
-    // ========================== LOJA SEGURA ==========================
     window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização."); return false; }
         if (window.isVipAtivo()) { alert("VIP Ativo! Item já liberado."); return false; }
@@ -83,9 +63,7 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
         else if (categoria === 'pageTheme') { arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
         else if (categoria === 'rouletteTheme') { arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
 
-        if (window.isItemLiberado(arrayDestravados, id)) {
-            _rawState[itemAtual] = id; window.saveData(); return true;
-        }
+        if (window.isItemLiberado(arrayDestravados, id)) { _rawState[itemAtual] = id; window.saveData(); return true; }
         return false;
     };
 
@@ -101,23 +79,16 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
 
-    window.isAppNativo = function() {
-        return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
-    };
-
+    window.isAppNativo = function() { return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform(); };
     window.spinCounter = 0; 
 
     if (window.isAppNativo()) {
         try {
             const { AdMob } = window.Capacitor.Plugins;
             AdMob.initialize().then(async () => {
-                console.log("✅ Motor do AdMob ligado");
-                try {
-                    await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 });
-                } catch(e) {}
-                try {
-                    await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true });
-                } catch(e) {}
+                console.log("✅ AdMob ligado");
+                try { await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }); } catch(e) {}
+                try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
             }).catch(console.error);
         } catch(e) {}
     }
@@ -125,13 +96,12 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
     window.mostrarIntersticialSeNecessario = async function() {
         if (!window.isAppNativo() || window.isVipAtivo()) return;
         window.spinCounter++;
-        
         if (window.spinCounter % 3 === 0) {
             try {
                 const { AdMob } = window.Capacitor.Plugins;
                 await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true });
                 await AdMob.showInterstitial();
-            } catch(e) { console.warn("Erro Intersticial", e); }
+            } catch(e) {}
         }
     };
 
@@ -149,39 +119,37 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
             try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
 
             return new Promise((resolve) => {
-                const rewardListener = AdMob.addListener('rewardedVideoAdRewarded', (reward) => {
+                // Timer de segurança: Se o Google falhar e não abrir o vídeo em 10 segundos, cancela o loading
+                const failsafe = setTimeout(() => {
+                    resolve(false); 
+                }, 10000);
+
+                // Eventos CORRETOS do AdMob v5
+                const rewardListener = AdMob.addListener('rewardedAdReward', (reward) => {
                     _rawState.coins += (reward.amount || 3);
                     window.saveData();
                     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                    rewardListener.remove(); 
-                    resolve(true);
+                    clearTimeout(failsafe); rewardListener.remove(); resolve(true);
                 });
                 
-                const closeListener = AdMob.addListener('rewardedVideoAdClosed', () => {
-                    closeListener.remove(); 
-                    resolve(false);
+                const closeListener = AdMob.addListener('rewardedAdDismissed', () => {
+                    clearTimeout(failsafe); closeListener.remove(); resolve(false);
                     AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{});
                 });
                 
                 AdMob.showRewardVideoAd().catch((err) => {
-                    _rawState.coins += 3; window.saveData(); 
-                    if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                    resolve(true);
+                    console.error("Erro AdMob:", err);
+                    clearTimeout(failsafe); resolve(false);
                 });
             });
-        } catch (error) { 
-            _rawState.coins += 3; window.saveData(); 
-            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-            return true; 
-        }
+        } catch (error) { return false; }
     };
 
     // ========================== FIREBASE & GOOGLE ==========================
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
-    let currentUserUid = null;
-    let anonymousSignInAttempted = false;
+    let currentUserUid = null; let anonymousSignInAttempted = false;
 
     if (auth) auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn(e));
 
@@ -191,10 +159,8 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
         const userAvatar = document.getElementById('userAvatar');
         const btnGoogle = document.getElementById('btnGoogleLogin');
         const reminderModal = document.getElementById('googleReminderModal');
-        const btnEdit = document.getElementById('btnEditName');
 
         if (!user) { if (userArea) userArea.style.display = 'none'; return; }
-
         let displayName = _rawState.displayName || user.displayName || '';
         if (!displayName) displayName = user.isAnonymous ? 'Convidado' : 'Usuário';
 
@@ -206,17 +172,14 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
                 if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Segura"></i>';
             }
         }
-
         if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
         if (reminderModal && !user.isAnonymous) reminderModal.style.display = 'none';
-        if (btnEdit) btnEdit.style.display = 'flex';
     }
 
     window.editarNomeUsuario = function(novoNome) {
         if (!novoNome || typeof novoNome !== 'string') return false;
         let nomeLimpo = novoNome.replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
         if (nomeLimpo.length < 3 || nomeLimpo.length > 16) return false;
-        
         _rawState.displayName = nomeLimpo; window.saveData();
         if (auth?.currentUser) updateUserInterface(auth.currentUser);
         return true;
@@ -237,49 +200,38 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
     window.conectarGoogle = function() {
         if (!auth) return;
         if (window.isAppNativo()) {
-            alert("⚠️ Segurança Android:\n\nPara vincular a sua conta ao Google, aceda ao nosso site pelo navegador do telemóvel ou PC. Os seus dados vão sincronizar com a aplicação automaticamente!");
+            alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site (rodadosabor.vercel.app) pelo navegador.\n\nSeus dados vão sincronizar com o aplicativo automaticamente!");
             return;
         }
 
         const provider = new firebase.auth.GoogleAuthProvider();
         const currentUser = auth.currentUser;
-        if (!currentUser || !currentUser.isAnonymous) { alert("A sua conta já está protegida!"); return; }
+        if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
 
         const modal = document.getElementById('mergeAccountModal');
         if (!modal) return;
         
-        document.getElementById('anonSummary').textContent = `${_rawState.coins} moedas`;
-        
         function proceedWithChoice(choice) {
             modal.style.display = 'none';
-            
-            // 1. Guarda o estado anónimo na memória para não ser apagado
             const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
             
-            // 2. Faz login forçado com a nova conta Google
             auth.signInWithPopup(provider).then((result) => {
                 const googleUser = result.user;
-                
-                // 3. Puxa os dados que o utilizador tiver guardado no Google e faz a mesclagem
                 database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
                     const googleData = snapshot.val() || {};
                     let finalData;
-                    
                     if (choice === 'keep') finalData = { ...estadoAnonimo };
                     else if (choice === 'overwrite') finalData = { ...googleData };
                     else if (choice === 'merge') finalData = _mergeData(estadoAnonimo, googleData);
                     
                     finalData.displayName = googleUser.displayName || 'Usuário';
-                    
-                    // 4. Guarda tudo na nova conta Google e recarrega a página
                     database.ref('users/' + googleUser.uid + '/appState').set(finalData).then(() => {
                         alert("✅ Conta vinculada e dados sincronizados com sucesso!");
                         window.location.reload(); 
                     });
                 });
             }).catch((error) => {
-                console.error("Erro no Login com Google:", error);
-                alert("❌ Erro ao ligar ao Google: " + error.message);
+                console.error("Erro Login:", error); alert("❌ Erro ao conectar com o Google.");
             });
         }
 
@@ -289,15 +241,6 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
         document.getElementById('btnMergeCancel').onclick = () => modal.style.display = 'none';
         modal.style.display = 'flex';
     };
-
-    function reverterItensVencidos() {
-        if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
-        if (!window.isItemLiberado('unlockedSpinSounds', _rawState.currentSpinSound)) _rawState.currentSpinSound = "spin-1";
-        if (!window.isItemLiberado('unlockedEndSounds', _rawState.currentEndSound)) _rawState.currentEndSound = "end-1";
-        if (!window.isItemLiberado('unlockedWinSounds', _rawState.currentWinSound)) _rawState.currentWinSound = "win-1";
-        if (!window.isItemLiberado('unlockedPageThemes', _rawState.currentPageTheme)) _rawState.currentPageTheme = "theme-1";
-        if (!window.isItemLiberado('unlockedRouletteThemes', _rawState.currentRouletteTheme)) _rawState.currentRouletteTheme = "theme-1";
-    }
 
     function garantirArraysNoEstado() {
         if (!Array.isArray(_rawState.unlockedEffects)) _rawState.unlockedEffects = ["effect-1"];
@@ -309,7 +252,10 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
         if (!Array.isArray(_rawState.foods) || _rawState.foods.length === 0) _rawState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
         if (!Array.isArray(_rawState.customFoods)) _rawState.customFoods = [];
         if (!Array.isArray(_rawState.unlockedRecipes)) _rawState.unlockedRecipes = [];
-        reverterItensVencidos();
+        
+        if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
+        if (!window.isItemLiberado('unlockedPageThemes', _rawState.currentPageTheme)) _rawState.currentPageTheme = "theme-1";
+        if (!window.isItemLiberado('unlockedRouletteThemes', _rawState.currentRouletteTheme)) _rawState.currentRouletteTheme = "theme-1";
     }
 
     function ativarModoOffline() {
@@ -336,20 +282,17 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
                 if (user) {
                     currentUserUid = user.uid;
                     updateUserInterface(user);
-
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
                         window.isServerSynced = true;
                         if (snapshot.exists()) {
                             Object.assign(_rawState, snapshot.val());
-                            garantirArraysNoEstado();
-                            if (typeof window.renderAll === 'function') window.renderAll();
-                            updateUserInterface(user);
                         } else {
                             if (_rawState.coins === 0) _rawState.coins = 20;
-                            garantirArraysNoEstado(); window.saveData();
-                            if (typeof window.renderAll === 'function') window.renderAll();
-                            updateUserInterface(user);
+                            window.saveData();
                         }
+                        garantirArraysNoEstado();
+                        if (typeof window.renderAll === 'function') window.renderAll();
+                        updateUserInterface(user);
                     });
                 } else {
                     if (!anonymousSignInAttempted) {
@@ -379,7 +322,7 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
 
     window.loadData();
 
-    // ========================== ÁUDIO E EFEITOS ==========================
+    // ========================== ÁUDIO E SINTETIZADOR ==========================
     let audioCtx = null;
     window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
@@ -388,29 +331,13 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
             const ctx = window.getAudioContext(); const now = ctx.currentTime;
             switch (soundType) {
                 case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
-                case 'swoosh': osc(ctx, now, 80, 250, 0.08, 'triangle', 0.2); break;
-                case 'arcade': oscSquare(ctx, now, 600, 900, 0.06, 0.15); break;
-                case 'motor': oscSquare(ctx, now, 100, 50, 0.08, 0.2); break;
-                case 'whoosh': osc(ctx, now, 60, 350, 0.15, 'sawtooth', 0.15); break;
-                case 'digital': oscSquare(ctx, now, 500, 1200, 0.05, 0.1); break;
                 case 'end-chord': [392, 493, 587].forEach((f) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
-                case 'end-bell': osc(ctx, now, 987.77, 987.77, 0.6, 'triangle', 0.4); break;
-                case 'end-coin': [987.77, 1318.51].forEach((f, i) => oscSquare(ctx, now + i * 0.1, f, f, 0.2, 0.15)); break;
-                case 'end-thud': osc(ctx, now, 150, 40, 0.2, 'square', 0.4); break;
-                case 'end-zap': oscSquare(ctx, now, 800, 100, 0.3, 0.2); break;
                 case 'win-tada': [523.25, 659.25, 783.99].forEach(f => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); [523.25, 659.25, 783.99, 1046.50].forEach(f => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); break;
                 default: osc(ctx, now, 400, 400, 0.1, 'sine', 0.2); break;
             }
         } catch (e) {}
     };
 
-    function playNoise(ctx, start, duration, gainValue) {
-        const bufferSize = ctx.sampleRate * duration; const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate); const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const noise = ctx.createBufferSource(); noise.buffer = buffer; const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1000;
-        const g = ctx.createGain(); g.gain.setValueAtTime(gainValue, start); g.gain.exponentialRampToValueAtTime(0.01, start + duration);
-        noise.connect(filter); filter.connect(g); g.connect(ctx.destination); noise.start(start);
-    }
     function osc(ctx, start, fStart, fEnd, duration, type, gain) {
         const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = type;
         o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
@@ -424,6 +351,7 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
         o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
     }
 
+    // Leitura Dinâmica do Gradiente
     window.applyThemes = function() {
         const themes = window.listTemas || []; if (themes.length === 0) return;
         const pageTheme = themes.find(t => t.id === _rawState.currentPageTheme) || themes[0];
@@ -432,14 +360,17 @@ console.log('core.js carregado (v9 - Google Login Seguro)');
         const pageData = pageTheme[mode];
         if (pageData && pageData.style) {
             const root = document.documentElement;
-            root.style.setProperty('--bg-body', pageData.style.bg); root.style.setProperty('--bg-card', pageData.style.card);
-            root.style.setProperty('--text-primary', pageData.style.text); root.style.setProperty('--accent', pageData.style.accent);
-            root.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${pageData.colors[0] || '#f5d742'}, ${pageData.colors[1] || '#7b9e5a'})`);
+            root.style.setProperty('--bg-body', pageData.style.bg); 
+            root.style.setProperty('--bg-card', pageData.style.card);
+            root.style.setProperty('--text-primary', pageData.style.text); 
+            root.style.setProperty('--accent', pageData.style.accent);
+            root.style.setProperty('--accent-gradient', pageData.style.accentGradient);
         }
         const rouletteData = rouletteTheme[mode];
         if (rouletteData && rouletteData.colors) {
             const root = document.documentElement;
-            root.style.setProperty('--wheel-border', rouletteData.colors[0]); root.style.setProperty('--wheel-center', rouletteData.colors[2] || rouletteData.colors[1] || '#f5d742');
+            root.style.setProperty('--wheel-border', rouletteData.wheelBorder || rouletteData.colors[0]); 
+            root.style.setProperty('--wheel-center', rouletteData.wheelCenter || rouletteData.colors[1]);
         }
         if (typeof window.drawRoulette === 'function') window.drawRoulette();
     };
