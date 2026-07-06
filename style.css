@@ -1,5 +1,5 @@
 /* ============================================================
-   ESTILOS GLOBAIS E VARIÁVEIS CSS (sem blur, sem lente)
+   ESTILOS GLOBAIS E VARIÁVEIS CSS (Fundo liso forçado)
    ============================================================ */
 * {
     margin: 0;
@@ -8,8 +8,9 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-body {
-    background: var(--bg-body);
+html, body {
+    background: var(--bg-body) !important;
+    background-image: var(--bg-body) !important; 
     color: var(--text-primary);
     min-height: 100vh;
     padding: 1rem;
@@ -18,12 +19,18 @@ body {
     background-attachment: fixed;
 }
 
+/* Removemos qualquer oval/fantasma de templates antigos */
+body::before, body::after, html::before, html::after {
+    display: none !important;
+    background: none !important;
+}
+
 .container {
     max-width: 900px;
     margin: 0 auto;
 }
 
-/* ===== CARDS – sem blur, com sombra moderna ===== */
+/* ===== CARDS ===== */
 .card {
     background: var(--bg-card);
     border-radius: 1.8rem;
@@ -80,7 +87,6 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    /* Garante que o gradiente seja dinâmico conforme o tema */
     transition: background 0.4s ease;
 }
 
@@ -108,9 +114,7 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.stat-badge i.fa-coins {
-    color: var(--gold);
-}
+.stat-badge i.fa-coins { color: var(--gold); }
 
 .btn-toggle-mode {
     background: var(--bg-card);
@@ -179,7 +183,7 @@ canvas {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: var(--bg-body);
+    background-color: var(--wheel-center); /* CORRIGIDO: Agora acompanha a cor central da roleta */
     border: 5px solid #ffffff;
     box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.5);
     cursor: pointer;
@@ -198,7 +202,7 @@ canvas {
     transform: translate(-50%, -50%) scale(0.95);
 }
 .center-spin-button span {
-    color: #7d1212;
+    color: #1e2a3a; /* CORRIGIDO: Cor escura para legibilidade */
     font-weight: 800;
     text-transform: uppercase;
     line-height: 1.1;
@@ -206,7 +210,7 @@ canvas {
 .center-spin-button .txt-top { font-size: 0.7rem; font-weight: 900; }
 .center-spin-button .txt-bottom { font-size: 0.45rem; font-weight: 700; margin-top: -2px; }
 
-/* ===== BOTÕES DE AÇÃO (gradiente moderno) ===== */
+/* ===== BOTÕES DE AÇÃO ===== */
 .action-row-buttons {
     display: flex;
     gap: 0.8rem;
@@ -235,16 +239,10 @@ canvas {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.12);
 }
-.btn-gradient-action:active {
-    transform: translateY(0);
-}
+.btn-gradient-action:active { transform: translateY(0); }
 
-.btn-gradient-action.dynamic-blue {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-}
-.btn-gradient-action.dynamic-green {
-    background: linear-gradient(135deg, #10b981, #047857);
-}
+.btn-gradient-action.dynamic-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.btn-gradient-action.dynamic-green { background: linear-gradient(135deg, #10b981, #047857); }
 
 /* ===== LISTA DE COMIDAS ===== */
 .food-list {
@@ -266,26 +264,18 @@ canvas {
     font-weight: 500;
     transition: background 0.2s;
 }
-.food-tag:hover {
-    background: rgba(245, 179, 66, 0.15);
-}
+.food-tag:hover { background: rgba(245, 179, 66, 0.15); }
 .food-tag i {
-    cursor: pointer;
-    color: #e94b3c;
-    margin-left: 0.2rem;
-    transition: transform 0.2s;
+    cursor: pointer; color: #e94b3c; margin-left: 0.2rem; transition: transform 0.2s;
 }
-.food-tag i:hover {
-    transform: scale(1.15);
-}
+.food-tag i:hover { transform: scale(1.15); }
 
-/* ===== LOJAS – cards com sombra destacada ===== */
+/* ===== LOJAS ===== */
 .store-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 0.8rem;
 }
-
 .item-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -309,57 +299,21 @@ canvas {
     background: rgba(245, 179, 66, 0.08);
     box-shadow: 0 4px 16px rgba(245, 179, 66, 0.10);
 }
-.item-card.active .item-info h4 {
-    color: var(--gold);
-}
+.item-card.active .item-info h4 { color: var(--gold); }
 
-.item-info h4 {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin: 0;
-}
-.item-info p {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin: 0;
-}
+.item-info h4 { font-size: 0.9rem; font-weight: 600; margin: 0; }
+.item-info p { font-size: 0.7rem; color: var(--text-muted); margin: 0; }
 
 .btn-action {
-    padding: 0.3rem 0.7rem;
-    border-radius: 30px;
-    border: none;
-    font-size: 0.7rem;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
+    padding: 0.3rem 0.7rem; border-radius: 30px; border: none; font-size: 0.7rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s;
 }
-.btn-buy {
-    background: var(--gold);
-    color: #1e2a3a;
-}
-.btn-buy:hover {
-    transform: scale(1.05);
-}
-.btn-use {
-    background: var(--accent);
-    color: white;
-}
-.btn-use:hover {
-    transform: scale(1.05);
-}
-.btn-active {
-    background: var(--border-color);
-    color: var(--text-muted);
-    cursor: default;
-}
-.btn-recipe-open {
-    background: var(--accent-gradient);
-    color: white;
-}
-.btn-recipe-open:hover {
-    transform: scale(1.05);
-}
+.btn-buy { background: var(--gold); color: #1e2a3a; }
+.btn-buy:hover { transform: scale(1.05); }
+.btn-use { background: var(--accent); color: white; }
+.btn-use:hover { transform: scale(1.05); }
+.btn-active { background: var(--border-color); color: var(--text-muted); cursor: default; }
+.btn-recipe-open { background: var(--accent-gradient); color: white; }
+.btn-recipe-open:hover { transform: scale(1.05); }
 
 /* ===== RECEITAS ===== */
 .recipes-grid {
@@ -368,217 +322,53 @@ canvas {
     gap: 0.8rem;
 }
 .recipe-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 0.8rem;
-    text-align: center;
-    cursor: pointer;
-    color: var(--text-primary);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.4rem;
-    transition: transform 0.2s, box-shadow 0.2s;
+    background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 0.8rem; text-align: center; cursor: pointer; color: var(--text-primary); display: flex; flex-direction: column; align-items: center; gap: 0.4rem; transition: transform 0.2s, box-shadow 0.2s;
 }
-.recipe-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
-}
+.recipe-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,0.08); }
 .recipe-icon { font-size: 2rem; }
 .recipe-name { font-weight: 600; font-size: 0.85rem; }
 
-/* ===== MODAIS – sem blur ===== */
+/* ===== MODAIS ===== */
 .result-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100;
 }
 .modal-content-box {
-    background: var(--bg-card);
-    border-radius: 2rem;
-    padding: 1.5rem;
-    width: 92%;
-    max-width: 550px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 48px rgba(0,0,0,0.20);
-    border: 1px solid var(--border-color);
+    background: var(--bg-card); border-radius: 2rem; padding: 1.5rem; width: 92%; max-width: 550px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 48px rgba(0,0,0,0.20); border: 1px solid var(--border-color);
 }
-.modal-header-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.8rem;
-}
-.close-modal-x {
-    font-size: 1.8rem;
-    cursor: pointer;
-    color: var(--text-muted);
-    line-height: 1;
-    transition: transform 0.2s;
-}
-.close-modal-x:hover {
-    transform: rotate(90deg);
-}
-.search-box-modal input {
-    width: 100%;
-    padding: 0.6rem 1rem;
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    background: rgba(128,128,128,0.04);
-    color: var(--text-primary);
-    margin-bottom: 0.8rem;
-    font-size: 0.9rem;
-}
-.add-food-section {
-    display: flex;
-    gap: 0.4rem;
-    margin-top: 0.4rem;
-    flex-wrap: wrap;
-}
-.add-food-section input {
-    flex: 1;
-    padding: 0.5rem;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    background: rgba(128,128,128,0.04);
-    color: var(--text-primary);
-    font-size: 0.85rem;
-}
-.add-food-section button {
-    flex: 0 1 auto;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 10px;
-    background: var(--accent-gradient);
-    color: white;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-.add-food-section button:hover {
-    transform: scale(1.02);
-}
-.grid-food-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 0.6rem;
-    overflow-y: auto;
-    flex: 1;
-    padding: 0.5rem 0;
-    max-height: 40vh;
-}
-.food-option-card {
-    background: var(--bg-card);
-    border: 2px solid var(--border-color);
-    padding: 0.6rem 0.2rem;
-    border-radius: 14px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
-}
-.food-option-card:hover {
-    transform: scale(1.02);
-    border-color: var(--accent);
-}
-.food-option-card.selected {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.10);
-    font-weight: 600;
-}
-.food-option-card span {
-    display: block;
-    font-size: 1.6rem;
-    margin-bottom: 0.2rem;
-}
+.modal-header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+.close-modal-x { font-size: 1.8rem; cursor: pointer; color: var(--text-muted); line-height: 1; transition: transform 0.2s; }
+.close-modal-x:hover { transform: rotate(90deg); }
+.search-box-modal input { width: 100%; padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(128,128,128,0.04); color: var(--text-primary); margin-bottom: 0.8rem; font-size: 0.9rem; }
+.add-food-section { display: flex; gap: 0.4rem; margin-top: 0.4rem; flex-wrap: wrap; }
+.add-food-section input { flex: 1; padding: 0.5rem; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(128,128,128,0.04); color: var(--text-primary); font-size: 0.85rem; }
+.add-food-section button { flex: 0 1 auto; padding: 0.5rem 1rem; border: none; border-radius: 10px; background: var(--accent-gradient); color: white; font-weight: 700; cursor: pointer; transition: transform 0.2s; }
+.add-food-section button:hover { transform: scale(1.02); }
+.grid-food-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.6rem; overflow-y: auto; flex: 1; padding: 0.5rem 0; max-height: 40vh; }
+.food-option-card { background: var(--bg-card); border: 2px solid var(--border-color); padding: 0.6rem 0.2rem; border-radius: 14px; text-align: center; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+.food-option-card:hover { transform: scale(1.02); border-color: var(--accent); }
+.food-option-card.selected { border-color: #3b82f6; background: rgba(59, 130, 246, 0.10); font-weight: 600; }
+.food-option-card span { display: block; font-size: 1.6rem; margin-bottom: 0.2rem; }
 
-/* ===== MODAL DE RESULTADO (sem blur) ===== */
-.result-modal {
-    background: var(--bg-card);
-    border-radius: 2rem;
-    padding: 2rem;
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 20px 48px rgba(0,0,0,0.20);
-    border: 1px solid var(--border-color);
-}
+/* ===== MODAL DE RESULTADO ===== */
+.result-modal { background: var(--bg-card); border-radius: 2rem; padding: 2rem; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 20px 48px rgba(0,0,0,0.20); border: 1px solid var(--border-color); }
 .result-modal h3 { font-size: 1.4rem; margin-bottom: 0.5rem; }
 .result-modal .food-emoji { font-size: 4rem; margin: 0.8rem 0; display: block; }
 .result-modal .food-name { font-size: 1.2rem; font-weight: 700; color: var(--gold); margin-bottom: 1.2rem; }
-
-.btn-close-modal {
-    background: var(--accent-gradient);
-    color: #fff;
-    border: none;
-    padding: 0.6rem 2rem;
-    border-radius: 50px;
-    font-weight: 700;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: transform 0.2s;
-}
-.btn-close-modal:hover {
-    transform: scale(1.04);
-}
+.btn-close-modal { background: var(--accent-gradient); color: #fff; border: none; padding: 0.6rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 0.9rem; transition: transform 0.2s; }
+.btn-close-modal:hover { transform: scale(1.04); }
 
 /* ===== OVERLAY ANÚNCIO ===== */
-.iframe-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-}
-.iframe-box {
-    width: 95%;
-    max-width: 650px;
-    height: 80vh;
-    background: #000;
-    border-radius: 20px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-}
-.iframe-header {
-    background: linear-gradient(90deg, #1f2937, #111827);
-    color: #fff;
-    padding: 0.8rem;
-    text-align: center;
-    font-weight: 700;
-    font-size: 0.95rem;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-#adFrame {
-    width: 100%;
-    flex: 1;
-    border: none;
-}
+.iframe-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; align-items: center; justify-content: center; }
+.iframe-box { width: 95%; max-width: 650px; height: 80vh; background: #000; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+.iframe-header { background: linear-gradient(90deg, #1f2937, #111827); color: #fff; padding: 0.8rem; text-align: center; font-weight: 700; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+#adFrame { width: 100%; flex: 1; border: none; }
 
 /* ===== CONFETES ===== */
-#confettiCanvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 150;
-}
+#confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 150; }
 
 /* ===== VARIÁVEIS CSS (FALLBACK) ===== */
 :root {
-    --bg-body: linear-gradient(145deg, #fdf6f0 0%, #f3e7da 100%);
+    --bg-body: #fdf6f0;
     --bg-card: rgba(255,255,255,0.92);
     --text-primary: #1e2a3a;
     --text-secondary: #2c3e50;
@@ -603,11 +393,7 @@ canvas {
 @media (max-width: 480px) {
     .canvas-container { width: 300px; height: 300px; }
     .container { padding: 0.2rem; }
-    .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5rem;
-    }
+    .header { flex-direction: column; align-items: stretch; gap: 0.5rem; }
     .logo-area { justify-content: center; }
     .logo-title h1 { font-size: 1.2rem; }
     .top-stats { justify-content: center; }
@@ -625,16 +411,9 @@ canvas {
     .food-list { max-height: 120px; }
 }
 
-/* ===== ANIMAÇÃO DE PULSO NO BOTÃO ===== */
 @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 4px 16px rgba(245, 179, 66, 0.15), 0 0 20px rgba(245, 179, 66, 0.05); }
     50% { box-shadow: 0 4px 24px rgba(245, 179, 66, 0.25), 0 0 40px rgba(245, 179, 66, 0.10); }
 }
-.center-spin-button:not(:disabled) {
-    animation: pulse-glow 2.5s ease-in-out infinite;
-}
-.center-spin-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    animation: none;
-}
+.center-spin-button:not(:disabled) { animation: pulse-glow 2.5s ease-in-out infinite; }
+.center-spin-button:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
