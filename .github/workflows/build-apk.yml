@@ -7,15 +7,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 18
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Install Capacitor
         run: |
@@ -23,12 +23,12 @@ jobs:
           npm install @capacitor/core @capacitor/android
 
       - name: Init Capacitor
-        run: npx cap init RodaDoSabor com.seuapp.rodasabor --web-dir .
+        run: npx cap init RodaDoSabor com.siddapichau.rodasabor --web-dir www
 
       - name: Add Android
         run: npx cap add android
 
-      - name: Sync Capacitor
+      - name: Sync
         run: npx cap sync
 
       - name: Setup Java
