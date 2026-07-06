@@ -228,23 +228,39 @@ console.log('core.js carregado (v7 - AdMob Full + Google Popup)');
         if (window.isAppNativo()) {
             alert("⚠️ Segurança Android:\n\nPara proteger sua conta, o vínculo com o Google deve ser feito pelo navegador.\n\nAcesse nosso site (rodadosabor.vercel.app) pelo navegador do celular ou PC, faça o login, e seus dados sincronizarão aqui automaticamente!");
             return;
+        }window.conectarGoogle = function() {
+        if (!auth) return;
+
+        // Se estiver no APK, bloqueia o popup e avisa para usar a Web
+        if (window.isAppNativo()) {
+            alert("⚠️ Segurança Android:\n\nPara proteger sua conta, o vínculo com o Google deve ser feito pelo navegador.\n\nAcesse nosso site (rodadosabor.vercel.app) pelo navegador do celular ou PC, faça o login, e seus dados sincronizarão aqui automaticamente!");
+            return;
         }
 
         const provider = new firebase.auth.GoogleAuthProvider();
         const currentUser = auth.currentUser;
-        if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
+        if (!currentUser || !currentUser.isAnonymous) { 
+            alert("Sua conta já está protegida!"); 
+            return; 
+        }
 
         const modal = document.getElementById('mergeAccountModal');
         if (!modal) return;
-        document.getElementById('anonSummary').textContent = `${_rawState.coins} moedas`;
-        document.getElementById('googleSummary').textContent = "Aguardando login...";
+        
+        const anonSummary = document.getElementById('anonSummary');
+        if (anonSummary) anonSummary.textContent = `${_rawState.coins} moedas`;
+        
+        const googleSummary = document.getElementById('googleSummary');
+        if (googleSummary) googleSummary.textContent = "Aguardando login...";
 
         // Mostramos o modal primeiro. Quando ele clicar em uma opção, disparamos o Popup
         function proceedWithChoice(choice) {
             modal.style.display = 'none';
-            // Voltou para o linkWithPopup que funciona 100% perfeito na Vercel Web
+            
+            // Abre a janela do Google
             currentUser.linkWithPopup(provider).then((result) => {
                 const googleUser = result.user;
+                
                 database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
                     const googleData = snapshot.val() || {};
                     let finalData;
@@ -255,16 +271,28 @@ console.log('core.js carregado (v7 - AdMob Full + Google Popup)');
                     finalData.displayName = googleUser.displayName || 'Usuário';
                     Object.assign(_rawState, finalData);
                     window.saveData();
-                    updateUserInterface(googleUser);
+                    
                     alert("✅ Conta vinculada e dados sincronizados!");
-                    if (typeof window.renderAll === 'function') window.renderAll();
+                    // Força o reload para limpar o "fantasma" do usuário anônimo e puxar a HUD correta
+                    window.location.reload(); 
                 });
             }).catch((error) => {
+                // Se a pessoa tentou logar num Google que JÁ TEM uma conta registrada
                 if (error.code === 'auth/credential-already-in-use') {
-                    if (confirm("E-mail já tem dados salvos. Deseja fazer login com ele? (Seu progresso atual sumirá).")) {
-                        auth.signInWithCredential(error.credential).then(() => window.location.reload());
+                    if (confirm("Esse e-mail do Google já tem dados salvos no nosso sistema.\n\nDeseja entrar com ele agora? (Atenção: o progresso atual de Convidado será perdido).")) {
+                        
+                        // Faz o login forçado passando por cima do usuário anônimo
+                        auth.signInWithPopup(provider).then(() => {
+                            window.location.reload(); // Recarrega a página para puxar os dados antigos da pessoa
+                        }).catch((err) => {
+                            console.error("Erro ao forçar login:", err);
+                            alert("❌ Erro ao tentar entrar com o Google.");
+                        });
                     }
-                } else alert("❌ Erro ao conectar.");
+                } else {
+                    console.error("Erro no Popup:", error);
+                    alert("❌ Erro ao conectar com o Google. Tente novamente.");
+                }
             });
         }
 
@@ -272,6 +300,7 @@ console.log('core.js carregado (v7 - AdMob Full + Google Popup)');
         document.getElementById('mergeOverwrite').onclick = () => proceedWithChoice('overwrite');
         document.getElementById('mergeCombine').onclick = () => proceedWithChoice('merge');
         document.getElementById('btnMergeCancel').onclick = () => modal.style.display = 'none';
+        
         modal.style.display = 'flex';
     };
 
