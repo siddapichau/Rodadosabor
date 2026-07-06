@@ -19,29 +19,14 @@ jobs:
         run: |
           mkdir -p www
           cp -f *.html *.css *.js *.json *.png *.webmanifest sw.js www/ 2>/dev/null || true
-          echo "📁 Conteúdo da pasta www:"
-          ls -la www/
 
       - name: Install dependencies
         run: npm install
 
-      - name: Install Capacitor globally
-        run: npm install -g @capacitor/cli
-
-      - name: Install Capacitor core and android
-        run: npm install @capacitor/core @capacitor/android
-
-      # 👇 Instala o plugin AdMob
-      - name: Install AdMob plugin
-        run: npm install @capacitor-community/admob
-
-      - name: Init Capacitor
-        run: npx cap init RodaDoSabor com.siddapichau.rodasabor --web-dir www
-
+      # Não precisamos do cap init, pois o capacitor.config.json já existe!
       - name: Add Android
         run: npx cap add android
 
-      # 👇 CORREÇÃO: Adiciona a meta-data do AdMob no AndroidManifest.xml
       - name: Fix AdMob manifest
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
