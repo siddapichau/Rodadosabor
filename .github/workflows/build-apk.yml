@@ -1,21 +1,71 @@
-- name: Generate app icons
-  run: |
-    # Instala o ImageMagick para manipular imagens
-    sudo apt-get update && sudo apt-get install -y imagemagick
-    # Redimensiona a logo.png para os tamanhos necessários
-    mkdir -p android/app/src/main/res/mipmap-mdpi
-    mkdir -p android/app/src/main/res/mipmap-hdpi
-    mkdir -p android/app/src/main/res/mipmap-xhdpi
-    mkdir -p android/app/src/main/res/mipmap-xxhdpi
-    mkdir -p android/app/src/main/res/mipmap-xxxhdpi
-    convert logo.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-    convert logo.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-    convert logo.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-    convert logo.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-    convert logo.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-    # Ícone redondo (opcional)
-    convert logo.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
-    convert logo.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
-    convert logo.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
-    convert logo.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-    convert logo.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare www folder
+        run: |
+          mkdir -p www
+          cp -f *.html *.css *.js *.json *.png *.webmanifest sw.js www/ 2>/dev/null || true
+          echo "📁 Conteúdo da pasta www:"
+          ls -la www/
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Capacitor globally
+        run: npm install -g @capacitor/cli
+
+      - name: Install Capacitor core and android
+        run: npm install @capacitor/core @capacitor/android
+
+      # 👇 Instala o plugin AdMob
+      - name: Install AdMob plugin
+        run: npm install @capacitor-community/admob
+
+      - name: Init Capacitor
+        run: npx cap init RodaDoSabor com.siddapichau.rodasabor --web-dir www
+
+      - name: Add Android
+        run: npx cap add android
+
+      # 👇 CORREÇÃO: Adiciona a meta-data do AdMob no AndroidManifest.xml
+      - name: Fix AdMob manifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST" ]; then
+            sed -i '/<\/application>/i \    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>\n    <meta-data android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING" android:value="true"/>' "$MANIFEST"
+          fi
+
+      - name: Sync Capacitor
+        run: npx cap sync
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
