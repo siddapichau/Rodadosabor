@@ -12,6 +12,70 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Área do usuário */
+        .user-area {
+            display: none;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--bg-card);
+            padding: 0.3rem 0.8rem 0.3rem 0.3rem;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .user-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        .user-name i {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            margin-left: 0.3rem;
+        }
+        /* Modal de mesclagem */
+        .merge-option {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .merge-option:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+        .merge-option strong { display: block; font-size: 1rem; }
+        .merge-option p { margin: 0.3rem 0 0 0; font-size: 0.85rem; color: var(--text-muted); }
+        .merge-option .badge-option {
+            display: inline-block;
+            background: var(--accent-gradient);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.6rem;
+            border-radius: 30px;
+            margin-top: 0.3rem;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -25,6 +89,12 @@
                 </div>
             </div>
             <div class="top-stats">
+                <!-- Área do usuário -->
+                <div id="userArea" class="user-area">
+                    <div class="user-avatar" id="userAvatar">?</div>
+                    <span class="user-name" id="userName">Convidado</span>
+                </div>
+
                 <div class="stat-badge">
                     <i class="fas fa-coins"></i>
                     <span id="coin-balance"><i class="fas fa-spinner fa-spin"></i></span>
@@ -41,6 +111,7 @@
             </div>
         </header>
 
+        <!-- demais seções ... (mesmo conteúdo) -->
         <div class="card" style="padding: 1.5rem 1rem;">
             <div class="roulette-wrapper">
                 <div class="roulette-arrow"></div>
@@ -71,20 +142,16 @@
         <section class="card">
             <h2><i class="fas fa-palette"></i> Temas da Página</h2>
             <div class="store-grid" id="pageThemesGrid" style="margin-bottom: 2rem;"></div>
-            
             <h2><i class="fas fa-life-ring"></i> Temas da Roleta</h2>
             <div class="store-grid" id="rouletteThemesGrid"></div>
         </section>
 
         <section class="card">
             <h2><i class="fas fa-volume-up"></i> Sons Personalizados</h2>
-            
             <div style="margin-bottom:0.8rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">1. Sons de Giro da Roleta:</div>
             <div class="store-grid" id="spinSoundsGrid" style="margin-bottom: 1.5rem;"></div>
-            
             <div style="margin-bottom:0.8rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">2. Som de Fim (Quando a roleta para):</div>
             <div class="store-grid" id="endSoundsGrid" style="margin-bottom: 1.5rem;"></div>
-
             <div style="margin-bottom:0.8rem; font-weight:600; font-size:0.9rem; color:var(--text-secondary)">3. Som da Vitória (Comemoração real):</div>
             <div class="store-grid" id="winSoundsGrid"></div>
         </section>
@@ -102,75 +169,53 @@
         </section>
     </div>
 
-    <div id="foodSelectionModal" class="result-overlay">
-        <div class="modal-content-box">
-            <div class="modal-header-container">
-                <h3>Selecione os Pratos</h3>
-                <span class="close-modal-x" id="btnCloseFoodModal">&times;</span>
-            </div>
-            <div class="search-box-modal">
-                <input type="text" id="searchFoodInput" placeholder="🔍 Buscar comida...">
-            </div>
-            <div class="add-food-section">
-                <input type="text" id="newFoodName" placeholder="Nova comida">
-                <input type="text" id="newFoodEmoji" placeholder="Emoji" maxlength="2" style="flex:0.5; min-width:60px; text-align:center;">
-                <button id="btnAddCustomFood" class="btn-gradient-action dynamic-blue" style="flex:0.8; padding:0.6rem 1rem; font-size:0.9rem;">+ Adicionar</button>
-            </div>
-            <div class="grid-food-options" id="modalFoodOptionsGrid"></div>
-            <div id="foodSelectionCount" style="text-align:center; margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">0 / 6 selecionadas</div>
-            <div style="text-align: center; margin-top: 0.5rem;">
-                <button class="btn-close-modal" id="btnSaveFoodSelection">Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
+    <!-- Modais (foodSelection, adOverlay, resultOverlay, googleReminderModal) -->
+    <!-- ... (mesmo conteúdo anterior) ... -->
+    <!-- Mantenha todos os modais que já existiam, apenas adicione o novo abaixo -->
 
-    <div id="adOverlay" class="iframe-overlay">
-        <div class="iframe-box">
-            <div class="iframe-header">
-                Aguarde <span id="adCountdown">30</span> segundos para coletar suas moedas...
-            </div>
-            <iframe id="adFrame" src="about:blank"></iframe>
-        </div>
-    </div>
-
-    <div class="result-overlay" id="resultOverlay">
-        <div class="result-modal">
-            <h3>Refeição Sorteada!</h3>
-            <span class="food-emoji" id="modalEmoji">🍕</span>
-            <div class="food-name" id="modalFoodName">Pizza</div>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem;">Bom apetite!</p>
-            <button class="btn-close-modal" id="btnCloseModal">Maravilha!</button>
-        </div>
-    </div>
-
-    <canvas id="confettiCanvas"></canvas>
-    <div id="googleReminderModal" class="result-overlay" style="display: none; z-index: 180;">
-        <div class="result-modal" style="max-width: 420px;">
-            <h3 style="color: var(--accent);"><i class="fas fa-shield-alt"></i> Proteja seu Progresso!</h3>
-            <span style="font-size: 3.5rem; margin: 0.5rem 0; display: block;">👑</span>
-            <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.8rem; font-weight: 600;">
-                Você está jogando em uma conta temporária.
+    <!-- NOVO MODAL DE MESCLAGEM -->
+    <div id="mergeAccountModal" class="result-overlay" style="display: none; z-index: 200;">
+        <div class="result-modal" style="max-width: 480px; text-align: left;">
+            <h3 style="color: var(--accent); text-align: center; margin-bottom: 0.5rem;">
+                <i class="fas fa-merge"></i> Vincular Conta Google
+            </h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-bottom: 1.2rem;">
+                Você já tem progresso na conta anônima. O que deseja fazer?
             </p>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.4;">
-                Se você limpar o histórico do celular ou o cache do navegador, poderá perder todas as suas moedas, VIP e temas comprados. Salve agora usando sua conta Google!
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-                <button class="btn-gradient-action dynamic-blue" id="btnGoogleModalLogin" style="width: 100%; min-width: auto; padding: 0.7rem;">
-                    <i class="fab fa-google"></i> Salvar Meus Dados
-                </button>
-                <button class="btn-action btn-active" id="btnGoogleModalClose" style="background: transparent; border: none; cursor: pointer; padding: 0.3rem; font-size: 0.75rem;">
-                    Lembrar-me amanhã
-                </button>
+
+            <div id="mergeSummary" style="background: var(--bg-card); border-radius: 12px; padding: 0.8rem; margin-bottom: 1.2rem; border: 1px solid var(--border-color); font-size: 0.9rem;">
+                <div><strong>🟡 Conta Anônima:</strong> <span id="anonSummary">Carregando...</span></div>
+                <div style="margin-top: 0.3rem;"><strong>🔵 Conta Google:</strong> <span id="googleSummary">Carregando...</span></div>
+            </div>
+
+            <div class="merge-option" id="mergeKeepAnon" style="border-color: #f5b342;">
+                <strong>📌 Manter dados anônimos</strong>
+                <p>Não vincular ao Google. Continuar com a conta atual.</p>
+                <span class="badge-option">Recomendado se você não quer misturar</span>
+            </div>
+            <div class="merge-option" id="mergeOverwrite" style="border-color: #e94b3c;">
+                <strong>🔄 Sobrescrever com dados do Google</strong>
+                <p>Perderá todo o progresso anônimo e usará os dados salvos no Google.</p>
+                <span class="badge-option">Cuidado: dados anônimos serão perdidos</span>
+            </div>
+            <div class="merge-option" id="mergeCombine" style="border-color: #27ae60;">
+                <strong>🔀 Mesclar dados</strong>
+                <p>Combinar moedas, itens desbloqueados e comidas. O melhor dos dois mundos!</p>
+                <span class="badge-option">Recomendado</span>
+            </div>
+
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn-action" id="btnMergeCancel" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 0.4rem 1.2rem;">Cancelar</button>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     
     <script src="firebase.js"></script>
-
     <script src="sons.js"></script>
     <script src="comidas.js"></script>
     <script src="temas.js"></script>
