@@ -49,21 +49,6 @@
             font-size: 0.7rem;
             margin-left: 0.3rem;
         }
-        .btn-edit-name {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.2rem 0.4rem;
-            font-size: 0.8rem;
-            border-radius: 30px;
-            transition: all 0.2s;
-        }
-        .btn-edit-name:hover {
-            background: var(--border-color);
-            color: var(--text-primary);
-        }
-
         /* Modal de mesclagem */
         .merge-option {
             background: var(--bg-card);
@@ -104,13 +89,10 @@
                 </div>
             </div>
             <div class="top-stats">
-                <!-- Área do usuário com botão de edição -->
+                <!-- Área do usuário -->
                 <div id="userArea" class="user-area">
                     <div class="user-avatar" id="userAvatar">?</div>
                     <span class="user-name" id="userName">Convidado</span>
-                    <button class="btn-edit-name" id="btnEditName" title="Editar nome">
-                        <i class="fas fa-pencil-alt"></i>
-                    </button>
                 </div>
 
                 <div class="stat-badge">
@@ -129,7 +111,7 @@
             </div>
         </header>
 
-        <!-- Conteúdo principal (roleta, botões, seções) -->
+        <!-- demais seções ... (mesmo conteúdo) -->
         <div class="card" style="padding: 1.5rem 1rem;">
             <div class="roulette-wrapper">
                 <div class="roulette-arrow"></div>
@@ -188,7 +170,8 @@
     </div>
 
     <!-- Modais (foodSelection, adOverlay, resultOverlay, googleReminderModal) -->
-    <!-- Mantenha todos os modais que já existiam -->
+    <!-- ... (mesmo conteúdo anterior) ... -->
+    <!-- Mantenha todos os modais que já existiam, apenas adicione o novo abaixo -->
 
     <!-- NOVO MODAL DE MESCLAGEM -->
     <div id="mergeAccountModal" class="result-overlay" style="display: none; z-index: 200;">
