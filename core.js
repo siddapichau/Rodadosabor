@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
+console.log('core.js carregado (v6 - Rápido, Google Redirect, AdMob)');
 
 (function() {
     window.isServerSynced = false;
@@ -8,7 +8,7 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
         coins: 0, 
         vipUntil: 0,
         darkMode: false,
-        displayName: '', // Guarda o nome do usuário
+        displayName: '',
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -32,6 +32,13 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
         value: proxyState, writable: false, configurable: false
     });
 
+    // ===== PORTA SEGURA PARA TEMA ESCURO =====
+    window.toggleDarkModeSeguro = function() {
+        _rawState.darkMode = !_rawState.darkMode;
+        window.saveData();
+        window.applyThemes();
+    };
+
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
 
     window.isItemLiberado = function(nomeDoArray, idDoItem) {
@@ -53,7 +60,7 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
             return false; 
         }
         if (window.isVipAtivo()) {
-            alert("Você é VIP! Não precisa gastar moedas. O item já está liberado.");
+            alert("Você é VIP! Não precisa gastar moedas.");
             return false;
         }
         let preco = 0; let arrayDestravados = ''; let itemAtual = '';
@@ -103,14 +110,22 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
         return false;
     };
 
-    // ===== ANÚNCIO (ADMOB NATIVO + FALLBACK WEB) =====
+    // ===== ADMOB =====
     let lastAdTime = 0;
     let rewardedAdLoaded = false;
-    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; 
+    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; // ID Oficial do Google de Teste
 
     window.isAppNativo = function() {
         return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
     };
+
+    // Inicializa o AdMob na abertura se for APK
+    if (window.isAppNativo()) {
+        try {
+            const { AdMob } = window.Capacitor.Plugins;
+            AdMob.initialize({ initializeForTesting: true }).then(() => console.log("✅ AdMob Inicializado")).catch(console.error);
+        } catch(e) {}
+    }
 
     window.ganharMoedasAnuncioWeb = function() {
         if (!window.isServerSynced) return false;
@@ -121,30 +136,7 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
         window.saveData();
         return true;
     };
-// ===== ANÚNCIO (ADMOB NATIVO + FALLBACK WEB) =====
-    let lastAdTime = 0;
-    let rewardedAdLoaded = false;
-    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; 
 
-    window.isAppNativo = function() {
-        return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
-    };
-
-    // 👇 ADICIONE ESTE BLOCO AQUI PARA LIGAR O MOTOR DO ADMOB 👇
-    if (window.isAppNativo()) {
-        try {
-            const { AdMob } = window.Capacitor.Plugins;
-            AdMob.initialize({
-                initializeForTesting: true // Mude para false quando for lançar oficialmente
-            }).then(() => {
-                console.log("✅ Motor do AdMob ligado com sucesso!");
-            }).catch(err => console.error("Erro ao ligar motor AdMob:", err));
-        } catch (e) {}
-    }
-    // 👆 FIM DO BLOCO 👇
-
-    window.ganharMoedasAnuncioWeb = function() {
-        // ... (código que já existe)
     window.mostrarAdMobNativo = async function() {
         try {
             const { AdMob } = window.Capacitor.Plugins;
@@ -175,7 +167,7 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
                 });
             });
         } catch (error) {
-            console.error('❌ Erro crítico no AdMob:', error);
+            console.error('❌ Erro no AdMob:', error);
             _rawState.coins += 3; 
             window.saveData();
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
@@ -183,7 +175,7 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
         }
     };
 
-    // ===== FIREBASE E DADOS DO USUÁRIO =====
+    // ===== FIREBASE =====
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
@@ -192,9 +184,23 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
 
     if (auth) {
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => console.warn(err));
+        
+        // RECUPERA O RESULTADO DO REDIRECT (Evita tela branca)
+        auth.getRedirectResult().then((result) => {
+            if (result && result.user) {
+                alert("✅ Conta conectada com sucesso!");
+            }
+        }).catch((error) => {
+            if (error.code === 'auth/credential-already-in-use') {
+                if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (O progresso anônimo será perdido).")) {
+                    auth.signInWithCredential(error.credential).then(() => window.location.reload());
+                }
+            } else {
+                console.error("Erro Redirect Google:", error);
+            }
+        });
     }
 
-    // A Mágica da Interface do Usuário (Logado vs Anônimo)
     function updateUserInterface(user) {
         const userArea = document.getElementById('userArea');
         const userName = document.getElementById('userName');
@@ -219,34 +225,24 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
             if (userAvatar) userAvatar.textContent = firstName.charAt(0).toUpperCase();
             if (userName) {
                 userName.textContent = firstName;
-                // Se NÃO for anônimo, coloca o ícone verde de conta segura
-                if (!user.isAnonymous) {
-                    userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Google Vinculada"></i>';
-                }
+                if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Segura"></i>';
             }
         }
 
-        if (btnGoogle) {
-            // Mostra o botão do Google SÓ SE a pessoa for anônima
-            btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
-        }
-        
-        // Esconde o aviso chato se ele já logou
+        if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
         if (reminderModal && !user.isAnonymous) reminderModal.style.display = 'none';
         if (btnEdit) btnEdit.style.display = 'flex';
     }
 
-    // Editar o nome
     window.editarNomeUsuario = function(novoNome) {
-        if (!novoNome || typeof novoNome !== 'string') { alert("Nome inválido."); return false; }
+        if (!novoNome || typeof novoNome !== 'string') return false;
         let nomeLimpo = novoNome.replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
-        if (nomeLimpo.length < 3 || nomeLimpo.length > 16) { alert("O nome deve ter entre 3 e 16 caracteres, apenas letras."); return false; }
+        if (nomeLimpo.length < 3 || nomeLimpo.length > 16) { alert("O nome deve ter entre 3 e 16 caracteres."); return false; }
         
         _rawState.displayName = nomeLimpo;
         window.saveData();
         const user = auth?.currentUser;
         if (user) updateUserInterface(user);
-        alert(`✅ Nome atualizado para "${nomeLimpo}"`);
         return true;
     };
 
@@ -265,7 +261,6 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
         return merged;
     }
 
-    // Vincular com Google
     window.conectarGoogle = function() {
         if (!auth) return;
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -278,76 +273,27 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
 
         const hasData = () => {
             if (_rawState.coins > 0) return true;
-            const baseItems = ['theme-1', 'effect-1', 'spin-1', 'end-1', 'win-1'];
-            const allUnlocked = [..._rawState.unlockedPageThemes, ..._rawState.unlockedRouletteThemes, ..._rawState.unlockedSpinSounds, ..._rawState.unlockedEndSounds, ..._rawState.unlockedWinSounds, ..._rawState.unlockedEffects, ..._rawState.unlockedRecipes];
-            for (let item of allUnlocked) if (!baseItems.includes(item)) return true;
-            if (_rawState.customFoods?.length > 0) return true;
-            if (_rawState.foods?.length > 4) return true;
+            if (_rawState.unlockedPageThemes.length > 1 || _rawState.unlockedEffects.length > 1) return true;
             return false;
         };
 
+        // Usa Redirect em vez de Popup para não bugar no Android
         if (!hasData()) {
-            currentUser.linkWithPopup(provider).then((result) => {
-                const profile = result.additionalUserInfo?.profile;
-                let displayName = result.user.displayName;
-                if (!displayName && profile) displayName = profile.name || profile.given_name || 'Usuário';
-                if (displayName && displayName !== result.user.displayName) result.user.updateProfile({ displayName }).catch(console.warn);
-                _rawState.displayName = displayName || 'Usuário';
-                window.saveData();
-                result.user.reload().then(() => {
-                    updateUserInterface(result.user);
-                    alert("✅ Conta salva e vinculada ao Google com sucesso!");
-                    if (typeof window.renderAll === 'function') window.renderAll();
-                });
-            }).catch((error) => {
-                if (error.code === 'auth/credential-already-in-use') {
-                    if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (Seu progresso anônimo será perdido).")) {
-                        auth.signInWithCredential(error.credential).then(() => window.location.reload());
-                    }
-                } else { alert("❌ Erro ao conectar com Google. Verifique os domínios autorizados no Firebase."); }
-            });
+            currentUser.linkWithRedirect(provider);
             return;
         }
 
         const modal = document.getElementById('mergeAccountModal');
         if (!modal) return;
-        const anonSummary = document.getElementById('anonSummary');
-        if (anonSummary) anonSummary.textContent = `${_rawState.coins} moedas, ${_rawState.unlockedEffects.length} efeitos`;
-        const googleSummary = document.getElementById('googleSummary');
-        if (googleSummary) googleSummary.textContent = "Carregando após login...";
+        
+        document.getElementById('anonSummary').textContent = `${_rawState.coins} moedas`;
+        document.getElementById('googleSummary').textContent = "Carregando após login...";
 
         function proceedWithChoice(choice) {
             modal.style.display = 'none';
-            currentUser.linkWithPopup(provider).then((result) => {
-                const googleUser = result.user;
-                const profile = result.additionalUserInfo?.profile;
-                let displayName = googleUser.displayName;
-                if (!displayName && profile) displayName = profile.name || profile.given_name || 'Usuário';
-                if (displayName && displayName !== googleUser.displayName) googleUser.updateProfile({ displayName }).catch(console.warn);
-                
-                database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
-                    const googleData = snapshot.val() || {};
-                    let finalData;
-                    if (choice === 'keep') finalData = { ..._rawState };
-                    else if (choice === 'overwrite') finalData = { ...googleData };
-                    else if (choice === 'merge') finalData = _mergeData(_rawState, googleData);
-                    
-                    finalData.displayName = displayName || 'Usuário';
-                    Object.assign(_rawState, finalData);
-                    window.saveData();
-                    googleUser.reload().then(() => {
-                        updateUserInterface(googleUser);
-                        alert("✅ Conta vinculada e dados sincronizados!");
-                        if (typeof window.renderAll === 'function') window.renderAll();
-                    });
-                }).catch(() => alert("Erro ao sincronizar dados."));
-            }).catch((error) => {
-                if (error.code === 'auth/credential-already-in-use') {
-                    if (confirm("Esse e-mail já tem dados salvos. Entrar com essa conta e perder o anônimo?")) {
-                        auth.signInWithCredential(error.credential).then(() => window.location.reload());
-                    }
-                } else alert("❌ Erro ao conectar com Google.");
-            });
+            // Salva a escolha no sessionStorage para o app saber o que fazer quando voltar do redirect
+            sessionStorage.setItem('rodaSabor_mergeChoice', choice);
+            currentUser.linkWithRedirect(provider);
         }
 
         document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep');
@@ -388,17 +334,15 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
     }
 
     window.loadData = function() {
+        // UI Otimista: Carrega local e mostra NA HORA (sem delay)
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) {
-                const parsed = JSON.parse(saved);
-                delete parsed.coins; 
-                delete parsed.vipUntil;
-                Object.assign(_rawState, parsed);
+                Object.assign(_rawState, JSON.parse(saved));
             }
             garantirArraysNoEstado();
-            const coinEl = document.getElementById('coin-balance');
-            if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            if (typeof window.applyThemes === 'function') window.applyThemes();
         } catch (e) {}
 
         setTimeout(ativarModoOffline, 4000);
@@ -412,15 +356,33 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
 
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
                         window.isServerSynced = true;
+                        
+                        // Lógica Pós-Redirect Merge
+                        const mergeChoice = sessionStorage.getItem('rodaSabor_mergeChoice');
+                        
                         if (snapshot.exists()) {
                             const serverData = snapshot.val();
-                            const localCoins = _rawState.coins;
-                            const localName = _rawState.displayName;
-                            Object.assign(_rawState, serverData);
-                            if (serverData.coins === 0 && localCoins > 0) _rawState.coins = localCoins;
-                            if (!_rawState.displayName && localName) _rawState.displayName = localName;
-                            else if (!_rawState.displayName && user.displayName) _rawState.displayName = user.displayName;
-                            else if (!_rawState.displayName) _rawState.displayName = user.isAnonymous ? '' : 'Usuário';
+                            
+                            if (mergeChoice) {
+                                // Aplicar mesclagem pendente do Google Login
+                                let finalData;
+                                if (mergeChoice === 'keep') finalData = { ..._rawState };
+                                else if (mergeChoice === 'overwrite') finalData = { ...serverData };
+                                else if (mergeChoice === 'merge') finalData = _mergeData(_rawState, serverData);
+                                
+                                Object.assign(_rawState, finalData);
+                                sessionStorage.removeItem('rodaSabor_mergeChoice');
+                                window.saveData();
+                            } else {
+                                // Fluxo Normal
+                                const localCoins = _rawState.coins;
+                                const localName = _rawState.displayName;
+                                Object.assign(_rawState, serverData);
+                                if (serverData.coins === 0 && localCoins > 0) _rawState.coins = localCoins;
+                                if (!_rawState.displayName && localName) _rawState.displayName = localName;
+                                else if (!_rawState.displayName && user.displayName) _rawState.displayName = user.displayName;
+                                else if (!_rawState.displayName) _rawState.displayName = user.isAnonymous ? '' : 'Usuário';
+                            }
                             
                             garantirArraysNoEstado();
                             if (typeof window.renderAll === 'function') window.renderAll();
@@ -454,7 +416,7 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
     let saveTimeout = null;
     window.saveData = function() {
         const coinEl = document.getElementById('coin-balance');
-        if (coinEl && window.isServerSynced) coinEl.textContent = _rawState.coins;
+        if (coinEl) coinEl.textContent = _rawState.coins;
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
         
         if (saveTimeout) clearTimeout(saveTimeout);
