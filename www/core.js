@@ -121,7 +121,30 @@ console.log('core.js carregado (v5 - Completo com Usuários e AdMob)');
         window.saveData();
         return true;
     };
+// ===== ANÚNCIO (ADMOB NATIVO + FALLBACK WEB) =====
+    let lastAdTime = 0;
+    let rewardedAdLoaded = false;
+    const ADMOB_REWARDED_ID = 'ca-app-pub-3940256099942544/5224354917'; 
 
+    window.isAppNativo = function() {
+        return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform();
+    };
+
+    // 👇 ADICIONE ESTE BLOCO AQUI PARA LIGAR O MOTOR DO ADMOB 👇
+    if (window.isAppNativo()) {
+        try {
+            const { AdMob } = window.Capacitor.Plugins;
+            AdMob.initialize({
+                initializeForTesting: true // Mude para false quando for lançar oficialmente
+            }).then(() => {
+                console.log("✅ Motor do AdMob ligado com sucesso!");
+            }).catch(err => console.error("Erro ao ligar motor AdMob:", err));
+        } catch (e) {}
+    }
+    // 👆 FIM DO BLOCO 👇
+
+    window.ganharMoedasAnuncioWeb = function() {
+        // ... (código que já existe)
     window.mostrarAdMobNativo = async function() {
         try {
             const { AdMob } = window.Capacitor.Plugins;
