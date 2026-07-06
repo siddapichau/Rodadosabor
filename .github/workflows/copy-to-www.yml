@@ -10,13 +10,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create www directory if not exists
+      - name: Create www directory
         run: mkdir -p www
 
       - name: Copy all web files to www
         run: |
-          # Copia apenas arquivos web (html, css, js, json, png, etc.)
-          cp -f *.html *.css *.js *.json *.png *.webmanifest sw.js www/ 2>/dev/null || true
+          # Copia todos os arquivos web da raiz (incluindo subpastas se houver)
+          find . -maxdepth 1 -type f \( -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.json" -o -name "*.png" -o -name "*.webmanifest" -o -name "sw.js" \) -exec cp -v {} www/ \;
+
+      - name: List files in www
+        run: ls -la www/
 
       - name: Commit and push if changed
         run: |
