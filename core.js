@@ -8,7 +8,7 @@ console.log('core.js carregado');
         coins: 0, 
         vipUntil: 0,
         darkMode: false,
-        displayName: '', // ← NOVO: armazena o nome do usuário
+        displayName: '',
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -117,9 +117,17 @@ console.log('core.js carregado');
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
     let currentUserUid = null;
+    let anonymousSignInAttempted = false; // flag para evitar múltiplos logins anônimos
+
+    // ========== DEFINE PERSISTÊNCIA LOCAL ==========
+    if (auth) {
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .catch(err => console.warn("Erro ao definir persistência:", err));
+    }
 
     // ========== FUNÇÃO PARA ATUALIZAR A INTERFACE DO USUÁRIO ==========
     function updateUserInterface(user) {
+        console.log("🔄 updateUserInterface chamado com user:", user?.uid, user?.isAnonymous);
         const userArea = document.getElementById('userArea');
         const userName = document.getElementById('userName');
         const userAvatar = document.getElementById('userAvatar');
@@ -135,7 +143,6 @@ console.log('core.js carregado');
             // Logado com Google/Email
             if (userArea) {
                 userArea.style.display = 'flex';
-                // Prioriza o nome salvo no estado, depois o displayName do user
                 let displayName = _rawState.displayName || user.displayName || 'Usuário';
                 const firstName = displayName.split(' ')[0];
                 userName.textContent = firstName + ' ✓';
@@ -144,7 +151,6 @@ console.log('core.js carregado');
                     userAvatar.textContent = firstName.charAt(0).toUpperCase();
                 }
             }
-            // Ocultar botão Google e aviso diário
             if (btnGoogle) btnGoogle.style.display = 'none';
             if (reminderModal) reminderModal.style.display = 'none';
         } else {
@@ -154,9 +160,7 @@ console.log('core.js carregado');
                 userName.textContent = 'Convidado';
                 userAvatar.textContent = '?';
             }
-            // Mostrar botão Google
             if (btnGoogle) btnGoogle.style.display = 'flex';
-            // O aviso diário é controlado separadamente (app.js)
         }
     }
 
@@ -178,10 +182,7 @@ console.log('core.js carregado');
             merged.vipUntil = googleData.vipUntil;
         }
         if (googleData.darkMode !== undefined) merged.darkMode = googleData.darkMode;
-        // Preserva o displayName: prefere o do Google se existir, senão mantém anônimo
-        if (googleData.displayName) {
-            merged.displayName = googleData.displayName;
-        }
+        if (googleData.displayName) merged.displayName = googleData.displayName;
         arrayFields.forEach(field => {
             merged[field] = mergeArray(anonData[field], googleData[field]);
         });
@@ -241,12 +242,16 @@ console.log('core.js carregado');
                     _rawState.displayName = displayName || 'Usuário';
                     window.saveData();
                     alert("✅ Conta salva e vinculada ao Google com sucesso!");
-                    window.location.reload();
+                    // Atualiza a UI sem recarregar
+                    updateUserInterface(result.user);
+                    if (typeof window.renderAll === 'function') window.renderAll();
                 })
                 .catch((error) => {
                     if (error.code === 'auth/credential-already-in-use') {
                         if (confirm("Esse e-mail já tem dados salvos. Deseja trocar para ele? (Seu progresso anônimo será perdido).")) {
-                            auth.signInWithCredential(error.credential).then(() => window.location.reload());
+                            auth.signInWithCredential(error.credential).then(() => {
+                                window.location.reload(); // recarrega para sincronizar
+                            });
                         }
                     } else {
                         console.error("Erro:", error);
@@ -302,12 +307,13 @@ console.log('core.js carregado');
                         } else if (choice === 'merge') {
                             finalData = _mergeData(_rawState, googleData);
                         }
-                        // Garante que o displayName seja o extraído
                         finalData.displayName = displayName || 'Usuário';
                         Object.assign(_rawState, finalData);
                         window.saveData();
                         alert("✅ Conta vinculada e dados sincronizados!");
-                        window.location.reload();
+                        // Atualiza UI sem recarregar
+                        updateUserInterface(googleUser);
+                        if (typeof window.renderAll === 'function') window.renderAll();
                     }).catch(err => {
                         console.error("Erro ao buscar dados do Google:", err);
                         alert("Erro ao sincronizar dados. Tente novamente.");
@@ -316,7 +322,9 @@ console.log('core.js carregado');
                 .catch((error) => {
                     if (error.code === 'auth/credential-already-in-use') {
                         if (confirm("Esse e-mail já tem dados salvos. Deseja fazer login com essa conta e perder o progresso anônimo?")) {
-                            auth.signInWithCredential(error.credential).then(() => window.location.reload());
+                            auth.signInWithCredential(error.credential).then(() => {
+                                window.location.reload();
+                            });
                         }
                     } else {
                         console.error("Erro:", error);
@@ -368,6 +376,7 @@ console.log('core.js carregado');
     }
 
     window.loadData = function() {
+        console.log("📥 loadData iniciado");
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) {
@@ -375,68 +384,68 @@ console.log('core.js carregado');
                 delete parsed.coins;
                 delete parsed.vipUntil;
                 Object.assign(_rawState, parsed);
+                console.log("📦 Estado restaurado do localStorage:", _rawState);
             }
             garantirArraysNoEstado();
             const coinEl = document.getElementById('coin-balance');
             if (coinEl) coinEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        } catch (e) {}
+        } catch (e) {
+            console.warn("Erro ao carregar localStorage:", e);
+        }
 
         setTimeout(ativarModoOffline, 4000);
 
         if (auth && database) {
-            // Só chama signInAnonymously se NÃO houver usuário logado
-            if (!auth.currentUser) {
-                auth.signInAnonymously().catch(err => {
-                    console.error("🛑 Erro Auth:", err);
-                    ativarModoOffline();
-                });
-            }
-
+            // Não chama signInAnonymously aqui – aguarda o listener
             auth.onAuthStateChanged((user) => {
+                console.log("👤 onAuthStateChanged:", user?.uid, user?.isAnonymous);
                 if (user) {
                     currentUserUid = user.uid;
                     updateUserInterface(user);
 
+                    // Escuta as alterações no banco de dados
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
                         window.isServerSynced = true;
                         if (snapshot.exists()) {
                             const serverData = snapshot.val();
-                            // Preserva o displayName local se existir e não veio do servidor
+                            console.log("📡 Dados do servidor:", serverData);
+                            // Mescla com o estado local, preservando displayName se o servidor não tiver
                             const localName = _rawState.displayName;
                             Object.assign(_rawState, serverData);
-                            // Se o servidor não tiver displayName, mantém o local (ou define um padrão)
                             if (!_rawState.displayName && localName) {
                                 _rawState.displayName = localName;
-                            } else if (!_rawState.displayName) {
-                                // Se não tiver nome, usa o do Firebase Auth (se disponível)
-                                if (user.displayName) {
-                                    _rawState.displayName = user.displayName;
-                                } else {
-                                    _rawState.displayName = user.isAnonymous ? '' : 'Usuário';
-                                }
-                            }
-                            garantirArraysNoEstado();
-                            if (typeof window.renderAll === 'function') window.renderAll();
-                        } else {
-                            _rawState.coins = 20;
-                            _rawState.vipUntil = 0;
-                            _rawState.unlockedPageThemes = ["theme-1"];
-                            _rawState.unlockedEffects = ["effect-1"];
-                            // Define displayName se ainda não existir
-                            if (!_rawState.displayName && user.displayName) {
+                            } else if (!_rawState.displayName && user.displayName) {
                                 _rawState.displayName = user.displayName;
                             } else if (!_rawState.displayName) {
                                 _rawState.displayName = user.isAnonymous ? '' : 'Usuário';
                             }
                             garantirArraysNoEstado();
+                            if (typeof window.renderAll === 'function') window.renderAll();
+                            updateUserInterface(user);
+                        } else {
+                            // Primeiro acesso: criar dados iniciais
+                            console.log("🆕 Criando dados iniciais para o usuário");
+                            _rawState.coins = 20;
+                            _rawState.vipUntil = 0;
+                            _rawState.unlockedPageThemes = ["theme-1"];
+                            _rawState.unlockedEffects = ["effect-1"];
+                            if (user.displayName) _rawState.displayName = user.displayName;
+                            garantirArraysNoEstado();
                             window.saveData();
                             if (typeof window.renderAll === 'function') window.renderAll();
+                            updateUserInterface(user);
                         }
-                        updateUserInterface(user);
                     });
                 } else {
-                    // Usuário deslogado – tenta login anônimo
-                    auth.signInAnonymously().catch(console.warn);
+                    // Nenhum usuário logado – tentar anônimo uma vez
+                    if (!anonymousSignInAttempted) {
+                        anonymousSignInAttempted = true;
+                        console.log("🔑 Nenhum usuário, chamando signInAnonymously...");
+                        auth.signInAnonymously().catch(err => {
+                            console.error("🛑 Erro Auth anônimo:", err);
+                            ativarModoOffline();
+                        });
+                    }
                 }
             });
         } else {
@@ -455,10 +464,14 @@ console.log('core.js carregado');
         saveTimeout = setTimeout(() => {
             if (currentUserUid && database && window.isServerSynced) {
                 database.ref('users/' + currentUserUid + '/appState').set(_rawState)
+                    .then(() => console.log("✅ Dados salvos no Firebase"))
                     .catch((error) => {
                         if (error.code === "PERMISSION_DENIED") {
                             console.warn("Transação negada pelo servidor.");
-                            localStorage.removeItem('rodaDoSaborState'); window.location.reload(); 
+                            localStorage.removeItem('rodaDoSaborState');
+                            window.location.reload();
+                        } else {
+                            console.error("Erro ao salvar no Firebase:", error);
                         }
                     });
             }
@@ -467,7 +480,8 @@ console.log('core.js carregado');
 
     window.loadData();
 
-    // SINTETIZADOR DE ÁUDIO 
+    // ========== SINTETIZADOR DE ÁUDIO (mantido) ==========
+    // ... (todo o código de áudio permanece igual) ...
     let audioCtx = null;
     window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
 
