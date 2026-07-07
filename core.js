@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
+console.log('core.js carregado (v11 - AdMob e Web Sem Travas)');
 
 (function() {
     window.isServerSynced = false;
@@ -30,12 +30,10 @@ console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
     window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
     window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
-    window.ativarVipMensal = function() { _rawState.vipUntil = Date.now() + (30 * 24 * 60 * 60 * 1000); window.saveData(); return true; };
 
     window.comprarItemSeguro = function(categoria, id) {
-        if (!window.isServerSynced) { alert("Aguarde a sincronização."); return false; }
+        if (!window.isServerSynced) return false;
         if (window.isVipAtivo()) { alert("VIP Ativo! Item já liberado."); return false; }
-
         let preco = 0; let arrayDestravados = ''; let itemAtual = '';
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
@@ -45,12 +43,7 @@ console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
         else if (categoria === 'rouletteTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
         else if (categoria === 'recipe') { const i = window.RECEITAS?.find(x => x.id === id); if(!i) return false; preco = i.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null; }
 
-        if (_rawState.coins >= preco) {
-            _rawState.coins -= preco;
-            if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id);
-            if (itemAtual) _rawState[itemAtual] = id;
-            window.saveData(); return true;
-        }
+        if (_rawState.coins >= preco) { _rawState.coins -= preco; if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id); if (itemAtual) _rawState[itemAtual] = id; window.saveData(); return true; }
         return false;
     };
 
@@ -74,14 +67,18 @@ console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
         return false;
     };
 
-    // ========================== ADMOB CONFIG ==========================
+    // ========================== ADMOB E RECOMPENSAS ==========================
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
 
-    window.isAppNativo = function() { return typeof window.Capacitor !== 'undefined' && window.Capacitor.isNativePlatform(); };
-    window.spinCounter = 0; 
+    window.isAppNativo = function() {
+        return typeof window.Capacitor !== 'undefined' && 
+               typeof window.Capacitor.isNativePlatform === 'function' && 
+               window.Capacitor.isNativePlatform();
+    };
 
+    window.spinCounter = 0; 
     if (window.isAppNativo()) {
         try {
             const { AdMob } = window.Capacitor.Plugins;
@@ -105,12 +102,11 @@ console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
         }
     };
 
-    let lastAdTime = 0;
     window.ganharMoedasAnuncioWeb = function() {
         if (!window.isServerSynced) return false;
-        const now = Date.now();
-        if (now - lastAdTime < 25000) return false;
-        lastAdTime = now; _rawState.coins += 3; window.saveData(); return true;
+        // Removida a barreira de tempo do script interno para a Web não falhar.
+        // A barreira dos 30s é feita pelo setInterval no app.js de forma impecável.
+        _rawState.coins += 3; window.saveData(); return true;
     };
 
     window.mostrarAdMobNativo = async function() {
@@ -119,27 +115,40 @@ console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
             try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
 
             return new Promise((resolve) => {
-                // Timer de segurança: Se o Google falhar e não abrir o vídeo em 10 segundos, cancela o loading
-                const failsafe = setTimeout(() => {
-                    resolve(false); 
-                }, 10000);
+                let resolved = false;
+                const listeners = [];
 
-                // Eventos CORRETOS do AdMob v5
-                const rewardListener = AdMob.addListener('rewardedAdReward', (reward) => {
+                const cleanup = () => {
+                    listeners.forEach(l => { try { l.remove(); } catch(e){} });
+                    AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{});
+                };
+
+                const handleReward = (reward) => {
+                    if(resolved) return; resolved = true;
                     _rawState.coins += (reward.amount || 3);
                     window.saveData();
                     if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                    clearTimeout(failsafe); rewardListener.remove(); resolve(true);
-                });
-                
-                const closeListener = AdMob.addListener('rewardedAdDismissed', () => {
-                    clearTimeout(failsafe); closeListener.remove(); resolve(false);
-                    AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{});
-                });
-                
+                    cleanup(); resolve(true);
+                };
+
+                const handleClose = () => {
+                    if(resolved) return; resolved = true;
+                    cleanup(); resolve(false);
+                };
+
+                // Abordagem "Shotgun": Ouve todos os nomes de eventos que o Capacitor AdMob já usou
+                listeners.push(AdMob.addListener('rewardedVideoAdReward', handleReward));
+                listeners.push(AdMob.addListener('rewardedAdReward', handleReward));
+                listeners.push(AdMob.addListener('onRewardedVideoAdReward', handleReward));
+
+                listeners.push(AdMob.addListener('rewardedVideoAdDismissed', handleClose));
+                listeners.push(AdMob.addListener('rewardedAdDismissed', handleClose));
+                listeners.push(AdMob.addListener('rewardedVideoAdClosed', handleClose));
+                listeners.push(AdMob.addListener('onRewardedVideoAdClosed', handleClose));
+
                 AdMob.showRewardVideoAd().catch((err) => {
                     console.error("Erro AdMob:", err);
-                    clearTimeout(failsafe); resolve(false);
+                    if(!resolved) { resolved = true; cleanup(); resolve(false); }
                 });
             });
         } catch (error) { return false; }
@@ -158,7 +167,6 @@ console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
         const userName = document.getElementById('userName');
         const userAvatar = document.getElementById('userAvatar');
         const btnGoogle = document.getElementById('btnGoogleLogin');
-        const reminderModal = document.getElementById('googleReminderModal');
 
         if (!user) { if (userArea) userArea.style.display = 'none'; return; }
         let displayName = _rawState.displayName || user.displayName || '';
@@ -169,11 +177,10 @@ console.log('core.js carregado (v10 - AdMob BugFix + Gradientes)');
             if (userAvatar) userAvatar.textContent = displayName.charAt(0).toUpperCase();
             if (userName) {
                 userName.textContent = displayName.split(' ')[0];
-                if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Segura"></i>';
+                if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;"></i>';
             }
         }
         if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
-        if (reminderModal && !user.isAnonymous) reminderModal.style.display = 'none';
     }
 
     window.editarNomeUsuario = function(novoNome) {
