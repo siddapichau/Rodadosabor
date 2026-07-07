@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Lasanha · Roda do Sabor</title>
+    <title>Pão de Queijo · Roda do Sabor</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -46,10 +46,10 @@
         <header class="header">
             <div class="logo-area">
                 <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="logo-box" style="display: none;">🍛</div>
+                <div class="logo-box" style="display: none;">🧀</div>
                 <div class="logo-title">
                     <h1>Roda do Sabor</h1>
-                    <p><i class="fas fa-star"></i> Receita de Lasanha</p>
+                    <p><i class="fas fa-star"></i> Receita de Pão de Queijo</p>
                 </div>
             </div>
             <div class="top-stats">
@@ -61,91 +61,88 @@
 
         <div class="card">
             <div class="recipe-hero">
-                <h1>Lasanha à Bolonhesa</h1>
-                <p>Camadas de massa, molho e queijo gratinado.</p>
+                <h1>Pão de Queijo Mineiro</h1>
+                <p>Bolinhas crocantes por fora, macias por dentro.</p>
             </div>
 
             <div class="recipe-tabs" id="recipeTabs">
-                <button class="recipe-tab active" data-target="bolonhesa"><span class="tab-icon">🍝</span>Bolonhesa</button>
-                <button class="recipe-tab" data-target="frango"><span class="tab-icon">🍗</span>Frango</button>
-                <button class="recipe-tab" data-target="vegetariana"><span class="tab-icon">🌱</span>Vegetariana</button>
+                <button class="recipe-tab active" data-target="tradicional"><span class="tab-icon">🧀</span>Tradicional</button>
+                <button class="recipe-tab" data-target="recheado"><span class="tab-icon">🧀</span>Recheado</button>
+                <button class="recipe-tab" data-target="integral"><span class="tab-icon">🌾</span>Integral</button>
             </div>
 
             <div id="recipeContents">
-                <div class="recipe-content active" id="lasanha-bolonhesa">
+                <div class="recipe-content active" id="pao-tradicional">
                     <div class="recipe-card">
-                        <div class="recipe-image"><img src="https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600&h=400&fit=crop" alt="Lasanha à Bolonhesa" loading="lazy"></div>
+                        <div class="recipe-image"><img src="https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=600&h=400&fit=crop" alt="Pão de Queijo" loading="lazy"></div>
                         <div class="recipe-details">
-                            <h2>Lasanha Bolonhesa</h2>
-                            <p class="description">Clássica com molho de carne e queijo derretido.</p>
+                            <h2>Pão de Queijo Tradicional</h2>
+                            <p class="description">Polvilho doce e azedo, queijo minas e leite.</p>
                             <div>
                                 <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
                                 <ul class="ingredients-list">
-                                    <li><i class="fas fa-circle"></i> Massa para lasanha</li>
-                                    <li><i class="fas fa-circle"></i> 500g de carne moída</li>
-                                    <li><i class="fas fa-circle"></i> Molho de tomate</li>
-                                    <li><i class="fas fa-circle"></i> Queijo parmesão</li>
-                                    <li><i class="fas fa-circle"></i> Mussarela</li>
+                                    <li><i class="fas fa-circle"></i> 500g de polvilho</li>
+                                    <li><i class="fas fa-circle"></i> 200ml de leite</li>
+                                    <li><i class="fas fa-circle"></i> 100ml de óleo</li>
+                                    <li><i class="fas fa-circle"></i> 200g de queijo minas</li>
+                                    <li><i class="fas fa-circle"></i> 2 ovos</li>
                                 </ul>
                             </div>
                             <div class="prep-steps">
                                 <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
                                 <ol>
-                                    <li>Refogue a carne com molho.</li>
-                                    <li>Monte camadas de massa, molho e queijo.</li>
-                                    <li>Asse a 200°C por 30 min.</li>
+                                    <li>Misture o polvilho com o leite e óleo.</li>
+                                    <li>Adicione os ovos e o queijo ralado.</li>
+                                    <li>Modele as bolinhas e asse a 200°C por 20 min.</li>
                                 </ol>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="recipe-content" id="lasanha-frango">
+                <div class="recipe-content" id="pao-recheado">
                     <div class="recipe-card">
-                        <div class="recipe-image"><img src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=600&h=400&fit=crop" alt="Lasanha de Frango" loading="lazy"></div>
+                        <div class="recipe-image"><img src="https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=600&h=400&fit=crop" alt="Pão de Queijo Recheado" loading="lazy"></div>
                         <div class="recipe-details">
-                            <h2>Lasanha de Frango</h2>
-                            <p class="description">Com creme de frango e requeijão.</p>
+                            <h2>Pão de Queijo Recheado</h2>
+                            <p class="description">Com recheio de catupiry e calabresa.</p>
                             <div>
                                 <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
                                 <ul class="ingredients-list">
-                                    <li><i class="fas fa-circle"></i> Massa para lasanha</li>
-                                    <li><i class="fas fa-circle"></i> Peito de frango desfiado</li>
-                                    <li><i class="fas fa-circle"></i> Requeijão</li>
-                                    <li><i class="fas fa-circle"></i> Queijo parmesão</li>
+                                    <li><i class="fas fa-circle"></i> Massa tradicional</li>
+                                    <li><i class="fas fa-circle"></i> 100g de catupiry</li>
+                                    <li><i class="fas fa-circle"></i> 50g de calabresa</li>
                                 </ul>
                             </div>
                             <div class="prep-steps">
                                 <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
                                 <ol>
-                                    <li>Misture o frango com requeijão.</li>
-                                    <li>Monte as camadas e cubra com queijo.</li>
-                                    <li>Asse até gratinar.</li>
+                                    <li>Abra a massa, coloque o recheio.</li>
+                                    <li>Feche e asse como tradicional.</li>
                                 </ol>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="recipe-content" id="lasanha-vegetariana">
+                <div class="recipe-content" id="pao-integral">
                     <div class="recipe-card">
-                        <div class="recipe-image"><img src="https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600&h=400&fit=crop" alt="Lasanha Vegetariana" loading="lazy"></div>
+                        <div class="recipe-image"><img src="https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=600&h=400&fit=crop" alt="Pão de Queijo Integral" loading="lazy"></div>
                         <div class="recipe-details">
-                            <h2>Lasanha Vegetariana</h2>
-                            <p class="description">Com berinjela, abobrinha e molho branco.</p>
+                            <h2>Pão de Queijo Integral</h2>
+                            <p class="description">Com polvilho integral e sementes.</p>
                             <div>
                                 <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
                                 <ul class="ingredients-list">
-                                    <li><i class="fas fa-circle"></i> Massa para lasanha</li>
-                                    <li><i class="fas fa-circle"></i> Berinjela, abobrinha</li>
-                                    <li><i class="fas fa-circle"></i> Molho branco</li>
-                                    <li><i class="fas fa-circle"></i> Queijo mussarela</li>
+                                    <li><i class="fas fa-circle"></i> Polvilho integral</li>
+                                    <li><i class="fas fa-circle"></i> Leite e óleo</li>
+                                    <li><i class="fas fa-circle"></i> Queijo</li>
+                                    <li><i class="fas fa-circle"></i> Sementes de chia</li>
                                 </ul>
                             </div>
                             <div class="prep-steps">
                                 <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
                                 <ol>
-                                    <li>Refogue os vegetais.</li>
-                                    <li>Monte com molho branco e queijo.</li>
-                                    <li>Asse a 200°C.</li>
+                                    <li>Misture todos os ingredientes.</li>
+                                    <li>Asse até dourar.</li>
                                 </ol>
                             </div>
                         </div>
@@ -176,7 +173,7 @@
                     this.classList.add('active');
                     contents.forEach(c => c.classList.remove('active'));
                     const target = this.dataset.target;
-                    const targetEl = document.getElementById('lasanha-' + target);
+                    const targetEl = document.getElementById('pao-' + target);
                     if (targetEl) targetEl.classList.add('active');
                 });
             });
