@@ -1,5 +1,5 @@
 'use strict';
-console.log('app.js carregado (v8 - Descongelador de Botoes)');
+console.log('app.js carregado (v9 - Restaurador das Lojas e Eventos)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
@@ -94,6 +94,117 @@ window.renderThemes = function() {
     renderThemeGrid(rouletteGrid, 'unlockedRouletteThemes', 'currentRouletteTheme', 'rouletteTheme');
 };
 
+window.renderSounds = function() {
+    const spinGrid = document.getElementById('spinSoundsGrid');
+    const endGrid = document.getElementById('endSoundsGrid');
+    const winGrid = document.getElementById('winSoundsGrid');
+    if (!spinGrid || !endGrid || !winGrid) return;
+
+    const renderSoundCards = (grid, soundList, arrayName, currentKey, category) => {
+        grid.innerHTML = '';
+        if (!soundList || soundList.length === 0) return;
+        const sorted = [...soundList].sort((a, b) => (a.price || 0) - (b.price || 0));
+        sorted.forEach(sound => {
+            const isUnlocked = window.isItemLiberado(arrayName, sound.id);
+            const isActive = window.appState?.[currentKey] === sound.id;
+            
+            const card = document.createElement('div');
+            card.className = `item-card ${isActive ? 'active' : ''}`;
+            
+            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
+                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('${category}', '${sound.id}')">Usar</button>` 
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${sound.id}')"><i class="fas fa-coins"></i> ${sound.price}</button>`;
+            
+            card.innerHTML = `
+                <div class="item-info">
+                    <h4>${sound.name}</h4>
+                    <p style="font-size:0.65rem; color:var(--text-muted);">${sound.price === 0 ? 'Grátis' : `${sound.price} moedas`}</p>
+                    <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="window.playSynthesizedSound('${sound.type}')"></i>
+                </div>
+                ${btnHTML}
+            `;
+            grid.appendChild(card);
+        });
+    };
+
+    renderSoundCards(spinGrid, window.SONS_GIRO, 'unlockedSpinSounds', 'currentSpinSound', 'spinSound');
+    renderSoundCards(endGrid, window.SONS_FIM, 'unlockedEndSounds', 'currentEndSound', 'endSound');
+    renderSoundCards(winGrid, window.SONS_VITORIA, 'unlockedWinSounds', 'currentWinSound', 'winSound');
+};
+
+window.renderEffects = function() {
+    const grid = document.getElementById('effectsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const effects = window.EFEITOS_VISUAIS || [];
+    if (effects.length === 0) return;
+    
+    const sorted = [...effects].sort((a, b) => (a.price || 0) - (b.price || 0));
+    sorted.forEach(effect => {
+        const isUnlocked = window.isItemLiberado('unlockedEffects', effect.id);
+        const isActive = window.appState?.currentEffect === effect.id;
+        
+        const card = document.createElement('div');
+        card.className = `item-card ${isActive ? 'active' : ''}`;
+        
+        let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
+                    : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('effect', '${effect.id}')">Usar</button>` 
+                    : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('effect', '${effect.id}')"><i class="fas fa-coins"></i> ${effect.price}</button>`;
+        
+        card.innerHTML = `
+            <div class="item-info">
+                <h4>${effect.name}</h4>
+                <p style="font-size:0.65rem; color:var(--text-muted);">${effect.price === 0 ? 'Grátis' : `${effect.price} moedas`}</p>
+            </div>
+            ${btnHTML}
+        `;
+        grid.appendChild(card);
+    });
+};
+
+window.renderRecipes = function() {
+    const grid = document.getElementById('recipesGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const recipes = window.RECEITAS || [];
+    if (recipes.length === 0) return;
+    
+    const sorted = [...recipes].sort((a, b) => (a.preco || 0) - (b.preco || 0));
+    sorted.forEach(rec => {
+        const isUnlocked = window.isItemLiberado('unlockedRecipes', rec.id);
+        const card = document.createElement('div');
+        card.className = 'recipe-card';
+        card.innerHTML = `<div class="recipe-info"><span class="recipe-icon">${rec.icone}</span><span class="recipe-name">${rec.nome}</span></div>`;
+        let btn = document.createElement('button');
+        
+        if (isUnlocked) {
+            btn.className = 'btn-action btn-recipe-open'; btn.textContent = 'Ver';
+            btn.onclick = () => window.location.href = rec.link;
+        } else {
+            btn.className = 'btn-action btn-buy'; btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco}`;
+            btn.onclick = () => window.comprarEAtualizar('recipe', rec.id);
+        }
+        card.appendChild(btn);
+        grid.appendChild(card);
+    });
+};
+
+window.launchCurrentEffect = function() {
+    const effectId = window.appState.currentEffect || 'effect-1';
+    switch (effectId) {
+        case 'effect-1': window.launchConfetti(); break;
+        case 'effect-2': window.launchFireworks(); break;
+        case 'effect-3': window.launchStars(); break;
+        case 'effect-4': window.launchNeonLights(); break;
+        case 'effect-5': window.launchLaser(); break;
+        case 'effect-6': window.launchGlitter(); break;
+        case 'effect-7': window.launchFireworks(); break; 
+        case 'effect-8': window.launchStars(); break;    
+        case 'effect-9': window.launchRainbow(); break;
+        default: window.launchConfetti();
+    }
+};
+
 window.comprarEAtualizar = function(categoria, id) {
     if (window.comprarItemSeguro(categoria, id)) window.renderAll();
     else if(!window.isVipAtivo()) alert("Não foi possível realizar a compra. Moedas insuficientes.");
@@ -107,6 +218,9 @@ window.renderAll = function() {
     window.updateCoinsDisplay();
     try { window.renderFoodList(); } catch(e) {}
     try { window.renderThemes(); } catch(e) {}
+    try { window.renderSounds(); } catch(e) {}
+    try { window.renderEffects(); } catch(e) {}
+    try { window.renderRecipes(); } catch(e) {}
     try { if (typeof window.applyThemes === 'function') window.applyThemes(); } catch(e) {}
 };
 
@@ -139,11 +253,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.toggleDarkModeSeguro === 'function') window.toggleDarkModeSeguro(); 
     });
 
-    // 👇 SOLUÇÃO DEFINITIVA DO BOTÃO DE ANÚNCIO 👇
+    // 👇 O GATILHO DEFINITIVO DE ANÚNCIOS 👇
     const btnWatchAd = document.getElementById('btnWatchAd');
     btnWatchAd?.addEventListener('click', async function() {
         if (!window.isServerSynced) { alert("⏳ Conectando ao servidor..."); return; }
 
+        // MODO APK NATIVO (Escuta Múltipla)
         if (window.isAppNativo && window.isAppNativo()) {
             btnWatchAd.disabled = true;
             const textoOriginal = btnWatchAd.innerHTML;
@@ -151,7 +266,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const recompensaGanha = await window.mostrarAdMobNativo();
             
-            // Força a restauração do botão quer tenha sucesso ou erro
             btnWatchAd.innerHTML = textoOriginal;
             btnWatchAd.disabled = false;
             
@@ -159,6 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // MODO WEB NAVEGADOR
         const overlay = document.getElementById('adOverlay');
         const countdownSpan = document.getElementById('adCountdown');
         if (!overlay || !countdownSpan) return;
@@ -177,9 +292,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.style.display = 'none';
                 btnWatchAd.disabled = false;
                 
+                // Agora o Web funciona de forma independente!
                 if (window.ganharMoedasAnuncioWeb()) {
                     window.updateCoinsDisplay(); alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
-                } else alert("⚠️ Falha ao resgatar.");
+                } else alert("⚠️ Falha ao resgatar. Aguarde um instante.");
             }
         }, 1000);
     });
