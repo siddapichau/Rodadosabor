@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v12 - Anti-Travamento do AdMob)');
+console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
 
 (function() {
     window.isServerSynced = false;
@@ -67,7 +67,7 @@ console.log('core.js carregado (v12 - Anti-Travamento do AdMob)');
         return false;
     };
 
-    // ========================== ADMOB E RECOMPENSAS (ANTI-TRAVAMENTO) ==========================
+    // ========================== ADMOB: ESCUDO ANTI-FALHAS ==========================
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
@@ -79,7 +79,7 @@ console.log('core.js carregado (v12 - Anti-Travamento do AdMob)');
     };
 
     window.spinCounter = 0; 
-    let resolveAdPromise = null; // Guardião Global da Promessa do Anúncio
+    let resolveAdPromise = null;
 
     if (window.isAppNativo()) {
         try {
@@ -89,35 +89,52 @@ console.log('core.js carregado (v12 - Anti-Travamento do AdMob)');
                 try { await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }); } catch(e) {}
                 try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
 
-                // 👇 A MÁGICA ESTÁ AQUI: Listeners Globais fixos (nunca falham e não causam Crash) 👇
+                // Evento de Recompensa: Recebendo as moedas (Blindado com try/catch)
                 const handleReward = (reward) => {
-                    _rawState.coins += (reward.amount || 3);
-                    window.saveData();
-                    if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                    
-                    if (resolveAdPromise) {
-                        resolveAdPromise(true);
-                        resolveAdPromise = null;
+                    try {
+                        let recompensa = 3;
+                        if (reward && reward.amount) recompensa = parseInt(reward.amount) || 3;
+                        
+                        _rawState.coins += recompensa;
+                        window.saveData();
+                        if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+                        
+                        // Destrava o botão IMEDIATAMENTE após ganhar as moedas
+                        if (resolveAdPromise) {
+                            resolveAdPromise(true);
+                            resolveAdPromise = null;
+                        }
+                    } catch (err) {
+                        console.error("Erro interno ao processar recompensa:", err);
+                        // Failsafe: destrava mesmo com erro
+                        if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; }
                     }
                 };
 
+                // Evento de Fechar: Caso a pessoa feche sem terminar ou após terminar
                 const handleClose = () => {
-                    if (resolveAdPromise) {
-                        resolveAdPromise(false);
-                        resolveAdPromise = null;
+                    try {
+                        // Se o resolveAdPromise ainda existir, significa que o handleReward não foi chamado (não ganhou nada)
+                        if (resolveAdPromise) {
+                            resolveAdPromise(false);
+                            resolveAdPromise = null;
+                        }
+                        
+                        // Prepara o próximo vídeo para não ficar sem anúncios
+                        setTimeout(() => {
+                            AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{});
+                        }, 2000);
+                    } catch (err) {
+                        console.error("Erro ao fechar vídeo:", err);
                     }
-                    
-                    // ATRASO VITAL: Dá 2 segundos para o telemóvel "respirar" e fechar o vídeo
-                    // antes de pedir um novo anúncio. Isto resolve o ecrã congelado!
-                    setTimeout(() => {
-                        AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{});
-                    }, 2000);
                 };
 
+                // Atira para todos os lados para garantir que o evento não se perde!
                 AdMob.addListener('rewardedVideoAdReward', handleReward);
                 AdMob.addListener('rewardedAdReward', handleReward);
                 AdMob.addListener('rewardedVideoAdDismissed', handleClose);
                 AdMob.addListener('rewardedAdDismissed', handleClose);
+                AdMob.addListener('rewardedVideoAdShowFailed', handleClose);
 
             }).catch(console.error);
         } catch(e) {}
@@ -147,19 +164,19 @@ console.log('core.js carregado (v12 - Anti-Travamento do AdMob)');
             try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
 
             return new Promise((resolve) => {
-                // Configura o guardião
                 resolveAdPromise = resolve;
 
-                // Temporizador de 60 segundos por segurança extrema
+                // Failsafe Extremo: Se a Google não responder em 90 segundos, o botão destrava sozinho.
                 setTimeout(() => {
                     if (resolveAdPromise) {
+                        console.warn("Failsafe: O vídeo não respondeu a tempo.");
                         resolveAdPromise(false);
                         resolveAdPromise = null;
                     }
-                }, 60000);
+                }, 90000);
 
                 AdMob.showRewardVideoAd().catch((err) => {
-                    console.error("Erro AdMob:", err);
+                    console.error("Erro ao tentar exibir AdMob:", err);
                     if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
                 });
             });
@@ -370,7 +387,6 @@ console.log('core.js carregado (v12 - Anti-Travamento do AdMob)');
         o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
     }
 
-    // Leitura Dinâmica do Gradiente
     window.applyThemes = function() {
         const themes = window.listTemas || []; if (themes.length === 0) return;
         const pageTheme = themes.find(t => t.id === _rawState.currentPageTheme) || themes[0];
