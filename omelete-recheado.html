@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Omelete Recheado · Roda do Sabor</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .recipe-hero { text-align: center; margin-bottom: 2rem; }
+        .recipe-hero h1 { font-size: 2.4rem; font-weight: 800; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; transition: background 0.4s ease; }
+        .recipe-hero p { color: var(--text-muted); margin-top: 0.5rem; }
+        
+        .recipe-tabs { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; margin-bottom: 2.5rem; }
+        .recipe-tab { background: var(--bg-card); border: 2px solid var(--border-color); border-radius: 20px; padding: 0.8rem 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; color: var(--text-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 100px; }
+        .tab-icon { font-size: 1.8rem; line-height: 1; transition: transform 0.3s ease; }
+        .recipe-tab.active { border-color: var(--gold); background: rgba(245, 179, 66, 0.10); transform: translateY(-4px); box-shadow: 0 8px 24px rgba(245, 179, 66, 0.2); }
+        .recipe-tab.active .tab-icon { transform: scale(1.2); }
+        .recipe-tab:hover:not(.active) { transform: translateY(-2px); border-color: var(--accent); }
+        
+        .recipe-content { display: none; animation: fadeUp 0.4s ease; }
+        .recipe-content.active { display: block; }
+        @keyframes fadeUp { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+        
+        .recipe-card { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+        .recipe-image { border-radius: 2rem; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.1); background: var(--bg-card); }
+        .recipe-image img { width: 100%; height: auto; display: block; transition: transform 0.5s ease; }
+        .recipe-image:hover img { transform: scale(1.05); }
+        .recipe-details { display: flex; flex-direction: column; gap: 1.5rem; }
+        .recipe-details h2 { font-size: 1.8rem; margin-bottom: 0.2rem; color: var(--gold); }
+        .recipe-details .description { color: var(--text-muted); font-size: 0.95rem; }
+        
+        .ingredients-list { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .ingredients-list li { background: var(--bg-card); padding: 0.4rem 0.8rem; border-radius: 30px; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; border: 1px solid var(--border-color); transition: border-color 0.3s; }
+        .ingredients-list li:hover { border-color: var(--accent); }
+        .ingredients-list li i { color: var(--gold); font-size: 0.8rem; }
+        
+        .prep-steps { background: var(--bg-card); padding: 1.2rem 1.5rem; border-radius: 1.5rem; border-left: 4px solid var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .prep-steps ol { padding-left: 1.2rem; margin: 0.8rem 0 0; color: var(--text-secondary); }
+        .prep-steps li { margin-bottom: 0.6rem; }
+        
+        .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-color); padding: 0.6rem 1.2rem; border-radius: 40px; color: var(--text-primary); text-decoration: none; font-weight: 600; transition: all 0.2s; margin-top: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .btn-back:hover { transform: translateX(-4px); border-color: var(--accent); }
+        
+        @media(max-width: 700px) { .recipe-card { grid-template-columns: 1fr; } .ingredients-list { grid-template-columns: 1fr; } .recipe-hero h1 { font-size: 1.8rem; } .recipe-tabs { gap: 0.5rem; } .recipe-tab { min-width: 80px; padding: 0.6rem 0.8rem; font-size: 0.8rem; } .tab-icon { font-size: 1.4rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo-area">
+                <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-box" style="display: none;">🍳</div>
+                <div class="logo-title">
+                    <h1>Roda do Sabor</h1>
+                    <p><i class="fas fa-star"></i> Receita de Omelete</p>
+                </div>
+            </div>
+            <div class="top-stats">
+                <div class="stat-badge"><i class="fas fa-coins"></i> <span id="coin-balance"><i class="fas fa-spinner fa-spin"></i></span></div>
+                <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro"><i class="fas fa-moon"></i></button>
+                <a href="index.html" class="btn-toggle-mode" title="Voltar à Roda" style="text-decoration:none;"><i class="fas fa-arrow-left"></i></a>
+            </div>
+        </header>
+
+        <div class="card">
+            <div class="recipe-hero">
+                <h1>Omeletes Recheados</h1>
+                <p>O prato rápido que salva qualquer refeição, com recheios que derretem na boca.</p>
+            </div>
+
+            <div class="recipe-tabs" id="recipeTabs">
+                <button class="recipe-tab active" data-target="queijo">
+                    <span class="tab-icon">🧀</span> Misto
+                </button>
+                <button class="recipe-tab" data-target="espinafre">
+                    <span class="tab-icon">🍄</span> Fit
+                </button>
+            </div>
+
+            <div id="recipeContents">
+                <div class="recipe-content active" id="recipe-queijo">
+                    <div class="recipe-card">
+                        <div class="recipe-image"><img src="https://images.unsplash.com/photo-1510693206972-df098062cb71?w=600&h=400&fit=crop" alt="Omelete Queijo"></div>
+                        <div class="recipe-details">
+                            <h2>Clássico Misto</h2>
+                            <p class="description">A dupla imbatível que agrada a todos: queijo derretido e presunto no ponto certo.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 3 Ovos grandes</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher de Leite</li>
+                                    <li><i class="fas fa-circle"></i> 2 fatias de Queijo Mussarela</li>
+                                    <li><i class="fas fa-circle"></i> 2 fatias de Presunto</li>
+                                    <li><i class="fas fa-circle"></i> Sal e Orégãos</li>
+                                    <li><i class="fas fa-circle"></i> Manteiga para untar</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Numa tigela, bata bem os ovos com o leite, uma pitada de sal e orégãos.</li>
+                                    <li>Aqueça a frigideira em lume médio com um pouco de manteiga.</li>
+                                    <li>Despeje a mistura de ovos e deixe cozinhar até as bordas começarem a soltar.</li>
+                                    <li>Coloque o queijo e o presunto picados em apenas uma das metades do omelete.</li>
+                                    <li>Dobre a metade vazia sobre o recheio usando uma espátula. Sirva imediatamente!</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recipe-content" id="recipe-espinafre">
+                    <div class="recipe-card">
+                        <div class="recipe-image"><img src="https://images.unsplash.com/photo-1494597564530-871f2b93ac55?w=600&h=400&fit=crop" alt="Omelete Fit"></div>
+                        <div class="recipe-details">
+                            <h2>Espinafre e Cogumelos</h2>
+                            <p class="description">Uma opção vegetariana sofisticada, leve e cheia de ferro e vitaminas.</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">
+                                    <li><i class="fas fa-circle"></i> 3 Ovos ou 4 Claras</li>
+                                    <li><i class="fas fa-circle"></i> 1 punhado de Espinafres frescos</li>
+                                    <li><i class="fas fa-circle"></i> 4 Cogumelos fatiados</li>
+                                    <li><i class="fas fa-circle"></i> Sal e Pimenta Preta</li>
+                                    <li><i class="fas fa-circle"></i> 1 colher de Queijo Creme</li>
+                                </ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>
+                                    <li>Numa frigideira, salteie os cogumelos até dourarem. Junte os espinafres por 30 segundos até murcharem. Retire e reserve.</li>
+                                    <li>Bata os ovos com sal e pimenta e deite na mesma frigideira.</li>
+                                    <li>Quando o fundo estiver cozido, espalhe a mistura de cogumelos e o queijo creme numa das metades.</li>
+                                    <li>Dobre a omelete ao meio, espere o queijo derreter e está pronto a comer.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu Principal</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="temas.js"></script>
+    <script src="core.js"></script>
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.recipe-tab');
+            const contents = document.querySelectorAll('.recipe-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    contents.forEach(c => c.classList.remove('active'));
+                    document.getElementById('recipe-' + this.dataset.target).classList.add('active');
+                });
+            });
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            if (typeof window.applyThemes === 'function') window.applyThemes();
+        });
+    </script>
+</body>
+</html>
