@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Pizza · Roda do Sabor</title>
+    <link rel="icon" type="image/png" href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -23,36 +24,56 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             display: inline-block;
+            transition: background 0.4s ease;
         }
         .recipe-hero p {
             color: var(--text-muted);
             margin-top: 0.5rem;
         }
+        
+        /* Abas com ícones embutidos */
         .pizza-tabs {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 0.8rem;
             justify-content: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
         .pizza-tab {
             background: var(--bg-card);
-            border: 2px solid transparent;
-            border-radius: 40px;
-            padding: 0.5rem 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            padding: 0.8rem 1.2rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             color: var(--text-primary);
-            box-shadow: var(--shadow);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            min-width: 100px;
+        }
+        .tab-icon {
+            font-size: 1.8rem;
+            line-height: 1;
+            transition: transform 0.3s ease;
         }
         .pizza-tab.active {
             border-color: var(--gold);
-            background: rgba(245, 179, 66, 0.15);
+            background: rgba(245, 179, 66, 0.10);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(245, 179, 66, 0.2);
         }
-        .pizza-tab:hover {
+        .pizza-tab.active .tab-icon {
+            transform: scale(1.2);
+        }
+        .pizza-tab:hover:not(.active) {
             transform: translateY(-2px);
+            border-color: var(--accent);
         }
+        
         .pizza-content {
             display: none;
             animation: fadeUp 0.4s ease;
@@ -61,7 +82,7 @@
             display: block;
         }
         @keyframes fadeUp {
-            0% { opacity: 0; transform: translateY(10px); }
+            0% { opacity: 0; transform: translateY(15px); }
             100% { opacity: 1; transform: translateY(0); }
         }
         .pizza-card {
@@ -73,13 +94,17 @@
         .pizza-image {
             border-radius: 2rem;
             overflow: hidden;
-            box-shadow: var(--shadow);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             background: var(--bg-card);
         }
         .pizza-image img {
             width: 100%;
             height: auto;
             display: block;
+            transition: transform 0.5s ease;
+        }
+        .pizza-image:hover img {
+            transform: scale(1.05);
         }
         .pizza-details {
             display: flex;
@@ -89,8 +114,7 @@
         .pizza-details h2 {
             font-size: 1.8rem;
             margin-bottom: 0.2rem;
-            border-bottom: none;
-            padding-bottom: 0;
+            color: var(--gold);
         }
         .pizza-details .description {
             color: var(--text-muted);
@@ -112,6 +136,10 @@
             align-items: center;
             gap: 0.5rem;
             border: 1px solid var(--border-color);
+            transition: border-color 0.3s;
+        }
+        .ingredients-list li:hover {
+            border-color: var(--accent);
         }
         .ingredients-list li i {
             color: var(--gold);
@@ -119,16 +147,18 @@
         }
         .prep-steps {
             background: var(--bg-card);
-            padding: 1rem 1.5rem;
+            padding: 1.2rem 1.5rem;
             border-radius: 1.5rem;
             border-left: 4px solid var(--gold);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
         .prep-steps ol {
             padding-left: 1.2rem;
-            margin: 0.5rem 0 0;
+            margin: 0.8rem 0 0;
+            color: var(--text-secondary);
         }
         .prep-steps li {
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.6rem;
         }
         .btn-back {
             display: inline-flex;
@@ -143,31 +173,28 @@
             font-weight: 600;
             transition: all 0.2s;
             margin-top: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .btn-back:hover {
             transform: translateX(-4px);
-            box-shadow: var(--shadow);
+            border-color: var(--accent);
         }
         @media(max-width: 700px) {
-            .pizza-card {
-                grid-template-columns: 1fr;
-            }
-            .ingredients-list {
-                grid-template-columns: 1fr;
-            }
-            .recipe-hero h1 {
-                font-size: 1.8rem;
-            }
+            .pizza-card { grid-template-columns: 1fr; }
+            .ingredients-list { grid-template-columns: 1fr; }
+            .recipe-hero h1 { font-size: 1.8rem; }
+            .pizza-tabs { gap: 0.5rem; }
+            .pizza-tab { min-width: 80px; padding: 0.6rem 0.8rem; font-size: 0.8rem; }
+            .tab-icon { font-size: 1.4rem; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- ===== HEADER (mesmo do index) ===== -->
         <header class="header">
             <div class="logo-area">
                 <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="logo-box" style="display: none;">🍽️</div>
+                <div class="logo-box" style="display: none;">🍕</div>
                 <div class="logo-title">
                     <h1>Roda do Sabor</h1>
                     <p><i class="fas fa-star"></i> Receita de Pizza</p>
@@ -176,7 +203,7 @@
             <div class="top-stats">
                 <div class="stat-badge">
                     <i class="fas fa-coins"></i>
-                    <span id="coin-balance">0</span>
+                    <span id="coin-balance"><i class="fas fa-spinner fa-spin"></i></span>
                 </div>
                 <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
                     <i class="fas fa-moon"></i>
@@ -187,209 +214,196 @@
             </div>
         </header>
 
-        <!-- ===== CONTEÚDO PRINCIPAL ===== -->
         <div class="card">
             <div class="recipe-hero">
-                <h1>🍕 Pizzas Artesanais</h1>
+                <h1>Pizzas Artesanais</h1>
                 <p>Escolha seu sabor favorito e veja a receita completa com ingredientes e modo de preparo.</p>
             </div>
 
-            <!-- Abas de sabores -->
             <div class="pizza-tabs" id="pizzaTabs">
-                <button class="pizza-tab active" data-target="margherita">Margherita</button>
-                <button class="pizza-tab" data-target="pepperoni">Pepperoni</button>
-                <button class="pizza-tab" data-target="quatroqueijos">Quatro Queijos</button>
-                <button class="pizza-tab" data-target="calabresa">Calabresa</button>
-                <button class="pizza-tab" data-target="vegetariana">Vegetariana</button>
+                <button class="pizza-tab active" data-target="margherita">
+                    <span class="tab-icon">🍅</span>
+                    Margherita
+                </button>
+                <button class="pizza-tab" data-target="pepperoni">
+                    <span class="tab-icon">🍕</span>
+                    Pepperoni
+                </button>
+                <button class="pizza-tab" data-target="quatroqueijos">
+                    <span class="tab-icon">🧀</span>
+                    4 Queijos
+                </button>
+                <button class="pizza-tab" data-target="calabresa">
+                    <span class="tab-icon">🧅</span>
+                    Calabresa
+                </button>
+                <button class="pizza-tab" data-target="vegetariana">
+                    <span class="tab-icon">🥦</span>
+                    Vegetariana
+                </button>
             </div>
 
-            <!-- Conteúdo das receitas -->
             <div id="pizzaContents">
-                <!-- Margherita -->
                 <div class="pizza-content active" id="pizza-margherita">
                     <div class="pizza-card">
                         <div class="pizza-image">
                             <img src="https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=600&h=400&fit=crop" alt="Pizza Margherita" loading="lazy">
                         </div>
                         <div class="pizza-details">
-                            <h2>Margherita</h2>
-                            <p class="description">A clássica pizza italiana com molho de tomate, mussarela de búfala, manjericão fresco e azeite. Simples e deliciosa.</p>
+                            <h2>Margherita Tradicional</h2>
+                            <p class="description">A clássica pizza italiana com molho de tomate fresco, mussarela de búfala e manjericão. Simples e deliciosa.</p>
                             <div>
-                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
                                 <ul class="ingredients-list">
                                     <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
                                     <li><i class="fas fa-circle"></i> 200ml de água morna</li>
-                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
+                                    <li><i class="fas fa-circle"></i> 10g de fermento seco</li>
                                     <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
                                     <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
                                     <li><i class="fas fa-circle"></i> 200g de mussarela de búfala</li>
-                                    <li><i class="fas fa-circle"></i> Folhas de manjericão fresco</li>
-                                    <li><i class="fas fa-circle"></i> Azeite extravirgem para finalizar</li>
+                                    <li><i class="fas fa-circle"></i> Manjericão fresco</li>
+                                    <li><i class="fas fa-circle"></i> Azeite extravirgem</li>
                                 </ul>
                             </div>
                             <div class="prep-steps">
-                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
                                 <ol>
-                                    <li>Em uma tigela, dissolva o fermento na água morna e deixe descansar por 5 minutos.</li>
-                                    <li>Adicione a farinha, o sal e o azeite. Misture até formar uma massa homogênea.</li>
-                                    <li>Sove a massa por 10 minutos até ficar lisa. Deixe crescer por 1 hora.</li>
-                                    <li>Abra a massa em um círculo de 30 cm de diâmetro.</li>
-                                    <li>Espalhe o molho de tomate, distribua a mussarela e leve ao forno a 220°C por 15 minutos.</li>
-                                    <li>Retire, adicione as folhas de manjericão e regue com azeite. Sirva quente.</li>
+                                    <li>Dissolva o fermento na água morna e deixe descansar por 5 minutos.</li>
+                                    <li>Misture a farinha e o sal, adicione o líquido e sove por 10 minutos. Deixe crescer por 1 hora.</li>
+                                    <li>Abra a massa em um círculo fino.</li>
+                                    <li>Espalhe o molho de tomate e asse a 250°C por 10 minutos.</li>
+                                    <li>Retire, adicione o queijo e o manjericão. Volte ao forno por mais 5 minutos.</li>
                                 </ol>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Pepperoni -->
                 <div class="pizza-content" id="pizza-pepperoni">
                     <div class="pizza-card">
                         <div class="pizza-image">
                             <img src="https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&h=400&fit=crop" alt="Pizza Pepperoni" loading="lazy">
                         </div>
                         <div class="pizza-details">
-                            <h2>Pepperoni</h2>
-                            <p class="description">A favorita dos americanos: molho de tomate, queijo mussarela e rodelas de pepperoni crocante.</p>
+                            <h2>Pepperoni Supreme</h2>
+                            <p class="description">A favorita do estilo nova-iorquino: queijo derretido e rodelas de pepperoni que ficam crocantes nas bordas.</p>
                             <div>
-                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
                                 <ul class="ingredients-list">
-                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
-                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
-                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
+                                    <li><i class="fas fa-circle"></i> Massa de pizza base</li>
                                     <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
                                     <li><i class="fas fa-circle"></i> 250g de mussarela ralada</li>
-                                    <li><i class="fas fa-circle"></i> 150g de pepperoni em rodelas</li>
-                                    <li><i class="fas fa-circle"></i> Orégano a gosto</li>
+                                    <li><i class="fas fa-circle"></i> 150g de pepperoni fatiado</li>
+                                    <li><i class="fas fa-circle"></i> Orégano seco a gosto</li>
                                 </ul>
                             </div>
                             <div class="prep-steps">
-                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
                                 <ol>
-                                    <li>Prepare a massa seguindo o mesmo processo da Margherita.</li>
-                                    <li>Abra a massa, espalhe o molho de tomate e cubra com a mussarela.</li>
-                                    <li>Distribua as rodelas de pepperoni por cima.</li>
-                                    <li>Polvilhe orégano e leve ao forno a 220°C por 18 minutos.</li>
-                                    <li>Sirva com mais orégano fresco, se desejar.</li>
+                                    <li>Abra a massa já fermentada numa forma untada.</li>
+                                    <li>Espalhe o molho de tomate uniformemente.</li>
+                                    <li>Cubra com uma camada generosa de queijo mussarela.</li>
+                                    <li>Distribua as fatias de pepperoni por cima do queijo.</li>
+                                    <li>Asse a 250°C por 12 a 15 minutos.</li>
                                 </ol>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Quatro Queijos -->
                 <div class="pizza-content" id="pizza-quatroqueijos">
                     <div class="pizza-card">
                         <div class="pizza-image">
                             <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&h=400&fit=crop" alt="Pizza Quatro Queijos" loading="lazy">
                         </div>
                         <div class="pizza-details">
-                            <h2>Quatro Queijos</h2>
-                            <p class="description">Uma explosão de sabor com mussarela, provolone, parmesão e gorgonzola.</p>
+                            <h2>Quattro Formaggi</h2>
+                            <p class="description">Uma explosão rica com mussarela, provolone, parmesão e gorgonzola derretidos em harmonia.</p>
                             <div>
-                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
                                 <ul class="ingredients-list">
-                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
-                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
-                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
-                                    <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
+                                    <li><i class="fas fa-circle"></i> Massa de pizza base</li>
+                                    <li><i class="fas fa-circle"></i> 150g de molho de tomate</li>
                                     <li><i class="fas fa-circle"></i> 100g de mussarela</li>
                                     <li><i class="fas fa-circle"></i> 100g de provolone</li>
+                                    <li><i class="fas fa-circle"></i> 50g de gorgonzola</li>
                                     <li><i class="fas fa-circle"></i> 50g de parmesão ralado</li>
-                                    <li><i class="fas fa-circle"></i> 80g de gorgonzola</li>
                                 </ul>
                             </div>
                             <div class="prep-steps">
-                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
                                 <ol>
-                                    <li>Faça a massa básica e deixe crescer.</li>
-                                    <li>Abra a massa, espalhe o molho de tomate.</li>
-                                    <li>Distribua os quatro queijos em pedaços ou ralados.</li>
-                                    <li>Asse a 220°C por 16 minutos até o queijo borbulhar.</li>
-                                    <li>Finalize com um fio de azeite e sirva.</li>
+                                    <li>Abra a massa e passe uma fina camada de molho de tomate.</li>
+                                    <li>Adicione primeiro a mussarela e o provolone ralados.</li>
+                                    <li>Distribua pedaços pequenos de gorgonzola.</li>
+                                    <li>Finalize polvilhando o queijo parmesão.</li>
+                                    <li>Asse a 250°C até o queijo borbulhar e dourar levemente.</li>
                                 </ol>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Calabresa -->
                 <div class="pizza-content" id="pizza-calabresa">
                     <div class="pizza-card">
                         <div class="pizza-image">
                             <img src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&h=400&fit=crop" alt="Pizza Calabresa" loading="lazy">
                         </div>
                         <div class="pizza-details">
-                            <h2>Calabresa</h2>
-                            <p class="description">Molho de tomate, queijo mussarela, rodelas de calabresa e cebola. Um clássico brasileiro.</p>
+                            <h2>Calabresa com Cebola</h2>
+                            <p class="description">O verdadeiro clássico das pizzarias. Calabresa defumada com fatias finas de cebola roxa.</p>
                             <div>
-                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
                                 <ul class="ingredients-list">
-                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
-                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
-                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
+                                    <li><i class="fas fa-circle"></i> Massa de pizza base</li>
                                     <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
-                                    <li><i class="fas fa-circle"></i> 250g de mussarela ralada</li>
-                                    <li><i class="fas fa-circle"></i> 150g de calabresa em rodelas</li>
-                                    <li><i class="fas fa-circle"></i> 1 cebola média em fatias</li>
-                                    <li><i class="fas fa-circle"></i> Orégano e azeitonas (opcional)</li>
+                                    <li><i class="fas fa-circle"></i> 150g de mussarela (opcional)</li>
+                                    <li><i class="fas fa-circle"></i> 1 linguiça calabresa fatiada</li>
+                                    <li><i class="fas fa-circle"></i> 1 cebola cortada em rodelas</li>
+                                    <li><i class="fas fa-circle"></i> Azeitonas pretas e orégano</li>
                                 </ul>
                             </div>
                             <div class="prep-steps">
-                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
                                 <ol>
-                                    <li>Prepare a massa e deixe crescer.</li>
-                                    <li>Abra a massa, espalhe o molho e cubra com a mussarela.</li>
-                                    <li>Distribua a calabresa e as cebolas.</li>
-                                    <li>Asse a 220°C por 18 minutos.</li>
-                                    <li>Adicione orégano e azeitonas antes de servir.</li>
+                                    <li>Espalhe o molho sobre a massa aberta.</li>
+                                    <li>Coloque a mussarela por baixo (se preferir estilo paulista, vá direto à calabresa).</li>
+                                    <li>Espalhe as rodelas de calabresa e, por cima, a cebola.</li>
+                                    <li>Asse a 250°C por 15 minutos.</li>
+                                    <li>Decore com azeitonas e sirva.</li>
                                 </ol>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Vegetariana -->
                 <div class="pizza-content" id="pizza-vegetariana">
                     <div class="pizza-card">
                         <div class="pizza-image">
                             <img src="https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?w=600&h=400&fit=crop" alt="Pizza Vegetariana" loading="lazy">
                         </div>
                         <div class="pizza-details">
-                            <h2>Vegetariana</h2>
-                            <p class="description">Recheio colorido com cogumelos, pimentão, azeitonas, cebola, tomate e muito queijo.</p>
+                            <h2>Vegetariana Fresca</h2>
+                            <p class="description">Uma explosão de cores e frescura com pimentos, cogumelos, azeitonas e tomates suculentos.</p>
                             <div>
-                                <h4 style="font-weight:700; margin-bottom:0.5rem;"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
                                 <ul class="ingredients-list">
-                                    <li><i class="fas fa-circle"></i> 300g de farinha de trigo</li>
-                                    <li><i class="fas fa-circle"></i> 200ml de água morna</li>
-                                    <li><i class="fas fa-circle"></i> 10g de fermento biológico seco</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (chá) de sal</li>
-                                    <li><i class="fas fa-circle"></i> 1 colher (sopa) de azeite</li>
+                                    <li><i class="fas fa-circle"></i> Massa de pizza base</li>
                                     <li><i class="fas fa-circle"></i> 200g de molho de tomate</li>
-                                    <li><i class="fas fa-circle"></i> 250g de mussarela ralada</li>
-                                    <li><i class="fas fa-circle"></i> 1/2 xícara de cogumelos fatiados</li>
-                                    <li><i class="fas fa-circle"></i> 1/2 pimentão vermelho em tiras</li>
-                                    <li><i class="fas fa-circle"></i> 1/2 cebola em rodelas</li>
-                                    <li><i class="fas fa-circle"></i> Azeitonas pretas a gosto</li>
-                                    <li><i class="fas fa-circle"></i> Tomate-cereja para decorar</li>
+                                    <li><i class="fas fa-circle"></i> 200g de mussarela ralada</li>
+                                    <li><i class="fas fa-circle"></i> 1/2 pimento verde e vermelho</li>
+                                    <li><i class="fas fa-circle"></i> 1 xícara de cogumelos frescos</li>
+                                    <li><i class="fas fa-circle"></i> Cebola roxa e azeitonas</li>
                                 </ul>
                             </div>
                             <div class="prep-steps">
-                                <h4 style="font-weight:700;"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
                                 <ol>
-                                    <li>Prepare a massa e deixe crescer.</li>
-                                    <li>Abra a massa, espalhe o molho de tomate e a mussarela.</li>
-                                    <li>Distribua os legumes e as azeitonas.</li>
-                                    <li>Leve ao forno a 220°C por 15-18 minutos.</li>
-                                    <li>Decore com tomate-cereja e sirva.</li>
+                                    <li>Fatie todos os vegetais de forma fina para assarem por igual.</li>
+                                    <li>Abra a massa, espalhe o molho e depois o queijo.</li>
+                                    <li>Distribua os vegetais coloridos por toda a pizza.</li>
+                                    <li>Asse a 250°C por 15 minutos até a massa ficar crocante.</li>
+                                    <li>Regue com azeite antes de servir.</li>
                                 </ol>
                             </div>
                         </div>
@@ -397,110 +411,48 @@
                 </div>
             </div>
 
-            <a href="index.html" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Voltar à Roda
-            </a>
+            <div style="text-align: center;">
+                <a href="index.html" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Menu Principal
+                </a>
+            </div>
         </div>
     </div>
 
-    <!-- ===== SCRIPTS ===== -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="temas.js"></script>
     <script src="core.js"></script>
     <script src="app.js"></script>
+    
     <script>
-        (function() {
-            // Atualiza saldo de moedas
-            function updateCoinDisplay() {
-                const el = document.getElementById('coin-balance');
-                if (el && typeof state !== 'undefined' && state.coins !== undefined) {
-                    el.textContent = state.coins;
-                }
-            }
-
-            // Aguarda o state ser carregado
-            if (typeof state !== 'undefined') {
-                updateCoinDisplay();
-            } else {
-                document.addEventListener('stateReady', updateCoinDisplay);
-            }
-
+        document.addEventListener('DOMContentLoaded', () => {
             // Lógica das abas
             const tabs = document.querySelectorAll('.pizza-tab');
             const contents = document.querySelectorAll('.pizza-content');
 
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
-                    // Remove active de todas as abas
+                    // Remove o estilo ativo de todos
                     tabs.forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
 
-                    // Esconde todos os conteúdos
+                    // Esconde os conteúdos
                     contents.forEach(c => c.classList.remove('active'));
 
-                    // Mostra o conteúdo alvo
+                    // Mostra o conteúdo correto
                     const target = this.dataset.target;
                     const targetEl = document.getElementById('pizza-' + target);
                     if (targetEl) targetEl.classList.add('active');
                 });
             });
 
-            // Aplica tema (já feito pelo core.js, mas garantimos)
-            if (typeof applyThemes === 'function') {
-                applyThemes();
-            }
-
-            // Se o state for carregado depois, atualiza moedas
-            if (typeof state !== 'undefined') {
-                // Salva o estado atual
-                saveToStorage();
-            }
-        })();
+            // Garante que a UI das moedas e o tema sejam aplicados se o core já carregou
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            if (typeof window.applyThemes === 'function') window.applyThemes();
+        });
     </script>
-
-    <!-- ===== PROMPT PARA FUTURAS RECEITAS ===== -->
-    <!--
-    PROMPT COMPLETO PARA CRIAÇÃO DE PÁGINAS DE RECEITA:
-    -------------------------------------------------
-    Ao criar uma nova página de receita (ex: hamburguer.html, sushi.html, etc.), siga este padrão:
-
-    1. Estrutura HTML:
-       - Use o mesmo header do index (com logo, moedas, botão de tema e link de volta).
-       - Inclua as meta tags, fontes e link para style.css.
-       - Crie um container principal com a classe .container e um card.
-
-    2. Conteúdo:
-       - Título principal com ícone e nome da receita.
-       - Sistema de abas para diferentes variações (sabores) da receita.
-       - Cada aba deve conter:
-           - Imagem real (via Unsplash ou similar) com tamanho adequado.
-           - Lista de ingredientes com medidas exatas (em gramas, ml, colheres, etc.).
-           - Modo de preparo passo a passo numerado.
-       - Botão "Voltar à Roda" estilizado.
-
-    3. Estilos:
-       - Use as variáveis CSS do tema (--bg-body, --text-primary, etc.) para consistência.
-       - Adicione um bloco <style> específico para a página, com classes como .pizza-tabs, .pizza-card, etc., mantendo o design moderno e limpo.
-       - Garanta responsividade (grid se ajusta em telas menores).
-
-    4. Scripts:
-       - Carregue core.js e app.js (para temas e moedas).
-       - Adicione um script inline que:
-           - Atualiza o saldo de moedas (usando a função saveToStorage e o state).
-           - Implementa a lógica de abas (toggle de classes active).
-           - Chama applyThemes() para aplicar o tema atual.
-       - Mantenha a compatibilidade com o estado global (state) e localStorage.
-
-    5. Imagens:
-       - Use URLs diretas do Unsplash com parâmetros de tamanho (ex: ?w=600&h=400&fit=crop).
-       - Escolha imagens que representem bem cada variação.
-
-    6. Receitas:
-       - Pesquise receitas reais e populares para cada variação.
-       - Forneça ingredientes completos e modo de preparo detalhado.
-       - Inclua dicas ou rendimento (ex: serve 2 pessoas, rende 1 pizza média).
-
-    7. Ao final do arquivo, inclua este prompt como comentário para referência futura.
-
-    Exemplo de uso: para criar 'hamburguer.html', substitua 'pizza' por 'hamburguer', ajuste os sabores (ex: Clássico, Bacon, Vegano) e mantenha a mesma estrutura.
-    -->
 </body>
 </html>
