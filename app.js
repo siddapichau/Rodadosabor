@@ -1,5 +1,5 @@
 'use strict';
-console.log('app.js carregado (v9 - Restaurador das Lojas e Eventos)');
+console.log('app.js carregado (v10 - Efeitos Corrigidos e Loja Premium)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
@@ -189,6 +189,7 @@ window.renderRecipes = function() {
     });
 };
 
+// 👇 BUG DOS EFEITOS CORRIGIDO AQUI 👇
 window.launchCurrentEffect = function() {
     const effectId = window.appState.currentEffect || 'effect-1';
     switch (effectId) {
@@ -198,9 +199,7 @@ window.launchCurrentEffect = function() {
         case 'effect-4': window.launchNeonLights(); break;
         case 'effect-5': window.launchLaser(); break;
         case 'effect-6': window.launchGlitter(); break;
-        case 'effect-7': window.launchFireworks(); break; 
-        case 'effect-8': window.launchStars(); break;    
-        case 'effect-9': window.launchRainbow(); break;
+        case 'effect-7': window.launchRainbow(); break; // Corrigido a ligação para Rainbow
         default: window.launchConfetti();
     }
 };
@@ -221,6 +220,18 @@ window.renderAll = function() {
     try { window.renderSounds(); } catch(e) {}
     try { window.renderEffects(); } catch(e) {}
     try { window.renderRecipes(); } catch(e) {}
+    
+    // Atualiza interface VIP se existir
+    const vipStatus = document.getElementById('vipStatusTag');
+    if (vipStatus) {
+        if (window.isVipAtivo()) {
+            vipStatus.style.display = 'inline-block';
+            vipStatus.textContent = '👑 VIP ATIVO';
+        } else {
+            vipStatus.style.display = 'none';
+        }
+    }
+    
     try { if (typeof window.applyThemes === 'function') window.applyThemes(); } catch(e) {}
 };
 
@@ -238,14 +249,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.conectarGoogle === 'function') window.conectarGoogle();
     });
 
+    // 👇 ROLETA (AGORA APENAS GIRA E SOMA O CONTADOR) 👇
     document.getElementById('btnSpin')?.addEventListener('click', async function() {
-        if (window.isAppNativo && window.isAppNativo()) await window.mostrarIntersticialSeNecessario();
         if (!window.gastarMoedaGiro()) {
             if(!window.isServerSynced) alert("⏳ Conectando ao servidor... Aguarde um instante.");
             else alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar.");
             return;
         }
         window.updateCoinsDisplay();
+        
+        // Regista que girou (o anúncio só aparece DEPOIS no roleta.js)
+        if (typeof window.spinCounter !== 'undefined') window.spinCounter++;
+        
         window.spinRoulette();
     });
     
@@ -253,12 +268,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.toggleDarkModeSeguro === 'function') window.toggleDarkModeSeguro(); 
     });
 
-    // 👇 O GATILHO DEFINITIVO DE ANÚNCIOS 👇
     const btnWatchAd = document.getElementById('btnWatchAd');
     btnWatchAd?.addEventListener('click', async function() {
         if (!window.isServerSynced) { alert("⏳ Conectando ao servidor..."); return; }
 
-        // MODO APK NATIVO (Escuta Múltipla)
         if (window.isAppNativo && window.isAppNativo()) {
             btnWatchAd.disabled = true;
             const textoOriginal = btnWatchAd.innerHTML;
@@ -273,7 +286,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // MODO WEB NAVEGADOR
         const overlay = document.getElementById('adOverlay');
         const countdownSpan = document.getElementById('adCountdown');
         if (!overlay || !countdownSpan) return;
@@ -292,7 +304,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.style.display = 'none';
                 btnWatchAd.disabled = false;
                 
-                // Agora o Web funciona de forma independente!
                 if (window.ganharMoedasAnuncioWeb()) {
                     window.updateCoinsDisplay(); alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
                 } else alert("⚠️ Falha ao resgatar. Aguarde um instante.");
@@ -300,7 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     });
 
-    // Funções Modais de Comida
     const foodModal = document.getElementById('foodSelectionModal');
     document.getElementById('btnOpenFoodModal')?.addEventListener('click', () => {
         if (window.appState) {
