@@ -28,19 +28,21 @@
         .recipe-details { display: flex; flex-direction: column; gap: 1.5rem; }
         .recipe-details h2 { font-size: 1.8rem; margin-bottom: 0.2rem; color: var(--gold); }
         .recipe-details .description { color: var(--text-muted); font-size: 0.95rem; }
-        .ingredients-list { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-        .ingredients-list li { background: var(--bg-card); padding: 0.4rem 0.8rem; border-radius: 30px; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; border: 1px solid var(--border-color); }
-        .ingredients-list li i { color: var(--gold); font-size: 0.8rem; }
-        .prep-steps { background: var(--bg-card); padding: 1.2rem 1.5rem; border-radius: 1.5rem; border-left: 4px solid var(--gold); }
-        .prep-steps ol { padding-left: 1.2rem; margin: 0.8rem 0 0; color: var(--text-secondary); }
-        .prep-steps li { margin-bottom: 0.6rem; }
+        
+        /* Estilos ajustados para o HTML gerado pelo Editor Rico */
+        .editor-render { background: var(--bg-card); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid var(--border-color); color: var(--text-primary); line-height: 1.6; }
+        .editor-render ul, .editor-render ol { margin-left: 1.5rem; margin-top: 0.5rem; }
+        .editor-render li { margin-bottom: 0.5rem; }
+        .editor-render b, .editor-render strong { color: var(--gold); }
+        .prep-box { border-left: 4px solid var(--gold); }
+        
         .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-color); padding: 0.6rem 1.2rem; border-radius: 40px; color: var(--text-primary); text-decoration: none; font-weight: 600; transition: all 0.2s; margin-top: 1rem; }
-        @media(max-width: 700px) { .recipe-card { grid-template-columns: 1fr; } .ingredients-list { grid-template-columns: 1fr; } .recipe-tabs { gap: 0.5rem; } .recipe-tab { min-width: 80px; padding: 0.6rem 0.8rem; font-size: 0.8rem; } .tab-icon { font-size: 1.4rem; } }
+        @media(max-width: 700px) { .recipe-card { grid-template-columns: 1fr; } .recipe-tabs { gap: 0.5rem; } .recipe-tab { min-width: 80px; padding: 0.6rem 0.8rem; font-size: 0.8rem; } .tab-icon { font-size: 1.4rem; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- HEADER Padrão -->
+        <!-- HEADER -->
         <header class="header">
             <div class="logo-area">
                 <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -57,64 +59,54 @@
             </div>
         </header>
 
-        <!-- CONTAINER DINÂMICO QUE SERÁ PREENCHIDO PELO JAVASCRIPT -->
+        <!-- CONTAINER DINÂMICO -->
         <div class="card" id="dynamicContainer" style="display: none;">
             <div class="recipe-hero">
                 <h1 id="mainTitle">Carregando...</h1>
                 <p id="mainDesc">Aguarde enquanto conectamos à nuvem.</p>
             </div>
-
-            <!-- Abas geradas aqui -->
             <div class="recipe-tabs" id="recipeTabs"></div>
-
-            <!-- Conteúdos gerados aqui -->
             <div id="recipeContents"></div>
-
-            <div style="text-align: center;">
-                <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu Principal</a>
-            </div>
+            <div style="text-align: center;"><a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu Principal</a></div>
         </div>
         
-        <!-- Tela de Carregamento Inicial -->
         <div id="loadingScreen" style="text-align: center; padding: 5rem 0;">
             <i class="fas fa-circle-notch fa-spin" style="font-size: 3rem; color: var(--gold);"></i>
-            <p style="margin-top: 1rem; color: var(--text-muted);">Buscando receita na nuvem...</p>
+            <p style="margin-top: 1rem; color: var(--text-muted);">Sincronizando com a nuvem...</p>
         </div>
     </div>
 
-    <!-- Firebase Scripts -->
+    <!-- Firebase e Motores -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="firebase.js"></script>
     <script src="temas.js"></script>
     <script src="core.js"></script>
+    <script src="app.js"></script> <!-- A PEÇA QUE FALTAVA PARA AS MOEDAS! -->
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Pega o ID da receita da URL (ex: receita.html?id=pizza)
             const urlParams = new URLSearchParams(window.location.search);
             const recipeId = urlParams.get('id');
 
             if (!recipeId) {
-                document.getElementById('loadingScreen').innerHTML = "<h2 style='color:red;'>Erro: Nenhuma receita informada na URL.</h2>";
+                document.getElementById('loadingScreen').innerHTML = "<h2 style='color:var(--danger);'>Erro: Receita não especificada.</h2>";
                 return;
             }
 
-            // 2. Conecta ao Firebase e puxa a receita
             const db = firebase.database();
             db.ref('conteudo/receitas/' + recipeId).once('value').then(snapshot => {
                 if (!snapshot.exists()) {
-                    document.getElementById('loadingScreen').innerHTML = "<h2 style='color:red;'>Receita não encontrada no servidor!</h2>";
+                    document.getElementById('loadingScreen').innerHTML = "<h2 style='color:var(--danger);'>Receita não encontrada!</h2>";
                     return;
                 }
 
-                const dados = snapshot.val();
-                construirPagina(dados);
-                
+                construirPagina(snapshot.val());
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('dynamicContainer').style.display = 'block';
                 
+                // Força a atualização da interface visual
                 if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
                 if (typeof window.applyThemes === 'function') window.applyThemes();
             }).catch(e => {
@@ -122,7 +114,6 @@
             });
         });
 
-        // 3. O Construtor Mágico (Cria o HTML sozinho)
         function construirPagina(dados) {
             document.getElementById('headerEmoji').textContent = dados.icone || '🍽️';
             document.getElementById('headerTitle').textContent = `Receita de ${dados.nome}`;
@@ -135,26 +126,22 @@
             dados.variacoes.forEach((varObj, index) => {
                 const isActive = index === 0 ? 'active' : '';
                 
-                // Criação da Aba
+                // Aba
                 const btn = document.createElement('button');
                 btn.className = `recipe-tab ${isActive}`;
                 btn.dataset.target = varObj.id;
                 btn.innerHTML = `<span class="tab-icon">${varObj.iconeAba}</span> ${varObj.nomeAba}`;
                 tabsContainer.appendChild(btn);
 
-                // Geração dos Ingredientes
-                let ingredientesHTML = '';
-                varObj.ingredientes.forEach(ing => {
-                    ingredientesHTML += `<li><i class="fas fa-circle"></i> ${ing}</li>`;
-                });
+                // Prepara os blocos de HTML gerados pelo novo Editor do Admin
+                let ingHTML = varObj.ingredientesHTML || "<em>Nenhum ingrediente informado.</em>";
+                let prepHTML = varObj.passosHTML || "<em>Nenhum passo informado.</em>";
 
-                // Geração dos Passos
-                let passosHTML = '';
-                varObj.passos.forEach(passo => {
-                    passosHTML += `<li>${passo}</li>`;
-                });
+                // Fallback (caso teste com JSON antigo que tinha arrays)
+                if (Array.isArray(varObj.ingredientes)) { ingHTML = `<ul>${varObj.ingredientes.map(i => `<li>${i}</li>`).join('')}</ul>`; }
+                if (Array.isArray(varObj.passos)) { prepHTML = `<ol>${varObj.passos.map(p => `<li>${p}</li>`).join('')}</ol>`; }
 
-                // Criação do Conteúdo
+                // Conteúdo
                 const divContent = document.createElement('div');
                 divContent.className = `recipe-content ${isActive}`;
                 divContent.id = `content-${varObj.id}`;
@@ -167,20 +154,22 @@
                         <div class="recipe-details">
                             <h2>${varObj.titulo}</h2>
                             <p class="description">${varObj.descricao}</p>
+                            
                             <div>
-                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
-                                <ul class="ingredients-list">${ingredientesHTML}</ul>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-shopping-basket"></i> Ingredientes</h4>
+                                <div class="editor-render">${ingHTML}</div>
                             </div>
-                            <div class="prep-steps">
-                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
-                                <ol>${passosHTML}</ol>
+                            
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <div class="editor-render prep-box">${prepHTML}</div>
                             </div>
                         </div>
                     </div>
                 `;
                 contentsContainer.appendChild(divContent);
 
-                // Adiciona o evento de clique na Aba criada
+                // Clique na Aba
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.recipe-tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
