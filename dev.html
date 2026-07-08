@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Dev Control Panel</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a2e; color: white; padding: 2rem; }
+        .box { background: #16213e; padding: 2rem; border-radius: 10px; max-width: 400px; margin: auto; }
+        input, button { display: block; width: 100%; margin-bottom: 1rem; padding: 0.8rem; border-radius: 5px; border: none; }
+        button { background: #e94b3c; color: white; font-weight: bold; cursor: pointer; }
+        button:hover { background: #f5b342; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Painel do Desenvolvedor</h2>
+        <label>Moedas:</label>
+        <input type="number" id="devCoins" value="0">
+        
+        <button onclick="addVip()">Dar VIP (30 Dias)</button>
+        <button onclick="removeVip()">Remover VIP / NoAds</button>
+        <button onclick="saveDevData()">Forçar Salvar Servidor</button>
+        <a href="index.html" style="color:#f5b342; text-align:center; display:block;">Voltar ao App</a>
+    </div>
+
+    <script>
+        function getLocalData() {
+            return JSON.parse(localStorage.getItem('rodaDoSaborState') || '{}');
+        }
+        function setLocalData(data) {
+            localStorage.setItem('rodaDoSaborState', JSON.stringify(data));
+            alert("Dados aplicados localmente! Abra o app para sincronizar.");
+        }
+
+        document.getElementById('devCoins').value = getLocalData().coins || 0;
+
+        function addVip() {
+            let data = getLocalData();
+            data.vipUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
+            setLocalData(data);
+        }
+
+        function removeVip() {
+            let data = getLocalData();
+            data.vipUntil = 0;
+            data.noAdsUntil = 0;
+            setLocalData(data);
+        }
+
+        function saveDevData() {
+            let data = getLocalData();
+            data.coins = parseInt(document.getElementById('devCoins').value);
+            setLocalData(data);
+        }
+    </script>
+</body>
+</html>
