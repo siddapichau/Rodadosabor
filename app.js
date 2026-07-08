@@ -1,5 +1,5 @@
 'use strict';
-console.log('app.js carregado (v10 - Efeitos Corrigidos e Loja Premium)');
+console.log('app.js carregado (v11 - Ocultar Loja VIP e Interface Limpa)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
@@ -189,7 +189,6 @@ window.renderRecipes = function() {
     });
 };
 
-// 👇 BUG DOS EFEITOS CORRIGIDO AQUI 👇
 window.launchCurrentEffect = function() {
     const effectId = window.appState.currentEffect || 'effect-1';
     switch (effectId) {
@@ -199,7 +198,7 @@ window.launchCurrentEffect = function() {
         case 'effect-4': window.launchNeonLights(); break;
         case 'effect-5': window.launchLaser(); break;
         case 'effect-6': window.launchGlitter(); break;
-        case 'effect-7': window.launchRainbow(); break; // Corrigido a ligação para Rainbow
+        case 'effect-7': window.launchRainbow(); break;
         default: window.launchConfetti();
     }
 };
@@ -231,6 +230,12 @@ window.renderAll = function() {
             vipStatus.style.display = 'none';
         }
     }
+
+    // Oculta Loja Premium se o usuário já for VIP
+    const premiumStore = document.querySelector('.premium-store');
+    if (premiumStore) {
+        premiumStore.style.display = window.isVipAtivo() ? 'none' : 'block';
+    }
     
     try { if (typeof window.applyThemes === 'function') window.applyThemes(); } catch(e) {}
 };
@@ -249,7 +254,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.conectarGoogle === 'function') window.conectarGoogle();
     });
 
-    // 👇 ROLETA (AGORA APENAS GIRA E SOMA O CONTADOR) 👇
     document.getElementById('btnSpin')?.addEventListener('click', async function() {
         if (!window.gastarMoedaGiro()) {
             if(!window.isServerSynced) alert("⏳ Conectando ao servidor... Aguarde um instante.");
@@ -258,7 +262,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         window.updateCoinsDisplay();
         
-        // Regista que girou (o anúncio só aparece DEPOIS no roleta.js)
         if (typeof window.spinCounter !== 'undefined') window.spinCounter++;
         
         window.spinRoulette();
