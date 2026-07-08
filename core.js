@@ -1,11 +1,11 @@
 'use strict';
-console.log('core.js carregado (v14 - Loja Premium e App Open Ad)');
+console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
 
 (function() {
     window.isServerSynced = false;
 
     const _rawState = {
-        coins: 0, vipUntil: 0, noAds: false, darkMode: false, displayName: '',
+        coins: 0, vipUntil: 0, noAdsUntil: 0, darkMode: false, displayName: '',
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -29,19 +29,21 @@ console.log('core.js carregado (v14 - Loja Premium e App Open Ad)');
 
     window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
+    window.isNoAdsAtivo = function() { return window.isVipAtivo() || _rawState.noAdsUntil > Date.now(); };
     window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
 
-    // ========================== SISTEMA PREMIUM (R$ 10 e R$ 5) ==========================
+    // ========================== SISTEMA PREMIUM MENSAL (R$ 10 e R$ 5) ==========================
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
         
-        // Simulação de compra (Na vida real, isto chama a API do Google Play Billing)
+        const trintaDias = 30 * 24 * 60 * 60 * 1000;
+
         if (tipo === 'vip') {
-            _rawState.vipUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
+            _rawState.vipUntil = Date.now() + trintaDias;
             alert("👑 Compra Concluída!\nVocê agora é VIP por 30 dias. Loja liberada e sem anúncios forçados!");
         } else if (tipo === 'no_ads') {
-            _rawState.noAds = true;
-            alert("🚫 Compra Concluída!\nOs anúncios forçados foram removidos para sempre.");
+            _rawState.noAdsUntil = Date.now() + trintaDias;
+            alert("🚫 Compra Concluída!\nOs anúncios forçados foram removidos por 30 dias.");
         }
         
         window.saveData();
@@ -53,7 +55,7 @@ console.log('core.js carregado (v14 - Loja Premium e App Open Ad)');
         if (!window.isAppNativo()) return;
         try {
             const { AdMob } = window.Capacitor.Plugins;
-            if (window.isVipAtivo() || _rawState.noAds) {
+            if (window.isNoAdsAtivo()) {
                 await AdMob.hideBanner().catch(()=>{});
             } else {
                 await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }).catch(()=>{});
@@ -64,7 +66,7 @@ console.log('core.js carregado (v14 - Loja Premium e App Open Ad)');
     // ========================== LOJA DE MOEDAS ==========================
     window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) return false;
-        if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para si."); return false; }
+        if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para você."); return false; }
         let preco = 0; let arrayDestravados = ''; let itemAtual = '';
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
@@ -123,7 +125,7 @@ console.log('core.js carregado (v14 - Loja Premium e App Open Ad)');
 
                 // App Open Ad (Exibe passados 2 segundos se não for VIP ou NoAds)
                 setTimeout(async () => {
-                    if (!window.isVipAtivo() && !_rawState.noAds) {
+                    if (!window.isNoAdsAtivo()) {
                         try { await AdMob.showInterstitial(); } catch(e){}
                     }
                     window.atualizarBannersEAnuncios();
@@ -157,7 +159,7 @@ console.log('core.js carregado (v14 - Loja Premium e App Open Ad)');
 
     // Chamado agora DEPOIS que a roleta para!
     window.mostrarAdAposGiro = async function() {
-        if (!window.isAppNativo() || window.isVipAtivo() || _rawState.noAds) return;
+        if (!window.isAppNativo() || window.isNoAdsAtivo()) return;
         if (window.spinCounter > 0 && window.spinCounter % 3 === 0) {
             try {
                 const { AdMob } = window.Capacitor.Plugins;
@@ -232,8 +234,10 @@ console.log('core.js carregado (v14 - Loja Premium e App Open Ad)');
         const mergeArray = (arr1, arr2) => Array.from(new Set([...(arr1 || []), ...(arr2 || [])]));
         const arrayFields = ['foods', 'customFoods', 'unlockedPageThemes', 'unlockedRouletteThemes', 'unlockedSpinSounds', 'unlockedEndSounds', 'unlockedWinSounds', 'unlockedEffects', 'unlockedRecipes'];
         const merged = { ...anonData, coins: mergedCoins };
+        
         if (googleData.vipUntil && googleData.vipUntil > (merged.vipUntil || 0)) merged.vipUntil = googleData.vipUntil;
-        if (googleData.noAds !== undefined) merged.noAds = googleData.noAds;
+        if (googleData.noAdsUntil && googleData.noAdsUntil > (merged.noAdsUntil || 0)) merged.noAdsUntil = googleData.noAdsUntil;
+        
         if (googleData.darkMode !== undefined) merged.darkMode = googleData.darkMode;
         if (googleData.displayName) merged.displayName = googleData.displayName;
         arrayFields.forEach(field => { merged[field] = mergeArray(anonData[field], googleData[field]); });
