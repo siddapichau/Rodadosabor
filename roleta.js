@@ -1,7 +1,12 @@
 'use strict';
 console.log('roleta.js carregado');
 
-let startAngle = 0; let isSpinning = false; let spinSpeed = 0; let spinTimeTotal = 0; let spinTimeCount = 0; let lastSoundAngle = 0;
+let startAngle = 0;
+let isSpinning = false;
+let spinSpeed = 0;
+let spinTimeTotal = 0;
+let spinTimeCount = 0;
+let lastSoundAngle = 0;
 
 window.drawRoulette = function() {
     const canvas = document.getElementById('rouletteCanvas');
@@ -15,8 +20,10 @@ window.drawRoulette = function() {
         canvas.height = rect.height || 600;
     }
 
-    const width = canvas.width; const height = canvas.height;
-    const centerX = width / 2; const centerY = height / 2;
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
     const radius = Math.min(width, height) * 0.46;
 
     ctx.clearRect(0, 0, width, height);
@@ -25,7 +32,8 @@ window.drawRoulette = function() {
     const numSegments = items.length;
 
     let colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
-    let wheelBorder = '#e94b3c'; let wheelCenter = '#f5d742';
+    let wheelBorder = '#e94b3c';
+    let wheelCenter = '#f5d742';
 
     try {
         if (window.listTemas && window.listTemas.length > 0) {
@@ -41,10 +49,14 @@ window.drawRoulette = function() {
     } catch (e) {}
 
     if (numSegments === 0) {
-        ctx.beginPath(); ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ccc'; ctx.fill();
-        ctx.fillStyle = '#333'; ctx.font = `bold ${radius * 0.12}px Inter, sans-serif`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ccc';
+        ctx.fill();
+        ctx.fillStyle = '#333';
+        ctx.font = `bold ${radius * 0.12}px Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText('Adicione comidas!', centerX, centerY);
         return;
     }
@@ -52,27 +64,45 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
-    ctx.beginPath(); ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelBorder; ctx.fill();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
+    ctx.fillStyle = wheelBorder;
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
 
     for (let b = 0; b < 20; b++) {
         const bAngle = (b * 2 * Math.PI) / 20;
         const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
         const by = centerY + (radius + borderWidth * 0.6) * Math.sin(bAngle);
-        ctx.beginPath(); ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ffffff'; ctx.fill();
+        ctx.beginPath();
+        ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
     }
 
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
-        ctx.beginPath(); ctx.fillStyle = colors[i % colors.length];
-        ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
-        ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
+        const color = colors[i % colors.length];
 
-        ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(currentArc + arcSize / 2);
-        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-        const textRadius = radius * 0.82;
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(currentArc + arcSize / 2);
+
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        const textRadius = radius * 0.82; 
         const maxTextWidth = (2 * Math.PI * textRadius) / numSegments * 0.75;
         let fontSize = Math.min(radius * 0.13, 26);
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
@@ -83,14 +113,22 @@ window.drawRoulette = function() {
             ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
         }
 
-        ctx.fillStyle = '#ffffff'; ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8;
-        ctx.fillText(items[i], textRadius, 0); ctx.shadowBlur = 0; ctx.restore();
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 8;
+        ctx.fillText(items[i], textRadius, 0);
+        ctx.shadowBlur = 0;
+        ctx.restore();
     }
 
     const centerRadius = radius * 0.16;
-    ctx.beginPath(); ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelCenter; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = centerRadius * 0.15;
-    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = wheelCenter;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = centerRadius * 0.15;
+    ctx.fill();
+    ctx.stroke();
 };
 
 window.spinRoulette = function() {
@@ -99,28 +137,36 @@ window.spinRoulette = function() {
     const btn = document.getElementById('btnSpin');
     if (btn) {
         btn.disabled = true;
-        btn.classList.add('spinning'); // Muda cor para vermelho
+        btn.classList.add('spinning');
     }
 
     const ctx = getAudioContext();
     if (ctx && ctx.state === 'suspended') ctx.resume();
-    isSpinning = true; spinTimeCount = 0; spinTimeTotal = Math.random() * 1000 + 4000;
-    spinSpeed = Math.random() * 0.3 + 0.4; lastSoundAngle = startAngle;
+    isSpinning = true;
+    spinTimeCount = 0;
+    spinTimeTotal = Math.random() * 1000 + 4000;
+    spinSpeed = Math.random() * 0.3 + 0.4;
+    lastSoundAngle = startAngle;
     animateSpin();
 };
 
 function animateSpin() {
     spinTimeCount += 20;
     if (spinTimeCount >= spinTimeTotal) {
-        isSpinning = false; finalizeSpin(); return;
+        isSpinning = false;
+        finalizeSpin();
+        return;
     }
     const progress = spinTimeCount / spinTimeTotal;
     const currentVelocity = spinSpeed * Math.pow(1 - progress, 2);
-    startAngle += currentVelocity; window.drawRoulette();
+    startAngle += currentVelocity;
+    window.drawRoulette();
 
     const arcSize = (2 * Math.PI) / window.appState.foods.length;
     if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        window.playSynthesizedSound('click'); lastSoundAngle = startAngle;
+        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
+        window.playSynthesizedSound(activeSpinSound.type);
+        lastSoundAngle = startAngle;
     }
     requestAnimationFrame(animateSpin);
 }
@@ -136,18 +182,27 @@ function finalizeSpin() {
     if (index >= numSegments) index = 0;
     if (index < 0) index = numSegments - 1;
 
-    window.playSynthesizedSound('end-chord');
+    const winningFood = window.appState.foods[index];
+
+    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
+    window.playSynthesizedSound(activeEndSound.type);
 
     setTimeout(() => {
-        window.playSynthesizedSound('win-tada');
-        if (typeof window.launchConfetti === 'function') window.launchConfetti();
+        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
+        window.playSynthesizedSound(activeWinSound.type);
+
+        if (typeof window.launchCurrentEffect === 'function') {
+            window.launchCurrentEffect();
+        } else {
+            window.launchConfetti();
+        }
 
         const nameEl = document.getElementById('modalFoodName');
         const emojiEl = document.getElementById('modalEmoji');
         const overlay = document.getElementById('resultOverlay');
         if (nameEl && emojiEl && overlay) {
-            nameEl.textContent = window.appState.foods[index];
-            const emojiMatch = window.appState.foods[index].match(/\p{Emoji}/u);
+            nameEl.textContent = winningFood;
+            const emojiMatch = winningFood.match(/\p{Emoji}/u);
             emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
             overlay.style.display = 'flex';
         }
@@ -155,10 +210,20 @@ function finalizeSpin() {
         const btn = document.getElementById('btnSpin');
         if (btn) {
             btn.disabled = false;
-            btn.classList.remove('spinning'); // Volta cor amarela
+            btn.classList.remove('spinning');
         }
+
+        // 👇 MOSTRA O ANÚNCIO (SE NECESSÁRIO) DEPOIS DO RESULTADO APARECER 👇
+        setTimeout(() => {
+            if (typeof window.mostrarAdAposGiro === 'function') {
+                window.mostrarAdAposGiro();
+            }
+        }, 1500); // 1.5 Segundos após a modal abrir
+
     }, 1000);
 }
 
-window.addEventListener('load', () => setTimeout(window.drawRoulette, 100));
+window.addEventListener('load', function() {
+    setTimeout(window.drawRoulette, 100);
+});
 window.addEventListener('resize', window.drawRoulette);
