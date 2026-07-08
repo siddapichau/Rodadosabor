@@ -1,11 +1,11 @@
 'use strict';
-console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
+console.log('core.js carregado (v16 - Sistema de Banimento Adicionado)');
 
 (function() {
     window.isServerSynced = false;
 
     const _rawState = {
-        coins: 0, vipUntil: 0, noAdsUntil: 0, darkMode: false, displayName: '',
+        coins: 0, vipUntil: 0, noAdsUntil: 0, darkMode: false, displayName: '', banned: false,
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -27,12 +27,22 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
 
     Object.defineProperty(window, 'appState', { value: proxyState, writable: false, configurable: false });
 
+    // Função de bloqueio fatal
+    function aplicarBanimento() {
+        document.body.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#0f172a; color:#f8fafc; text-align:center; padding:2rem;">
+                <i class="fas fa-ban" style="font-size: 5rem; color:#ef4444; margin-bottom:1.5rem;"></i>
+                <h1 style="font-size:2rem; margin-bottom:1rem; color:#ef4444;">Conta Banida</h1>
+                <p style="color:#94a3b8; font-size:1.1rem; max-width:400px; line-height:1.5;">O seu acesso foi revogado por violação dos nossos Termos de Serviço ou uso de sistemas não autorizados.</p>
+            </div>
+        `;
+    }
+
     window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
     window.isNoAdsAtivo = function() { return window.isVipAtivo() || _rawState.noAdsUntil > Date.now(); };
     window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
 
-    // ========================== SISTEMA PREMIUM MENSAL (R$ 10 e R$ 5) ==========================
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
         
@@ -63,7 +73,6 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
         } catch(e){}
     };
 
-    // ========================== LOJA DE MOEDAS ==========================
     window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) return false;
         if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para você."); return false; }
@@ -100,7 +109,7 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
         return false;
     };
 
-    // ========================== ADMOB E RECOMPENSAS ==========================
+    // ========================== ADMOB ==========================
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
@@ -118,16 +127,11 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
         try {
             const { AdMob } = window.Capacitor.Plugins;
             AdMob.initialize().then(async () => {
-                console.log("✅ AdMob Inicializado");
-                
                 try { await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }); } catch(e){}
                 try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e){}
 
-                // App Open Ad (Exibe passados 2 segundos se não for VIP ou NoAds)
                 setTimeout(async () => {
-                    if (!window.isNoAdsAtivo()) {
-                        try { await AdMob.showInterstitial(); } catch(e){}
-                    }
+                    if (!window.isNoAdsAtivo()) { try { await AdMob.showInterstitial(); } catch(e){} }
                     window.atualizarBannersEAnuncios();
                 }, 2000);
 
@@ -157,7 +161,6 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
         } catch(e) {}
     }
 
-    // Chamado agora DEPOIS que a roleta para!
     window.mostrarAdAposGiro = async function() {
         if (!window.isAppNativo() || window.isNoAdsAtivo()) return;
         if (window.spinCounter > 0 && window.spinCounter % 3 === 0) {
@@ -237,6 +240,7 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
         
         if (googleData.vipUntil && googleData.vipUntil > (merged.vipUntil || 0)) merged.vipUntil = googleData.vipUntil;
         if (googleData.noAdsUntil && googleData.noAdsUntil > (merged.noAdsUntil || 0)) merged.noAdsUntil = googleData.noAdsUntil;
+        if (googleData.banned !== undefined) merged.banned = googleData.banned;
         
         if (googleData.darkMode !== undefined) merged.darkMode = googleData.darkMode;
         if (googleData.displayName) merged.displayName = googleData.displayName;
@@ -315,6 +319,7 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) Object.assign(_rawState, JSON.parse(saved));
+            if (_rawState.banned) return aplicarBanimento(); // Trava Imediata Local
             garantirArraysNoEstado();
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             if (typeof window.applyThemes === 'function') window.applyThemes();
@@ -336,6 +341,13 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
                             if (_rawState.coins === 0) _rawState.coins = 20;
                             window.saveData();
                         }
+                        
+                        // Trava em Tempo Real! Se o admin clicar em "Banir", a tela limpa na hora.
+                        if (_rawState.banned) {
+                            aplicarBanimento();
+                            return;
+                        }
+
                         garantirArraysNoEstado();
                         if (typeof window.renderAll === 'function') window.renderAll();
                         window.atualizarBannersEAnuncios();
@@ -353,6 +365,7 @@ console.log('core.js carregado (v15 - VIP Oculta Loja e NoAds Mensal)');
 
     let saveTimeout = null;
     window.saveData = function() {
+        if (_rawState.banned) return; // Se está banido, não salva mais nada
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = _rawState.coins;
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
