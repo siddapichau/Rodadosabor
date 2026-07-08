@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Receita · Roda do Sabor</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        .recipe-hero { text-align: center; margin-bottom: 2rem; }
+        .recipe-hero h1 { font-size: 2.4rem; font-weight: 800; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; transition: background 0.4s ease; }
+        .recipe-hero p { color: var(--text-muted); margin-top: 0.5rem; }
+        .recipe-tabs { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; margin-bottom: 2.5rem; }
+        .recipe-tab { background: var(--bg-card); border: 2px solid var(--border-color); border-radius: 20px; padding: 0.8rem 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; color: var(--text-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; gap: 0.3rem; min-width: 100px; }
+        .tab-icon { font-size: 1.8rem; line-height: 1; transition: transform 0.3s ease; }
+        .recipe-tab.active { border-color: var(--gold); background: rgba(245, 179, 66, 0.10); transform: translateY(-4px); box-shadow: 0 8px 24px rgba(245, 179, 66, 0.2); }
+        .recipe-tab.active .tab-icon { transform: scale(1.2); }
+        .recipe-content { display: none; animation: fadeUp 0.4s ease; }
+        .recipe-content.active { display: block; }
+        @keyframes fadeUp { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+        .recipe-card { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+        .recipe-image { border-radius: 2rem; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.1); background: var(--bg-card); }
+        .recipe-image img { width: 100%; height: auto; display: block; transition: transform 0.5s ease; }
+        .recipe-details { display: flex; flex-direction: column; gap: 1.5rem; }
+        .recipe-details h2 { font-size: 1.8rem; margin-bottom: 0.2rem; color: var(--gold); }
+        .recipe-details .description { color: var(--text-muted); font-size: 0.95rem; }
+        .ingredients-list { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .ingredients-list li { background: var(--bg-card); padding: 0.4rem 0.8rem; border-radius: 30px; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; border: 1px solid var(--border-color); }
+        .ingredients-list li i { color: var(--gold); font-size: 0.8rem; }
+        .prep-steps { background: var(--bg-card); padding: 1.2rem 1.5rem; border-radius: 1.5rem; border-left: 4px solid var(--gold); }
+        .prep-steps ol { padding-left: 1.2rem; margin: 0.8rem 0 0; color: var(--text-secondary); }
+        .prep-steps li { margin-bottom: 0.6rem; }
+        .btn-back { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--bg-card); border: 1px solid var(--border-color); padding: 0.6rem 1.2rem; border-radius: 40px; color: var(--text-primary); text-decoration: none; font-weight: 600; transition: all 0.2s; margin-top: 1rem; }
+        @media(max-width: 700px) { .recipe-card { grid-template-columns: 1fr; } .ingredients-list { grid-template-columns: 1fr; } .recipe-tabs { gap: 0.5rem; } .recipe-tab { min-width: 80px; padding: 0.6rem 0.8rem; font-size: 0.8rem; } .tab-icon { font-size: 1.4rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER Padrão -->
+        <header class="header">
+            <div class="logo-area">
+                <img src="logo.png" alt="Logo Roda do Sabor" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="logo-box" style="display: none;" id="headerEmoji">🍽️</div>
+                <div class="logo-title">
+                    <h1>Roda do Sabor</h1>
+                    <p><i class="fas fa-star"></i> <span id="headerTitle">Carregando...</span></p>
+                </div>
+            </div>
+            <div class="top-stats">
+                <div class="stat-badge"><i class="fas fa-coins"></i> <span id="coin-balance"><i class="fas fa-spinner fa-spin"></i></span></div>
+                <button class="btn-toggle-mode" id="btnModeToggle"><i class="fas fa-moon"></i></button>
+                <a href="index.html" class="btn-toggle-mode" style="text-decoration:none;"><i class="fas fa-arrow-left"></i></a>
+            </div>
+        </header>
+
+        <!-- CONTAINER DINÂMICO QUE SERÁ PREENCHIDO PELO JAVASCRIPT -->
+        <div class="card" id="dynamicContainer" style="display: none;">
+            <div class="recipe-hero">
+                <h1 id="mainTitle">Carregando...</h1>
+                <p id="mainDesc">Aguarde enquanto conectamos à nuvem.</p>
+            </div>
+
+            <!-- Abas geradas aqui -->
+            <div class="recipe-tabs" id="recipeTabs"></div>
+
+            <!-- Conteúdos gerados aqui -->
+            <div id="recipeContents"></div>
+
+            <div style="text-align: center;">
+                <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu Principal</a>
+            </div>
+        </div>
+        
+        <!-- Tela de Carregamento Inicial -->
+        <div id="loadingScreen" style="text-align: center; padding: 5rem 0;">
+            <i class="fas fa-circle-notch fa-spin" style="font-size: 3rem; color: var(--gold);"></i>
+            <p style="margin-top: 1rem; color: var(--text-muted);">Buscando receita na nuvem...</p>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="temas.js"></script>
+    <script src="core.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Pega o ID da receita da URL (ex: receita.html?id=pizza)
+            const urlParams = new URLSearchParams(window.location.search);
+            const recipeId = urlParams.get('id');
+
+            if (!recipeId) {
+                document.getElementById('loadingScreen').innerHTML = "<h2 style='color:red;'>Erro: Nenhuma receita informada na URL.</h2>";
+                return;
+            }
+
+            // 2. Conecta ao Firebase e puxa a receita
+            const db = firebase.database();
+            db.ref('conteudo/receitas/' + recipeId).once('value').then(snapshot => {
+                if (!snapshot.exists()) {
+                    document.getElementById('loadingScreen').innerHTML = "<h2 style='color:red;'>Receita não encontrada no servidor!</h2>";
+                    return;
+                }
+
+                const dados = snapshot.val();
+                construirPagina(dados);
+                
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('dynamicContainer').style.display = 'block';
+                
+                if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+                if (typeof window.applyThemes === 'function') window.applyThemes();
+            }).catch(e => {
+                document.getElementById('loadingScreen').innerHTML = "Erro de conexão: " + e.message;
+            });
+        });
+
+        // 3. O Construtor Mágico (Cria o HTML sozinho)
+        function construirPagina(dados) {
+            document.getElementById('headerEmoji').textContent = dados.icone || '🍽️';
+            document.getElementById('headerTitle').textContent = `Receita de ${dados.nome}`;
+            document.getElementById('mainTitle').textContent = dados.nomeLong || dados.nome;
+            document.getElementById('mainDesc').textContent = dados.descricaoGeral || '';
+
+            const tabsContainer = document.getElementById('recipeTabs');
+            const contentsContainer = document.getElementById('recipeContents');
+
+            dados.variacoes.forEach((varObj, index) => {
+                const isActive = index === 0 ? 'active' : '';
+                
+                // Criação da Aba
+                const btn = document.createElement('button');
+                btn.className = `recipe-tab ${isActive}`;
+                btn.dataset.target = varObj.id;
+                btn.innerHTML = `<span class="tab-icon">${varObj.iconeAba}</span> ${varObj.nomeAba}`;
+                tabsContainer.appendChild(btn);
+
+                // Geração dos Ingredientes
+                let ingredientesHTML = '';
+                varObj.ingredientes.forEach(ing => {
+                    ingredientesHTML += `<li><i class="fas fa-circle"></i> ${ing}</li>`;
+                });
+
+                // Geração dos Passos
+                let passosHTML = '';
+                varObj.passos.forEach(passo => {
+                    passosHTML += `<li>${passo}</li>`;
+                });
+
+                // Criação do Conteúdo
+                const divContent = document.createElement('div');
+                divContent.className = `recipe-content ${isActive}`;
+                divContent.id = `content-${varObj.id}`;
+                
+                divContent.innerHTML = `
+                    <div class="recipe-card">
+                        <div class="recipe-image">
+                            <img src="${varObj.imagem}" alt="${varObj.titulo}">
+                        </div>
+                        <div class="recipe-details">
+                            <h2>${varObj.titulo}</h2>
+                            <p class="description">${varObj.descricao}</p>
+                            <div>
+                                <h4 style="font-weight:700; margin-bottom:0.5rem; color:var(--text-primary);"><i class="fas fa-list-ul"></i> Ingredientes</h4>
+                                <ul class="ingredients-list">${ingredientesHTML}</ul>
+                            </div>
+                            <div class="prep-steps">
+                                <h4 style="font-weight:700; color:var(--text-primary);"><i class="fas fa-utensils"></i> Modo de Preparo</h4>
+                                <ol>${passosHTML}</ol>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                contentsContainer.appendChild(divContent);
+
+                // Adiciona o evento de clique na Aba criada
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.recipe-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelectorAll('.recipe-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(`content-${this.dataset.target}`).classList.add('active');
+                });
+            });
+        }
+    </script>
+</body>
+</html>
