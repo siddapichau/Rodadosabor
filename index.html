@@ -12,134 +12,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="style.css" />
-    <style>
-        /* Área do usuário */
-        .user-area {
-            display: none;
-            align-items: center;
-            gap: 0.4rem;
-            background: var(--bg-card);
-            padding: 0.2rem 0.6rem 0.2rem 0.2rem;
-            border-radius: 50px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            flex-shrink: 0;
-        }
-        .user-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--accent-gradient);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.8rem;
-            color: white;
-            text-transform: uppercase;
-            flex-shrink: 0;
-        }
-        .user-name {
-            font-weight: 600;
-            font-size: 0.8rem;
-            color: var(--text-primary);
-            white-space: nowrap;
-        }
-        .user-name i {
-            color: var(--text-muted);
-            font-size: 0.6rem;
-            margin-left: 0.2rem;
-        }
-        .btn-edit-name {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.1rem 0.3rem;
-            font-size: 0.7rem;
-            border-radius: 30px;
-            transition: all 0.2s;
-        }
-        .btn-edit-name:hover {
-            background: var(--border-color);
-            color: var(--text-primary);
-        }
-
-        /* Botão Google compacto */
-        .btn-google-login {
-            background: #4285F4;
-            color: white;
-            border: none;
-            padding: 0.4rem 0.9rem;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
-            transition: all 0.2s;
-            flex-shrink: 0;
-            white-space: nowrap;
-        }
-        .btn-google-login:hover {
-            background: #357ae8;
-            transform: scale(1.02);
-        }
-        .btn-google-login i {
-            font-size: 1rem;
-        }
-
-        /* Modal de mesclagem */
-        .merge-option {
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1rem;
-            margin-bottom: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: left;
-        }
-        .merge-option:hover {
-            border-color: var(--accent);
-            transform: translateX(4px);
-        }
-        .merge-option strong { display: block; font-size: 1rem; }
-        .merge-option p { margin: 0.3rem 0 0 0; font-size: 0.85rem; color: var(--text-muted); }
-        .merge-option .badge-option {
-            display: inline-block;
-            background: var(--accent-gradient);
-            color: white;
-            font-size: 0.7rem;
-            padding: 0.1rem 0.6rem;
-            border-radius: 30px;
-            margin-top: 0.3rem;
-        }
-
-        /* Ajustes responsivos */
-        @media (max-width: 480px) {
-            .btn-google-login {
-                font-size: 0.65rem;
-                padding: 0.3rem 0.6rem;
-            }
-            .btn-google-login i {
-                font-size: 0.8rem;
-            }
-            .user-name {
-                font-size: 0.7rem;
-            }
-            .user-area {
-                padding: 0.15rem 0.4rem 0.15rem 0.15rem;
-            }
-            .user-avatar {
-                width: 24px;
-                height: 24px;
-                font-size: 0.7rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -153,13 +25,12 @@
                 </div>
             </div>
             <div class="top-stats">
-                <!-- Área do usuário -->
+                <span id="vipStatusTag" class="vip-tag" style="display:none;">👑 VIP</span>
+                
                 <div id="userArea" class="user-area">
                     <div class="user-avatar" id="userAvatar">?</div>
                     <span class="user-name" id="userName">Convidado</span>
-                    <button class="btn-edit-name" id="btnEditName" title="Editar nome">
-                        <i class="fas fa-pencil-alt"></i>
-                    </button>
+                    <button class="btn-edit-name" id="btnEditName" title="Editar nome"><i class="fas fa-pencil-alt"></i></button>
                 </div>
 
                 <div class="stat-badge">
@@ -167,17 +38,8 @@
                     <span id="coin-balance"><i class="fas fa-spinner fa-spin"></i></span>
                 </div>
 
-                <!-- Botão Google compacto -->
-                <button class="btn-google-login" id="btnGoogleLogin" title="Salvar progresso com o Google" style="display:none;">
-                    <i class="fab fa-google"></i> Google
-                </button>
-
-                <button class="btn-toggle-mode" id="btnModeToggle" title="Alternar Modo Claro/Escuro">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <button id="installAppBtn" class="btn-toggle-mode" style="display:none; background:var(--accent-gradient); color:white;" title="Instalar App">
-                    <i class="fas fa-download"></i>
-                </button>
+                <button class="btn-google-login" id="btnGoogleLogin" style="display:none;"><i class="fab fa-google"></i> Google</button>
+                <button class="btn-toggle-mode" id="btnModeToggle"><i class="fas fa-moon"></i></button>
             </div>
         </header>
 
@@ -204,6 +66,29 @@
             </button>
         </div>
 
+        <!-- 👇 LOJA PREMIUM (NOVO) 👇 -->
+        <section class="card premium-store">
+            <h2 style="color: var(--gold); border-bottom: none;"><i class="fas fa-store"></i> Loja Premium</h2>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem;">Melhore sua experiência e apoie o aplicativo!</p>
+            
+            <div class="premium-grid">
+                <div class="premium-card vip">
+                    <div class="premium-badge">Mais Popular</div>
+                    <h3>Passe VIP <small>(30 dias)</small></h3>
+                    <p>Libera <strong>TUDO</strong> na loja de moedas e remove anúncios forçados.</p>
+                    <div class="price">R$ 10,00</div>
+                    <button class="btn-premium btn-vip" onclick="window.comprarPacoteReal('vip')">Comprar VIP</button>
+                </div>
+                
+                <div class="premium-card no-ads">
+                    <h3>Remover Anúncios</h3>
+                    <p>Jogue sem interrupções. Remove anúncios em tela cheia e rodapé para sempre.</p>
+                    <div class="price">R$ 5,00</div>
+                    <button class="btn-premium btn-noads" onclick="window.comprarPacoteReal('no_ads')">Remover Anúncios</button>
+                </div>
+            </div>
+        </section>
+
         <section class="card">
             <h2><i class="fas fa-clipboard-list"></i> Itens Ativos na Roleta</h2>
             <div class="food-list" id="foodListContainer"></div>
@@ -228,18 +113,16 @@
 
         <section class="card">
             <h2><i class="fas fa-magic"></i> Efeitos Visuais</h2>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Escolha como comemorar suas vitórias!</p>
             <div class="store-grid" id="effectsGrid"></div>
         </section>
 
         <section class="card">
             <h2><i class="fas fa-book-open"></i> Receitas Completas</h2>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Clique em uma receita para ver os detalhes.</p>
             <div class="recipes-grid" id="recipesGrid"></div>
         </section>
     </div>
 
-    <!-- Modal de Seleção de Comidas -->
+    <!-- Modais (Mantidos iguais) -->
     <div id="foodSelectionModal" class="result-overlay">
         <div class="modal-content-box">
             <div class="modal-header-container">
@@ -262,7 +145,6 @@
         </div>
     </div>
 
-    <!-- Overlay do Anúncio (simulado) -->
     <div id="adOverlay" class="iframe-overlay">
         <div class="iframe-box">
             <div class="iframe-header">
@@ -272,7 +154,6 @@
         </div>
     </div>
 
-    <!-- Modal de Resultado da Roleta -->
     <div class="result-overlay" id="resultOverlay">
         <div class="result-modal">
             <h3>Refeição Sorteada!</h3>
@@ -283,69 +164,30 @@
         </div>
     </div>
 
-    <!-- Canvas para efeitos -->
     <canvas id="confettiCanvas"></canvas>
 
-    <!-- Modal de Aviso Diário (Google) -->
-    <div id="googleReminderModal" class="result-overlay" style="display: none; z-index: 180;">
-        <div class="result-modal" style="max-width: 420px;">
-            <h3 style="color: var(--accent);"><i class="fas fa-shield-alt"></i> Proteja seu Progresso!</h3>
-            <span style="font-size: 3.5rem; margin: 0.5rem 0; display: block;">👑</span>
-            <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.8rem; font-weight: 600;">
-                Você está jogando em uma conta temporária.
-            </p>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.4;">
-                Se você limpar o histórico do celular ou o cache do navegador, poderá perder todas as suas moedas, VIP e temas comprados. Salve agora usando sua conta Google!
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-                <button class="btn-gradient-action dynamic-blue" id="btnGoogleModalLogin" style="width: 100%; min-width: auto; padding: 0.7rem;">
-                    <i class="fab fa-google"></i> Salvar Meus Dados
-                </button>
-                <button class="btn-action btn-active" id="btnGoogleModalClose" style="background: transparent; border: none; cursor: pointer; padding: 0.3rem; font-size: 0.75rem;">
-                    Lembrar-me amanhã
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Mesclagem de Contas -->
     <div id="mergeAccountModal" class="result-overlay" style="display: none; z-index: 200;">
         <div class="result-modal" style="max-width: 480px; text-align: left;">
-            <h3 style="color: var(--accent); text-align: center; margin-bottom: 0.5rem;">
-                <i class="fas fa-merge"></i> Vincular Conta Google
-            </h3>
-            <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-bottom: 1.2rem;">
-                Você já tem progresso na conta anônima. O que deseja fazer?
-            </p>
-
-            <div id="mergeSummary" style="background: var(--bg-card); border-radius: 12px; padding: 0.8rem; margin-bottom: 1.2rem; border: 1px solid var(--border-color); font-size: 0.9rem;">
-                <div><strong>🟡 Conta Anônima:</strong> <span id="anonSummary">Carregando...</span></div>
-                <div style="margin-top: 0.3rem;"><strong>🔵 Conta Google:</strong> <span id="googleSummary">Carregando...</span></div>
-            </div>
-
+            <h3 style="color: var(--accent); text-align: center; margin-bottom: 0.5rem;"><i class="fas fa-merge"></i> Vincular Conta Google</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-bottom: 1.2rem;">Você já tem progresso na conta anônima. O que deseja fazer?</p>
             <div class="merge-option" id="mergeKeepAnon" style="border-color: #f5b342;">
                 <strong>📌 Manter dados anônimos</strong>
                 <p>Não vincular ao Google. Continuar com a conta atual.</p>
-                <span class="badge-option">Recomendado se você não quer misturar</span>
             </div>
             <div class="merge-option" id="mergeOverwrite" style="border-color: #e94b3c;">
                 <strong>🔄 Sobrescrever com dados do Google</strong>
                 <p>Perderá todo o progresso anônimo e usará os dados salvos no Google.</p>
-                <span class="badge-option">Cuidado: dados anônimos serão perdidos</span>
             </div>
             <div class="merge-option" id="mergeCombine" style="border-color: #27ae60;">
                 <strong>🔀 Mesclar dados</strong>
-                <p>Combinar moedas, itens desbloqueados e comidas. O melhor dos dois mundos!</p>
-                <span class="badge-option">Recomendado</span>
+                <p>Combinar moedas, itens desbloqueados e comidas.</p>
             </div>
-
             <div style="text-align: center; margin-top: 1rem;">
                 <button class="btn-action" id="btnMergeCancel" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 0.4rem 1.2rem;">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
