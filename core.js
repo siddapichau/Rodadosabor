@@ -1,11 +1,11 @@
 'use strict';
-console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
+console.log('core.js carregado (v14 - Loja Premium e App Open Ad)');
 
 (function() {
     window.isServerSynced = false;
 
     const _rawState = {
-        coins: 0, vipUntil: 0, darkMode: false, displayName: '',
+        coins: 0, vipUntil: 0, noAds: false, darkMode: false, displayName: '',
         foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
         unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
         unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
@@ -31,9 +31,40 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
     window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
 
+    // ========================== SISTEMA PREMIUM (R$ 10 e R$ 5) ==========================
+    window.comprarPacoteReal = function(tipo) {
+        if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
+        
+        // Simulação de compra (Na vida real, isto chama a API do Google Play Billing)
+        if (tipo === 'vip') {
+            _rawState.vipUntil = Date.now() + (30 * 24 * 60 * 60 * 1000);
+            alert("👑 Compra Concluída!\nVocê agora é VIP por 30 dias. Loja liberada e sem anúncios forçados!");
+        } else if (tipo === 'no_ads') {
+            _rawState.noAds = true;
+            alert("🚫 Compra Concluída!\nOs anúncios forçados foram removidos para sempre.");
+        }
+        
+        window.saveData();
+        window.atualizarBannersEAnuncios();
+        window.renderAll();
+    };
+
+    window.atualizarBannersEAnuncios = async function() {
+        if (!window.isAppNativo()) return;
+        try {
+            const { AdMob } = window.Capacitor.Plugins;
+            if (window.isVipAtivo() || _rawState.noAds) {
+                await AdMob.hideBanner().catch(()=>{});
+            } else {
+                await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }).catch(()=>{});
+            }
+        } catch(e){}
+    };
+
+    // ========================== LOJA DE MOEDAS ==========================
     window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) return false;
-        if (window.isVipAtivo()) { alert("VIP Ativo! Item já liberado."); return false; }
+        if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para si."); return false; }
         let preco = 0; let arrayDestravados = ''; let itemAtual = '';
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
@@ -67,7 +98,7 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
         return false;
     };
 
-    // ========================== ADMOB: ESCUDO ANTI-FALHAS ==========================
+    // ========================== ADMOB E RECOMPENSAS ==========================
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
@@ -86,68 +117,52 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
             const { AdMob } = window.Capacitor.Plugins;
             AdMob.initialize().then(async () => {
                 console.log("✅ AdMob Inicializado");
-                try { await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }); } catch(e) {}
-                try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
+                
+                try { await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }); } catch(e){}
+                try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e){}
 
-                // Evento de Recompensa: Recebendo as moedas (Blindado com try/catch)
+                // App Open Ad (Exibe passados 2 segundos se não for VIP ou NoAds)
+                setTimeout(async () => {
+                    if (!window.isVipAtivo() && !_rawState.noAds) {
+                        try { await AdMob.showInterstitial(); } catch(e){}
+                    }
+                    window.atualizarBannersEAnuncios();
+                }, 2000);
+
                 const handleReward = (reward) => {
                     try {
                         let recompensa = 3;
                         if (reward && reward.amount) recompensa = parseInt(reward.amount) || 3;
-                        
-                        _rawState.coins += recompensa;
-                        window.saveData();
+                        _rawState.coins += recompensa; window.saveData();
                         if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                        
-                        // Destrava o botão IMEDIATAMENTE após ganhar as moedas
-                        if (resolveAdPromise) {
-                            resolveAdPromise(true);
-                            resolveAdPromise = null;
-                        }
-                    } catch (err) {
-                        console.error("Erro interno ao processar recompensa:", err);
-                        // Failsafe: destrava mesmo com erro
                         if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; }
-                    }
+                    } catch (err) { if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; } }
                 };
 
-                // Evento de Fechar: Caso a pessoa feche sem terminar ou após terminar
                 const handleClose = () => {
                     try {
-                        // Se o resolveAdPromise ainda existir, significa que o handleReward não foi chamado (não ganhou nada)
-                        if (resolveAdPromise) {
-                            resolveAdPromise(false);
-                            resolveAdPromise = null;
-                        }
-                        
-                        // Prepara o próximo vídeo para não ficar sem anúncios
-                        setTimeout(() => {
-                            AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{});
-                        }, 2000);
-                    } catch (err) {
-                        console.error("Erro ao fechar vídeo:", err);
-                    }
+                        if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
+                        setTimeout(() => { AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{}); }, 2000);
+                    } catch (err) {}
                 };
 
-                // Atira para todos os lados para garantir que o evento não se perde!
                 AdMob.addListener('rewardedVideoAdReward', handleReward);
                 AdMob.addListener('rewardedAdReward', handleReward);
                 AdMob.addListener('rewardedVideoAdDismissed', handleClose);
                 AdMob.addListener('rewardedAdDismissed', handleClose);
                 AdMob.addListener('rewardedVideoAdShowFailed', handleClose);
-
             }).catch(console.error);
         } catch(e) {}
     }
 
-    window.mostrarIntersticialSeNecessario = async function() {
-        if (!window.isAppNativo() || window.isVipAtivo()) return;
-        window.spinCounter++;
-        if (window.spinCounter % 3 === 0) {
+    // Chamado agora DEPOIS que a roleta para!
+    window.mostrarAdAposGiro = async function() {
+        if (!window.isAppNativo() || window.isVipAtivo() || _rawState.noAds) return;
+        if (window.spinCounter > 0 && window.spinCounter % 3 === 0) {
             try {
                 const { AdMob } = window.Capacitor.Plugins;
-                await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true });
                 await AdMob.showInterstitial();
+                AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }).catch(()=>{});
             } catch(e) {}
         }
     };
@@ -162,21 +177,12 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
         try {
             const { AdMob } = window.Capacitor.Plugins;
             try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
-
             return new Promise((resolve) => {
                 resolveAdPromise = resolve;
-
-                // Failsafe Extremo: Se a Google não responder em 90 segundos, o botão destrava sozinho.
                 setTimeout(() => {
-                    if (resolveAdPromise) {
-                        console.warn("Failsafe: O vídeo não respondeu a tempo.");
-                        resolveAdPromise(false);
-                        resolveAdPromise = null;
-                    }
+                    if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
                 }, 90000);
-
                 AdMob.showRewardVideoAd().catch((err) => {
-                    console.error("Erro ao tentar exibir AdMob:", err);
                     if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
                 });
             });
@@ -227,6 +233,7 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
         const arrayFields = ['foods', 'customFoods', 'unlockedPageThemes', 'unlockedRouletteThemes', 'unlockedSpinSounds', 'unlockedEndSounds', 'unlockedWinSounds', 'unlockedEffects', 'unlockedRecipes'];
         const merged = { ...anonData, coins: mergedCoins };
         if (googleData.vipUntil && googleData.vipUntil > (merged.vipUntil || 0)) merged.vipUntil = googleData.vipUntil;
+        if (googleData.noAds !== undefined) merged.noAds = googleData.noAds;
         if (googleData.darkMode !== undefined) merged.darkMode = googleData.darkMode;
         if (googleData.displayName) merged.displayName = googleData.displayName;
         arrayFields.forEach(field => { merged[field] = mergeArray(anonData[field], googleData[field]); });
@@ -236,7 +243,7 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
     window.conectarGoogle = function() {
         if (!auth) return;
         if (window.isAppNativo()) {
-            alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site (rodadosabor.vercel.app) pelo navegador.\n\nSeus dados vão sincronizar com o aplicativo automaticamente!");
+            alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador.\n\nSeus dados vão sincronizar com o aplicativo automaticamente!");
             return;
         }
 
@@ -266,9 +273,7 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
                         window.location.reload(); 
                     });
                 });
-            }).catch((error) => {
-                console.error("Erro Login:", error); alert("❌ Erro ao conectar com o Google.");
-            });
+            }).catch((error) => { alert("❌ Erro ao conectar com o Google."); });
         }
 
         document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep');
@@ -309,6 +314,7 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
             garantirArraysNoEstado();
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             if (typeof window.applyThemes === 'function') window.applyThemes();
+            window.atualizarBannersEAnuncios();
         } catch (e) {}
 
         setTimeout(ativarModoOffline, 4000);
@@ -328,6 +334,7 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
                         }
                         garantirArraysNoEstado();
                         if (typeof window.renderAll === 'function') window.renderAll();
+                        window.atualizarBannersEAnuncios();
                         updateUserInterface(user);
                     });
                 } else {
@@ -376,12 +383,6 @@ console.log('core.js carregado (v13 - Escudo Anti-Falhas AdMob)');
 
     function osc(ctx, start, fStart, fEnd, duration, type, gain) {
         const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = type;
-        o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
-        g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
-        o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
-    }
-    function oscSquare(ctx, start, fStart, fEnd, duration, gain) {
-        const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = 'square';
         o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
         g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
         o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
