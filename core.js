@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v16 - Sistema de Banimento Adicionado)');
+console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
 
 (function() {
     window.isServerSynced = false;
@@ -41,7 +41,10 @@ console.log('core.js carregado (v16 - Sistema de Banimento Adicionado)');
     window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
     window.isNoAdsAtivo = function() { return window.isVipAtivo() || _rawState.noAdsUntil > Date.now(); };
-    window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
+    window.isItemLiberado = function(nomeDoArray, idDoItem) { 
+        if (window.isVipAtivo()) return true; 
+        return _rawState[nomeDoArray].includes(idDoItem);
+    };
 
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
@@ -73,19 +76,39 @@ console.log('core.js carregado (v16 - Sistema de Banimento Adicionado)');
         } catch(e){}
     };
 
-    window.comprarItemSeguro = function(categoria, id) {
+    // MODIFICADO: suporta preço passado como argumento (para receitas do Firebase)
+    window.comprarItemSeguro = function(categoria, id, precoOverride) {
         if (!window.isServerSynced) return false;
         if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para você."); return false; }
-        let preco = 0; let arrayDestravados = ''; let itemAtual = '';
+        
+        let preco = precoOverride !== undefined ? precoOverride : 0;
+        let arrayDestravados = '';
+        let itemAtual = '';
+
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
         else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
         else if (categoria === 'effect') { const i = window.EFEITOS_VISUAIS?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
         else if (categoria === 'pageTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
         else if (categoria === 'rouletteTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
-        else if (categoria === 'recipe') { const i = window.RECEITAS?.find(x => x.id === id); if(!i) return false; preco = i.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null; }
+        else if (categoria === 'recipe') {
+            // Se não foi passado precoOverride, busca do window.RECEITAS (fallback)
+            if (precoOverride === undefined) {
+                const rec = window.RECEITAS?.find(x => x.id === id);
+                if (!rec) return false;
+                preco = rec.preco || 0;
+            }
+            arrayDestravados = 'unlockedRecipes';
+            itemAtual = null;
+        }
 
-        if (_rawState.coins >= preco) { _rawState.coins -= preco; if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id); if (itemAtual) _rawState[itemAtual] = id; window.saveData(); return true; }
+        if (_rawState.coins >= preco) {
+            _rawState.coins -= preco;
+            if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id);
+            if (itemAtual) _rawState[itemAtual] = id;
+            window.saveData();
+            return true;
+        }
         return false;
     };
 
