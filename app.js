@@ -1,5 +1,5 @@
 'use strict';
-console.log('app.js carregado (v24 - Restaurado com Renderização Segura)');
+console.log('app.js carregado (v25 - Renderização Segura de Dados na Nuvem)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
@@ -36,7 +36,10 @@ window.renderModalFoodOptions = function(filterText = '') {
     const modalGrid = document.getElementById('modalFoodOptionsGrid');
     if (!modalGrid) return;
     modalGrid.innerHTML = '';
-    let allItems = window.BANCO_DE_COMIDAS ? [...window.BANCO_DE_COMIDAS] : [];
+    
+    // Agora vai puxar o Banco de Comidas do FIREBASE
+    let allItems = (window.BANCO_DE_COMIDAS && window.BANCO_DE_COMIDAS.length > 0) ? [...window.BANCO_DE_COMIDAS] : [];
+    
     if (window.appState?.customFoods) {
         window.appState.customFoods.forEach(custom => {
             const match = custom.match(/\p{Emoji}/u);
@@ -46,6 +49,11 @@ window.renderModalFoodOptions = function(filterText = '') {
     }
     const filtradas = allItems.filter(item => item.nome.toLowerCase().includes(filterText.toLowerCase()));
     const selecionadas = window._comidasSelecionadasTemporarias || [];
+    
+    if(filtradas.length === 0 && allItems.length === 0) {
+        modalGrid.innerHTML = '<span style="color:var(--text-muted); font-size:0.8rem; text-align:center; width: 100%;">Carregando opções da nuvem...</span>';
+    }
+
     filtradas.forEach(item => {
         const itemString = `${item.nome} ${item.icone}`;
         const card = document.createElement('div'); card.className = 'food-option-card';
@@ -70,9 +78,8 @@ window.renderThemes = function() {
     const pageGrid = document.getElementById('pageThemesGrid');
     const rouletteGrid = document.getElementById('rouletteThemesGrid');
     
-    // Lista segura ligada à Nuvem
-    const activePageThemes = typeof window.getPageThemes === 'function' ? window.getPageThemes() : (window.listTemas || []);
-    const activeRouletteThemes = typeof window.getRouletteThemes === 'function' ? window.getRouletteThemes() : (window.listTemas || []);
+    const activePageThemes = typeof window.getPageThemes === 'function' ? window.getPageThemes() : [];
+    const activeRouletteThemes = typeof window.getRouletteThemes === 'function' ? window.getRouletteThemes() : [];
     
     const renderThemeGrid = (grid, themeList, arrayName, currentKey, category) => {
         if (!grid) return;
@@ -343,6 +350,26 @@ document.addEventListener('DOMContentLoaded', function() {
         data.foods = [...window._comidasSelecionadasTemporarias];
         localStorage.setItem('rodaDoSaborState', JSON.stringify(data));
         window.location.reload(); 
+    });
+
+    // 🔴 Adicionando item customizado na modal
+    document.getElementById('btnAddCustomFood')?.addEventListener('click', () => {
+        const inputName = document.getElementById('newFoodName');
+        const inputEmoji = document.getElementById('newFoodEmoji');
+        const name = inputName.value.trim();
+        const emoji = inputEmoji.value.trim() || '🍽️';
+
+        if (name) {
+            const newItem = { nome: name, icone: emoji };
+            if (!window.BANCO_DE_COMIDAS) window.BANCO_DE_COMIDAS = [];
+            
+            // Adiciona localmente apenas para renderizar. Na vida real, o Admin que gerencia a nuvem
+            window.BANCO_DE_COMIDAS.push(newItem);
+            window.renderModalFoodOptions(document.getElementById('searchFoodInput')?.value || '');
+            
+            inputName.value = '';
+            inputEmoji.value = '';
+        }
     });
 
     const resultOverlay = document.getElementById('resultOverlay');
