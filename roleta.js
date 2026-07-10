@@ -1,236 +1,358 @@
 'use strict';
-console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste)');
+console.log('app.js carregado (v22 - Fallbacks de Nuvem Ativos)');
 
-let startAngle = 0;
-let isSpinning = false;
-let spinSpeed = 0;
-let spinTimeTotal = 0;
-let spinTimeCount = 0;
-let lastSoundAngle = 0;
+window.updateCoinsDisplay = function() {
+    const coinBalance = document.getElementById('coin-balance');
+    if (coinBalance) coinBalance.textContent = window.appState.coins;
+};
 
-window.drawRoulette = function() {
-    const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    if (canvas.width !== rect.width || canvas.height !== rect.height) {
-        canvas.width = rect.width || 600;
-        canvas.height = rect.height || 600;
+// ========================== RENDERIZADORES ==========================
+window.renderFoodList = function() {
+    const container = document.getElementById('foodListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    const foods = window.appState?.foods || [];
+    if (foods.length === 0) {
+        container.innerHTML = '<span style="color:var(--text-muted);">Nenhuma comida selecionada.</span>'; return;
     }
+    foods.forEach((food, idx) => {
+        const tag = document.createElement('div'); tag.className = 'food-tag';
+        tag.innerHTML = `${food} <i class="fas fa-times" onclick="window.removeFood(${idx})"></i>`;
+        container.appendChild(tag);
+    });
+    if (typeof window.drawRoulette === 'function') { try { window.drawRoulette(); } catch(e) {} }
+};
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.46;
+window.removeFood = function(idx) {
+    if (window.appState && window.appState.foods) {
+        const novasComidas = [...window.appState.foods];
+        novasComidas.splice(idx, 1);
+        window._comidasSelecionadasTemporarias = novasComidas;
+        document.getElementById('btnSaveFoodSelection')?.click();
+    }
+};
 
-    ctx.clearRect(0, 0, width, height);
-
-    const items = window.appState?.foods || [];
-    const numSegments = items.length;
-
-    // Cores de Fallback e Contraste Seguro
-    let colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
-    let wheelBorder = window.appState?.darkMode ? '#f8fafc' : '#1e293b'; 
-    let wheelCenter = window.appState?.darkMode ? '#0f172a' : '#ffffff';
-
-    try {
-        if (typeof window.getRouletteThemes === 'function') {
-            const themes = window.getRouletteThemes();
-            const theme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
-            const mode = window.appState.darkMode ? 'dark' : 'light';
-            const themeData = theme[mode];
-            
-            if (themeData && themeData.colors) {
-                colors = themeData.colors;
-                // AQUI ESTÁ A CORREÇÃO MÁXIMA: Só usa a borda do banco de dados, NUNCA cai na colors[0] (que é a cor da pizza)
-                if (themeData.wheelBorder) wheelBorder = themeData.wheelBorder;
-                if (themeData.wheelCenter) wheelCenter = themeData.wheelCenter;
+window.renderModalFoodOptions = function(filterText = '') {
+    const modalGrid = document.getElementById('modalFoodOptionsGrid');
+    if (!modalGrid) return;
+    modalGrid.innerHTML = '';
+    let allItems = window.BANCO_DE_COMIDAS ? [...window.BANCO_DE_COMIDAS] : [];
+    if (window.appState?.customFoods) {
+        window.appState.customFoods.forEach(custom => {
+            const match = custom.match(/\p{Emoji}/u);
+            if (match) { allItems.push({ nome: custom.replace(/\p{Emoji}/u, '').trim(), icone: match[0] }); } 
+            else { allItems.push({ nome: custom, icone: '🍽️' }); }
+        });
+    }
+    const filtradas = allItems.filter(item => item.nome.toLowerCase().includes(filterText.toLowerCase()));
+    const selecionadas = window._comidasSelecionadasTemporarias || [];
+    filtradas.forEach(item => {
+        const itemString = `${item.nome} ${item.icone}`;
+        const card = document.createElement('div'); card.className = 'food-option-card';
+        if (selecionadas.includes(itemString)) card.classList.add('selected');
+        card.innerHTML = `<span>${item.icone}</span> ${item.nome}`;
+        card.addEventListener('click', () => {
+            const idx = selecionadas.indexOf(itemString);
+            if (idx > -1) { selecionadas.splice(idx, 1); card.classList.remove('selected'); } 
+            else {
+                if (selecionadas.length >= 6) { alert("Máximo de 6 itens permitidos!"); return; }
+                selecionadas.push(itemString); card.classList.add('selected');
             }
-        }
-    } catch (e) {
-        console.warn("Erro ao buscar cores da roleta. Usando contraste padrão.", e);
-    }
+            window._comidasSelecionadasTemporarias = selecionadas;
+            const info = document.getElementById('foodSelectionCount');
+            if (info) info.textContent = `${window._comidasSelecionadasTemporarias.length} / 6 selecionadas`;
+        });
+        modalGrid.appendChild(card);
+    });
+};
 
-    if (numSegments === 0) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ccc';
-        ctx.fill();
-        ctx.fillStyle = '#333';
-        ctx.font = `bold ${radius * 0.12}px Inter, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Adicione comidas!', centerX, centerY);
-        return;
-    }
+window.renderThemes = function() {
+    const pageGrid = document.getElementById('pageThemesGrid');
+    const rouletteGrid = document.getElementById('rouletteThemesGrid');
+    
+    // Obtém as listas seguras do Core
+    const activePageThemes = typeof window.getPageThemes === 'function' ? window.getPageThemes() : [];
+    const activeRouletteThemes = typeof window.getRouletteThemes === 'function' ? window.getRouletteThemes() : [];
+    
+    const renderThemeGrid = (grid, themeList, arrayName, currentKey, category) => {
+        if (!grid) return;
+        grid.innerHTML = '';
+        themeList.forEach(theme => {
+            const precoExibicao = (theme.price !== undefined) ? theme.price : (theme.preco || 0);
+            const isUnlocked = window.isItemLiberado(arrayName, theme.id) || precoExibicao === 0;
+            const isActive = window.appState?.[currentKey] === theme.id;
+            
+            const card = document.createElement('div');
+            card.className = `item-card ${isActive ? 'active' : ''}`;
+            
+            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>`
+                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('${category}', '${theme.id}')">Usar</button>`
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${theme.id}')"><i class="fas fa-coins"></i> ${precoExibicao}</button>`;
+            
+            card.innerHTML = `<div class="item-info"><h4>${theme.nome || theme.id}</h4><p style="font-size:0.65rem; color:var(--text-muted);">${precoExibicao === 0 ? 'Grátis' : `${precoExibicao} moedas`}</p></div>${btnHTML}`;
+            grid.appendChild(card);
+        });
+    };
 
-    const arcSize = (2 * Math.PI) / numSegments;
-    const borderWidth = radius * 0.045;
+    renderThemeGrid(pageGrid, activePageThemes, 'unlockedPageThemes', 'currentPageTheme', 'pageTheme');
+    renderThemeGrid(rouletteGrid, activeRouletteThemes, 'unlockedRouletteThemes', 'currentRouletteTheme', 'rouletteTheme');
+};
 
-    // DESENHA A BORDA EXTERNA ISOLADA
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelBorder;
-    ctx.shadowColor = 'rgba(0,0,0,0.25)';
-    ctx.shadowBlur = 12;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+window.renderSounds = function() {
+    const spinGrid = document.getElementById('spinSoundsGrid');
+    const endGrid = document.getElementById('endSoundsGrid');
+    const winGrid = document.getElementById('winSoundsGrid');
+    if (!spinGrid || !endGrid || !winGrid) return;
 
-    // DESENHA OS PONTOS BRANCOS NA BORDA
-    for (let b = 0; b < 20; b++) {
-        const bAngle = (b * 2 * Math.PI) / 20;
-        const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
-        const by = centerY + (radius + borderWidth * 0.6) * Math.sin(bAngle);
-        ctx.beginPath();
-        ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-    }
+    const renderSoundCards = (grid, soundList, arrayName, currentKey, category) => {
+        grid.innerHTML = '';
+        if (!soundList || soundList.length === 0) return;
+        const sorted = [...soundList].sort((a, b) => (a.price || 0) - (b.price || 0));
+        sorted.forEach(sound => {
+            const isUnlocked = window.isItemLiberado(arrayName, sound.id) || sound.price === 0;
+            const isActive = window.appState?.[currentKey] === sound.id;
+            
+            const card = document.createElement('div');
+            card.className = `item-card ${isActive ? 'active' : ''}`;
+            
+            let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
+                        : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('${category}', '${sound.id}')">Usar</button>` 
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${sound.id}')"><i class="fas fa-coins"></i> ${sound.price}</button>`;
+            
+            card.innerHTML = `
+                <div class="item-info">
+                    <h4>${sound.name}</h4>
+                    <p style="font-size:0.65rem; color:var(--text-muted);">${sound.price === 0 ? 'Grátis' : `${sound.price} moedas`}</p>
+                    <i class="fas fa-play-circle" style="cursor:pointer;color:var(--accent);" onclick="window.playSynthesizedSound('${sound.type}')"></i>
+                </div>
+                ${btnHTML}
+            `;
+            grid.appendChild(card);
+        });
+    };
 
-    // DESENHA AS FATIAS DA ROLETA
-    for (let i = 0; i < numSegments; i++) {
-        const currentArc = startAngle + i * arcSize;
-        const color = colors[i % colors.length];
+    renderSoundCards(spinGrid, window.SONS_GIRO, 'unlockedSpinSounds', 'currentSpinSound', 'spinSound');
+    renderSoundCards(endGrid, window.SONS_FIM, 'unlockedEndSounds', 'currentEndSound', 'endSound');
+    renderSoundCards(winGrid, window.SONS_VITORIA, 'unlockedWinSounds', 'currentWinSound', 'winSound');
+};
 
-        ctx.beginPath();
-        ctx.fillStyle = color;
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
-        ctx.closePath();
-        ctx.fill();
+window.renderEffects = function() {
+    const grid = document.getElementById('effectsGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const effects = window.EFEITOS_VISUAIS || [];
+    if (effects.length === 0) return;
+    
+    const sorted = [...effects].sort((a, b) => (a.price || 0) - (b.price || 0));
+    sorted.forEach(effect => {
+        const isUnlocked = window.isItemLiberado('unlockedEffects', effect.id) || effect.price === 0;
+        const isActive = window.appState?.currentEffect === effect.id;
         
-        // Linhas de separação
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(currentArc + arcSize / 2);
-
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        const textRadius = radius * 0.82; 
-        const maxTextWidth = (2 * Math.PI * textRadius) / numSegments * 0.75;
-        let fontSize = Math.min(radius * 0.13, 26);
-        ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
-
-        let textWidth = ctx.measureText(items[i]).width;
-        if (textWidth > maxTextWidth && fontSize > 6) {
-            fontSize = Math.max(6, fontSize * (maxTextWidth / textWidth));
-            ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
-        }
-
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.6)';
-        ctx.shadowBlur = 8;
-        ctx.fillText(items[i], textRadius, 0);
-        ctx.shadowBlur = 0;
-        ctx.restore();
-    }
-
-    // EIXO CENTRAL ISOLADO
-    const centerRadius = radius * 0.16;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelCenter;
-    ctx.strokeStyle = wheelBorder; // Usa a cor da borda para não misturar com as fatias
-    ctx.lineWidth = centerRadius * 0.15;
-    ctx.fill();
-    ctx.stroke();
+        const card = document.createElement('div');
+        card.className = `item-card ${isActive ? 'active' : ''}`;
+        
+        let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>` 
+                    : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('effect', '${effect.id}')">Usar</button>` 
+                    : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('effect', '${effect.id}')"><i class="fas fa-coins"></i> ${effect.price}</button>`;
+        
+        card.innerHTML = `
+            <div class="item-info">
+                <h4>${effect.name}</h4>
+                <p style="font-size:0.65rem; color:var(--text-muted);">${effect.price === 0 ? 'Grátis' : `${effect.price} moedas`}</p>
+            </div>
+            ${btnHTML}
+        `;
+        grid.appendChild(card);
+    });
 };
 
-window.spinRoulette = function() {
-    if (isSpinning || window.appState.foods.length === 0) return;
-
-    const btn = document.getElementById('btnSpin');
-    if (btn) {
-        btn.disabled = true;
-        btn.classList.add('spinning');
-    }
-
-    const ctx = window.getAudioContext ? window.getAudioContext() : null;
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-    isSpinning = true;
-    spinTimeCount = 0;
-    spinTimeTotal = Math.random() * 1000 + 4000;
-    spinSpeed = Math.random() * 0.3 + 0.4;
-    lastSoundAngle = startAngle;
-    animateSpin();
-};
-
-function animateSpin() {
-    spinTimeCount += 20;
-    if (spinTimeCount >= spinTimeTotal) {
-        isSpinning = false;
-        finalizeSpin();
+window.renderRecipes = function() {
+    const grid = document.getElementById('recipesGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    const recipes = (window.DYNAMIC_RECIPES && window.DYNAMIC_RECIPES.length > 0) ? window.DYNAMIC_RECIPES : (window.RECEITAS || []);
+    if (recipes.length === 0) {
+        grid.innerHTML = '<span style="color:var(--text-muted); font-size: 0.85rem;">Carregando receitas exclusivas da nuvem...</span>';
         return;
     }
-    const progress = spinTimeCount / spinTimeTotal;
-    const currentVelocity = spinSpeed * Math.pow(1 - progress, 2);
-    startAngle += currentVelocity;
-    window.drawRoulette();
+    
+    const sorted = [...recipes].sort((a, b) => (a.preco || 0) - (b.preco || 0));
+    sorted.forEach(rec => {
+        const isUnlocked = window.isItemLiberado('unlockedRecipes', rec.id) || rec.preco === 0;
+        const card = document.createElement('div');
+        card.className = 'recipe-card';
+        card.innerHTML = `<div class="recipe-info"><span class="recipe-icon">${rec.icone}</span><span class="recipe-name">${rec.nome}</span></div>`;
+        let btn = document.createElement('button');
+        
+        if (isUnlocked) {
+            btn.className = 'btn-action btn-recipe-open'; btn.textContent = 'Ver';
+            btn.onclick = () => window.location.href = rec.link;
+        } else {
+            btn.className = 'btn-action btn-buy'; btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco || 0}`;
+            btn.onclick = () => window.comprarEAtualizar('recipe', rec.id);
+        }
+        card.appendChild(btn);
+        grid.appendChild(card);
+    });
+};
 
-    const arcSize = (2 * Math.PI) / window.appState.foods.length;
-    if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
-        if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeSpinSound.type);
-        lastSoundAngle = startAngle;
+window.launchCurrentEffect = function() {
+    const effectId = window.appState.currentEffect || 'effect-1';
+    switch (effectId) {
+        case 'effect-1': window.launchConfetti(); break;
+        case 'effect-2': window.launchFireworks(); break;
+        case 'effect-3': window.launchStars(); break;
+        case 'effect-4': window.launchNeonLights(); break;
+        case 'effect-5': window.launchLaser(); break;
+        case 'effect-6': window.launchGlitter(); break;
+        case 'effect-7': window.launchRainbow(); break;
+        default: window.launchConfetti();
     }
-    requestAnimationFrame(animateSpin);
-}
+};
 
-function finalizeSpin() {
-    const numSegments = window.appState.foods.length;
-    if (numSegments === 0) return;
-    const arcSize = (2 * Math.PI) / numSegments;
+window.comprarEAtualizar = function(categoria, id) {
+    if (window.comprarItemSeguro(categoria, id)) window.renderAll();
+    else if(!window.isVipAtivo()) alert("Não foi possível realizar a compra. Moedas insuficientes.");
+};
 
-    let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
-    if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
-    let index = Math.floor(angleFromStart / arcSize);
-    if (index >= numSegments) index = 0;
-    if (index < 0) index = numSegments - 1;
+window.equiparEAtualizar = function(categoria, id) {
+    if (window.equiparItemSeguro(categoria, id)) window.renderAll();
+};
 
-    const winningFood = window.appState.foods[index];
+window.renderAll = function() {
+    window.updateCoinsDisplay();
+    try { window.renderFoodList(); } catch(e) {}
+    try { window.renderThemes(); } catch(e) {}
+    try { window.renderSounds(); } catch(e) {}
+    try { window.renderEffects(); } catch(e) {}
+    try { window.renderRecipes(); } catch(e) {}
+    
+    const vipStatus = document.getElementById('vipStatusTag');
+    if (vipStatus) {
+        if (window.isVipAtivo()) {
+            vipStatus.style.display = 'inline-block';
+            vipStatus.textContent = '👑 VIP ATIVO';
+        } else {
+            vipStatus.style.display = 'none';
+        }
+    }
 
-    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
-    if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeEndSound.type);
+    const premiumStore = document.querySelector('.premium-store');
+    if (premiumStore) {
+        premiumStore.style.display = window.isVipAtivo() ? 'none' : 'block';
+    }
+    
+    try { if (typeof window.applyThemes === 'function') window.applyThemes(); } catch(e) {}
+};
 
+document.addEventListener('DOMContentLoaded', function() {
+    window.renderAll();
+
+    // 🔴 Destruidor Javascript Adicional de Backgrounds Antigos 🔴
     setTimeout(() => {
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
-        if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeWinSound.type);
+        document.querySelectorAll('body > div').forEach(el => {
+            const cName = el.className || '';
+            if(cName.includes('bg-shape') || cName.includes('circle') || cName.includes('blob') || cName.includes('oval')) {
+                el.remove();
+            }
+        });
+    }, 500);
 
-        if (typeof window.launchCurrentEffect === 'function') {
-            window.launchCurrentEffect();
+    document.getElementById('btnEditName')?.addEventListener('click', function() {
+        const nomeAtual = document.getElementById('userName')?.textContent?.replace(' ✓', '').trim() || '';
+        const novoNome = prompt('Digite seu novo nome:', nomeAtual);
+        if (novoNome !== null && novoNome.trim() !== '') window.editarNomeUsuario(novoNome.trim());
+    });
+
+    document.getElementById('btnGoogleLogin')?.addEventListener('click', function() {
+        if (typeof window.conectarGoogle === 'function') window.conectarGoogle();
+    });
+
+    document.getElementById('btnSpin')?.addEventListener('click', async function() {
+        if (!window.gastarMoedaGiro()) {
+            if(!window.isServerSynced) alert("⏳ Conectando ao servidor... Aguarde um instante.");
+            else alert("Você precisa de 1 moeda para girar! Assista a um anúncio para ganhar.");
+            return;
+        }
+        window.updateCoinsDisplay();
+        if (typeof window.spinCounter !== 'undefined') window.spinCounter++;
+        window.spinRoulette();
+    });
+    
+    document.getElementById('btnModeToggle')?.addEventListener('click', () => {
+        if (typeof window.toggleDarkModeSeguro === 'function') window.toggleDarkModeSeguro(); 
+    });
+
+    const btnWatchAd = document.getElementById('btnWatchAd');
+    btnWatchAd?.addEventListener('click', async function() {
+        if (!window.isServerSynced) { alert("⏳ Conectando ao servidor..."); return; }
+
+        if (window.isAppNativo && window.isAppNativo()) {
+            btnWatchAd.disabled = true;
+            const textoOriginal = btnWatchAd.innerHTML;
+            btnWatchAd.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+            
+            const recompensaGanha = await window.mostrarAdMobNativo();
+            
+            btnWatchAd.innerHTML = textoOriginal;
+            btnWatchAd.disabled = false;
+            
+            if (recompensaGanha) alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
+            return;
         }
 
-        const nameEl = document.getElementById('modalFoodName');
-        const emojiEl = document.getElementById('modalEmoji');
-        const overlay = document.getElementById('resultOverlay');
-        if (nameEl && emojiEl && overlay) {
-            nameEl.textContent = winningFood;
-            const emojiMatch = winningFood.match(/\p{Emoji}/u);
-            emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
-            overlay.style.display = 'flex';
+        const overlay = document.getElementById('adOverlay');
+        const countdownSpan = document.getElementById('adCountdown');
+        if (!overlay || !countdownSpan) return;
+        
+        btnWatchAd.disabled = true; overlay.style.display = 'flex';
+        let timeLeft = 30; countdownSpan.textContent = timeLeft;
+        
+        const preventClose = (e) => e.stopPropagation();
+        overlay.addEventListener('click', preventClose);
+        
+        const timer = setInterval(() => {
+            timeLeft--; countdownSpan.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                overlay.removeEventListener('click', preventClose);
+                overlay.style.display = 'none';
+                btnWatchAd.disabled = false;
+                
+                if (window.ganharMoedasAnuncioWeb()) {
+                    window.updateCoinsDisplay(); alert("🎉 Recompensa recebida: Você ganhou +3 moedas!");
+                } else alert("⚠️ Falha ao resgatar. Aguarde um instante.");
+            }
+        }, 1000);
+    });
+
+    const foodModal = document.getElementById('foodSelectionModal');
+    document.getElementById('btnOpenFoodModal')?.addEventListener('click', () => {
+        if (window.appState) {
+            window._comidasSelecionadasTemporarias = [...window.appState.foods];
+            foodModal.style.display = 'flex';
+            window.renderModalFoodOptions(document.getElementById('searchFoodInput')?.value || '');
+            let countEl = document.getElementById('foodSelectionCount');
+            if (countEl) countEl.textContent = `${window._comidasSelecionadasTemporarias.length} / 6 selecionadas`;
         }
+    });
+    
+    document.getElementById('btnCloseFoodModal')?.addEventListener('click', () => foodModal.style.display = 'none');
+    document.getElementById('searchFoodInput')?.addEventListener('input', e => window.renderModalFoodOptions(e.target.value));
+    
+    document.getElementById('btnSaveFoodSelection')?.addEventListener('click', () => {
+        if (!window._comidasSelecionadasTemporarias) return;
+        const count = window._comidasSelecionadasTemporarias.length;
+        if (count < 2) { alert("Selecione pelo menos 2 comidas!"); return; }
+        if (count > 6) { alert("Máximo permitido é 6 comidas na roleta!"); return; }
+        
+        const data = JSON.parse(localStorage.getItem('rodaDoSaborState'));
+        data.foods = [...window._comidasSelecionadasTemporarias];
+        localStorage.setItem('rodaDoSaborState', JSON.stringify(data));
+        window.location.reload(); 
+    });
 
-        const btn = document.getElementById('btnSpin');
-        if (btn) {
-            btn.disabled = false;
-            btn.classList.remove('spinning');
-        }
-
-        setTimeout(() => {
-            if (typeof window.mostrarAdAposGiro === 'function') window.mostrarAdAposGiro();
-        }, 1500); 
-
-    }, 1000);
-}
-
-window.addEventListener('load', function() {
-    setTimeout(window.drawRoulette, 100);
+    const resultOverlay = document.getElementById('resultOverlay');
+    document.getElementById('btnCloseModal')?.addEventListener('click', () => resultOverlay.style.display = 'none');
 });
-window.addEventListener('resize', window.drawRoulette);
