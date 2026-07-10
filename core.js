@@ -1,415 +1,413 @@
-'use strict';
-console.log('core.js carregado (v18 - Temas Dinâmicos na Nuvem)');
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Admin GOD - Roda do Sabor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        body { display: flex; align-items: flex-start; padding: 0; margin: 0; border-radius: 0 !important; overflow-x: hidden; }
+        .sidebar { width: 260px; background: var(--bg-card); border-right: 1px solid var(--border-color); min-height: 100vh; padding: 1.5rem; display: flex; flex-direction: column; position: sticky; top: 0; z-index: 10; }
+        .sidebar-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .sidebar-logo img { width: 40px; height: 40px; }
+        .sidebar-logo h2 { font-size: 1.2rem; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-btn { display: block; width: 100%; background: transparent; color: var(--text-primary); border: 1px solid transparent; padding: 1rem; text-align: left; border-radius: 12px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: all 0.2s; margin-bottom: 0.5rem; }
+        .nav-btn:hover { background: var(--border-color); }
+        .nav-btn.active { background: var(--accent-gradient); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .nav-btn i { width: 25px; }
+        .main { flex: 1; padding: 2rem; max-width: calc(100vw - 260px); }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: var(--bg-card); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 1.5rem; overflow: hidden; border: 1px solid var(--border-color); }
+        th, td { padding: 1.2rem 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: rgba(128,128,128,0.05); color: var(--gold); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+        .action-btn { padding: 0.5rem 0.8rem; border-radius: 8px; border: none; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-right: 0.4rem; color: white; transition: transform 0.2s; }
+        .action-btn:hover { transform: translateY(-2px); }
+        .btn-green { background: linear-gradient(135deg, #10b981, #047857); } 
+        .btn-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); } 
+        .btn-orange { background: linear-gradient(135deg, #f5b342, #e65100); }
+        .btn-red { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+        .btn-darkred { background: #000; border: 1px solid #ef4444; color: #ef4444; }
+        .tab-content { display: none; animation: fadeUp 0.4s ease; }
+        .tab-content.active { display: block; }
+        #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem; font-size: 0.9rem; }
+        .form-control { width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(128,128,128,0.05); color: var(--text-primary); font-family: 'Inter', sans-serif; }
+        .form-row { display: flex; gap: 1rem; }
+        .form-row .form-group { flex: 1; }
+        .variation-box { background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; position: relative; }
+        .variation-box h4 { color: var(--gold); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .btn-remove-var { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--danger); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        
+        .editor-container { border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: rgba(128,128,128,0.05); }
+        .editor-toolbar { background: rgba(0,0,0,0.1); padding: 0.5rem; display: flex; gap: 0.3rem; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; }
+        .editor-toolbar button { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.4rem 0.6rem; cursor: pointer; transition: background 0.2s; }
+        .editor-toolbar button:hover { background: var(--accent); color: white; }
+        .editor-content { min-height: 120px; padding: 1rem; color: var(--text-primary); outline: none; font-size: 0.9rem; line-height: 1.5; }
+        .editor-content:empty:before { content: attr(placeholder); color: var(--text-muted); }
 
-(function() {
-    window.isServerSynced = false;
-    window.DYNAMIC_RECIPES = []; 
-    window.DYNAMIC_THEMES = []; // Armazena os temas puxados do Firebase
+        input[type="color"] { padding: 0; border: none; width: 100%; height: 45px; border-radius: 8px; cursor: pointer; }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid var(--border-color); border-radius: 8px; }
+        .theme-section { background: rgba(0,0,0,0.1); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 2rem; }
+    </style>
+</head>
+<body>
 
-    const _rawState = {
-        coins: 0, vipUntil: 0, noAdsUntil: 0, darkMode: false, displayName: '', banned: false,
-        foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
-        unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
-        unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
-        unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1",
-        unlockedEndSounds: ["end-1"], currentEndSound: "end-1",
-        unlockedWinSounds: ["win-1"], currentWinSound: "win-1",
-        unlockedEffects: ["effect-1"], currentEffect: "effect-1",
-        unlockedRecipes: [], customFoods: []
-    };
+    <div id="loginScreen">
+        <img src="logo.png" style="width:100px; margin-bottom: 2rem; filter: drop-shadow(0 0 20px rgba(245, 179, 66, 0.4));">
+        <h1 style="color:var(--gold); margin-bottom: 0.5rem;">Acesso de Administrador</h1>
+        <p style="margin-bottom: 2rem; color: #94a3b8;">Portal de Gestão Exclusivo.</p>
+        <button onclick="fazerLogin()" class="btn-gradient-action dynamic-blue" style="font-size: 1.1rem; padding: 1rem 2rem;"><i class="fab fa-google"></i> Autorizar Acesso</button>
+    </div>
 
-    const proxyState = new Proxy(_rawState, {
-        set(target, prop, value) { return false; }, 
-        get(target, prop) {
-            const value = target[prop];
-            if (Array.isArray(value)) return Object.freeze([...value]); 
-            return value;
-        }
-    });
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <img src="logo.png" alt="Logo">
+            <h2>Roda do Sabor</h2>
+        </div>
+        <button class="nav-btn active" onclick="mudarAba('users')"><i class="fas fa-users"></i> Utilizadores</button>
+        <button class="nav-btn" onclick="mudarAba('content')"><i class="fas fa-utensils"></i> Receitas (Editor)</button>
+        <button class="nav-btn" onclick="mudarAba('themes')"><i class="fas fa-palette"></i> Estúdio de Temas</button>
+        
+        <div style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <button class="nav-btn" onclick="toggleTheme()"><i class="fas fa-moon"></i> Modo Escuro</button>
+            <button class="nav-btn" onclick="sair()" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Sair do Painel</button>
+        </div>
+    </div>
 
-    Object.defineProperty(window, 'appState', { value: proxyState, writable: false, configurable: false });
-
-    function aplicarBanimento() {
-        document.body.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#0f172a; color:#f8fafc; text-align:center; padding:2rem;">
-                <i class="fas fa-ban" style="font-size: 5rem; color:#ef4444; margin-bottom:1.5rem;"></i>
-                <h1 style="font-size:2rem; margin-bottom:1rem; color:#ef4444;">Conta Banida</h1>
-                <p style="color:#94a3b8; font-size:1.1rem; max-width:400px; line-height:1.5;">O seu acesso foi revogado por violação dos nossos Termos de Serviço.</p>
+    <div class="main">
+        <div class="admin-header">
+            <div>
+                <h1 id="pageTitle" style="font-size: 1.8rem; margin-bottom: 0.3rem;">Gerenciar Utilizadores</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Visão geral e Arquitetura do Sistema.</p>
             </div>
-        `;
-    }
+            <div id="adminInfo" style="background: var(--bg-body); padding: 0.8rem 1.5rem; border-radius: 30px; border: 1px solid var(--border-color); font-weight: 600;">
+                <i class="fas fa-shield-alt" style="color: var(--gold);"></i> Carregando...
+            </div>
+        </div>
 
-    window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
-    window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
-    window.isNoAdsAtivo = function() { return window.isVipAtivo() || _rawState.noAdsUntil > Date.now(); };
-    window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
+        <div id="users" class="tab-content active">
+            <table>
+                <thead><tr><th>UID</th><th>Nome</th><th>Saldo</th><th>Status da Conta</th><th>Ferramentas</th></tr></thead>
+                <tbody id="usersTableBody"><tr><td colspan="5" style="text-align: center; padding: 3rem;">Carregando...</td></tr></tbody>
+            </table>
+        </div>
 
-    window.comprarPacoteReal = function(tipo) {
-        if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
-        const trintaDias = 30 * 24 * 60 * 60 * 1000;
-        if (tipo === 'vip') {
-            _rawState.vipUntil = Date.now() + trintaDias;
-            alert("👑 Compra Concluída!\nVocê agora é VIP por 30 dias. Loja liberada e sem anúncios forçados!");
-        } else if (tipo === 'no_ads') {
-            _rawState.noAdsUntil = Date.now() + trintaDias;
-            alert("🚫 Compra Concluída!\nOs anúncios forçados foram removidos por 30 dias.");
+        <!-- ABA DE RECEITAS -->
+        <div id="content" class="tab-content">
+            <div class="card" style="border-left: 5px solid var(--gold);">
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary); font-size: 1.5rem;"><i class="fas fa-edit"></i> Gestor de Receitas Profissional</h3>
+                
+                <div style="background: rgba(59, 130, 246, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--accent); margin-bottom: 2rem;">
+                    <h4 style="color:var(--accent); margin-bottom: 1rem;"><i class="fas fa-cloud-download-alt"></i> Receitas Publicadas</h4>
+                    <div class="form-row" style="align-items: flex-end;">
+                        <div class="form-group" style="flex: 2; margin-bottom: 0;">
+                            <select id="selectRecipeEdit" class="form-control" style="font-weight: 600; cursor: pointer;">
+                                <option value="">-- Criar Nova Receita --</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex: 1;">
+                            <button onclick="carregarEdicaoReceita()" class="btn-gradient-action dynamic-blue" style="padding: 0.8rem; width: 100%; min-width: auto;"><i class="fas fa-download"></i> Carregar</button>
+                            <button onclick="excluirReceitaSelecionada()" class="btn-gradient-action btn-red" style="padding: 0.8rem; width: 100%; min-width: auto;"><i class="fas fa-trash"></i> Excluir</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: var(--bg-body); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="color:var(--gold); margin: 0;">1. Informações Principais</h4>
+                        <button onclick="limparFormularioReceita()" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 0.3rem 0.8rem; border-radius: 8px; cursor: pointer;"><i class="fas fa-eraser"></i> Limpar Formulário</button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>ID da Receita (URL) *</label><input type="text" id="r_id" class="form-control" placeholder="ex: pizza"></div>
+                        <div class="form-group"><label>Ícone (Emoji) *</label><input type="text" id="r_icone" class="form-control" placeholder="ex: 🍕" maxlength="2"></div>
+                        <div class="form-group"><label>Preço (Moedas) *</label><input type="number" id="r_preco" class="form-control" placeholder="ex: 5" value="5"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Nome Curto (Menu) *</label><input type="text" id="r_nome" class="form-control" placeholder="ex: Pizza"></div>
+                        <div class="form-group"><label>Título Longo (Header)</label><input type="text" id="r_nomeLong" class="form-control" placeholder="ex: Pizzas Artesanais"></div>
+                    </div>
+                    <div class="form-group"><label>Descrição Geral</label><input type="text" id="r_desc" class="form-control" placeholder="ex: Escolha seu sabor favorito..."></div>
+                </div>
+
+                <h4 style="color:var(--gold); margin-bottom: 1rem;">2. Variações e Modo de Preparo</h4>
+                <div id="variationsContainer"></div>
+                <button onclick="adicionarVariacao()" class="btn-gradient-action dynamic-blue" style="margin-bottom: 2rem; padding: 0.6rem 1.2rem;"><i class="fas fa-plus"></i> Adicionar Nova Aba</button>
+                <button onclick="salvarReceitaVisual()" class="btn-gradient-action dynamic-green" style="width: 100%; font-size: 1.1rem; padding: 1rem;"><i class="fas fa-cloud-upload-alt"></i> Salvar e Publicar Receita na Nuvem</button>
+            </div>
+        </div>
+
+        <!-- ABA DE TEMAS -->
+        <div id="themes" class="tab-content">
+            <div class="card" style="border-left: 5px solid var(--accent);">
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary); font-size: 1.5rem;"><i class="fas fa-paint-roller"></i> Estúdio de Temas Dinâmicos</h3>
+
+                <div style="background: rgba(59, 130, 246, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--accent); margin-bottom: 2rem;">
+                    <h4 style="color:var(--accent); margin-bottom: 1rem;"><i class="fas fa-cloud-download-alt"></i> Temas Publicados</h4>
+                    <div class="form-row" style="align-items: flex-end;">
+                        <div class="form-group" style="flex: 2; margin-bottom: 0;">
+                            <select id="selectThemeEdit" class="form-control" style="font-weight: 600; cursor: pointer;">
+                                <option value="">-- Criar Novo Tema --</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex: 1;">
+                            <button onclick="carregarEdicaoTema()" class="btn-gradient-action dynamic-blue" style="padding: 0.8rem; width: 100%; min-width: auto;"><i class="fas fa-download"></i> Carregar</button>
+                            <button onclick="excluirTemaSelecionado()" class="btn-gradient-action btn-red" style="padding: 0.8rem; width: 100%; min-width: auto;"><i class="fas fa-trash"></i> Excluir</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IMPORTAÇÃO JSON PARA TEMAS -->
+                <div style="background: rgba(245, 179, 66, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--gold); margin-bottom: 2rem;">
+                    <h4 style="color:var(--gold); margin-bottom: 0.5rem;"><i class="fas fa-file-import"></i> Importação em Massa (JSON)</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Selecione o ficheiro <b>temas_iniciais.json</b> para importar todos os 11 temas de uma só vez para a nuvem.</p>
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="file" id="jsonThemeUpload" accept=".json" class="form-control" style="flex: 2;">
+                        <button onclick="uploadTemasJson()" class="btn-gradient-action dynamic-green" style="flex: 1;"><i class="fas fa-upload"></i> Subir JSON</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group"><label>ID do Tema (ex: theme-12)</label><input type="text" id="t_id" class="form-control"></div>
+                    <div class="form-group"><label>Nome de Exibição (ex: Neon Cyber)</label><input type="text" id="t_nome" class="form-control"></div>
+                    <div class="form-group"><label>Preço (Moedas)</label><input type="number" id="t_preco" class="form-control" value="15"></div>
+                </div>
+
+                <div class="theme-section">
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;"><i class="fas fa-sun" style="color: #f5b342;"></i> Configuração: MODO CLARO</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Fundo Gradiente 1</label><input type="color" id="l_bg1" value="#fdf6f0"></div>
+                        <div class="form-group"><label>Fundo Gradiente 2</label><input type="color" id="l_bg2" value="#e6d8cb"></div>
+                        <div class="form-group"><label>Cor do Cartão</label><input type="color" id="l_card" value="#ffffff"></div>
+                        <div class="form-group"><label>Opacidade Cartão</label><input type="number" step="0.05" min="0" max="1" id="l_card_op" class="form-control" value="0.85"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label style="color:#ef4444; font-weight:800;">Cor do Texto</label><input type="color" id="l_text" value="#1e2a3a"></div>
+                        <div class="form-group"><label>Cor Destaque</label><input type="color" id="l_accent" value="#7b9e5a"></div>
+                        <div class="form-group"><label>Botão Grad 1</label><input type="color" id="l_grad1" value="#f5b342"></div>
+                        <div class="form-group"><label>Botão Grad 2</label><input type="color" id="l_grad2" value="#e94b3c"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Roleta: Borda Externa</label><input type="color" id="l_wb" value="#e94b3c"></div>
+                        <div class="form-group"><label>Roleta: Centro</label><input type="color" id="l_wc" value="#f5d742"></div>
+                    </div>
+                    <label style="display:block; margin-bottom:0.5rem; font-weight:600;">Cores das 6 Fatias da Roleta</label>
+                    <div class="form-row">
+                        <div class="form-group"><input type="color" id="l_c1" value="#f5b342"></div><div class="form-group"><input type="color" id="l_c2" value="#7b9e5a"></div>
+                        <div class="form-group"><input type="color" id="l_c3" value="#e94b3c"></div><div class="form-group"><input type="color" id="l_c4" value="#4a90d9"></div>
+                        <div class="form-group"><input type="color" id="l_c5" value="#9b59b6"></div><div class="form-group"><input type="color" id="l_c6" value="#f39c12"></div>
+                    </div>
+                </div>
+
+                <div class="theme-section">
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;"><i class="fas fa-moon" style="color: #9b59b6;"></i> Configuração: MODO ESCURO</h4>
+                    <div class="form-row">
+                        <div class="form-group"><label>Fundo Gradiente 1</label><input type="color" id="d_bg1" value="#1a1a2e"></div>
+                        <div class="form-group"><label>Fundo Gradiente 2</label><input type="color" id="d_bg2" value="#0d0d1a"></div>
+                        <div class="form-group"><label>Cor do Cartão</label><input type="color" id="d_card" value="#1e1e3c"></div>
+                        <div class="form-group"><label>Opacidade Cartão</label><input type="number" step="0.05" min="0" max="1" id="d_card_op" class="form-control" value="0.85"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label style="color:#ef4444; font-weight:800;">Cor do Texto</label><input type="color" id="d_text" value="#e8e8e8"></div>
+                        <div class="form-group"><label>Cor Destaque</label><input type="color" id="d_accent" value="#f5b342"></div>
+                        <div class="form-group"><label>Botão Grad 1</label><input type="color" id="d_grad1" value="#f5d742"></div>
+                        <div class="form-group"><label>Botão Grad 2</label><input type="color" id="d_grad2" value="#e94b3c"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Roleta: Borda Externa</label><input type="color" id="d_wb" value="#9b59b6"></div>
+                        <div class="form-group"><label>Roleta: Centro</label><input type="color" id="d_wc" value="#f5d742"></div>
+                    </div>
+                    <label style="display:block; margin-bottom:0.5rem; font-weight:600;">Cores das 6 Fatias da Roleta</label>
+                    <div class="form-row">
+                        <div class="form-group"><input type="color" id="d_c1" value="#f5b342"></div><div class="form-group"><input type="color" id="d_c2" value="#7b9e5a"></div>
+                        <div class="form-group"><input type="color" id="d_c3" value="#e94b3c"></div><div class="form-group"><input type="color" id="d_c4" value="#4a90d9"></div>
+                        <div class="form-group"><input type="color" id="d_c5" value="#9b59b6"></div><div class="form-group"><input type="color" id="d_c6" value="#f39c12"></div>
+                    </div>
+                </div>
+                <button onclick="salvarTemaFirebase()" class="btn-gradient-action dynamic-green" style="width: 100%; font-size: 1.1rem; padding: 1rem;"><i class="fas fa-paint-brush"></i> Salvar e Publicar Tema na Nuvem</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="temas.js"></script>
+
+    <script>
+        let isDarkMode = localStorage.getItem('adminDarkMode') === 'true';
+        function aplicarTemaAdmin() {
+            const root = document.documentElement;
+            const theme = window.listTemas[0][isDarkMode ? 'dark' : 'light'];
+            root.style.setProperty('--bg-body', theme.style.bg); root.style.setProperty('--bg-card', theme.style.card);
+            root.style.setProperty('--text-primary', theme.style.text); root.style.setProperty('--accent', theme.style.accent);
+            root.style.setProperty('--accent-gradient', theme.style.accentGradient); root.style.setProperty('--gold', '#f5b342'); root.style.setProperty('--danger', '#ef4444');
         }
-        window.saveData(); window.atualizarBannersEAnuncios(); window.renderAll();
-    };
+        function toggleTheme() { isDarkMode = !isDarkMode; localStorage.setItem('adminDarkMode', isDarkMode); aplicarTemaAdmin(); }
+        aplicarTemaAdmin();
 
-    window.atualizarBannersEAnuncios = async function() {
-        if (!window.isAppNativo()) return;
-        try {
-            const { AdMob } = window.Capacitor.Plugins;
-            if (window.isNoAdsAtivo()) { await AdMob.hideBanner().catch(()=>{}); } 
-            else { await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }).catch(()=>{}); }
-        } catch(e){}
-    };
+        if (!firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
+        const auth = firebase.auth(); const database = firebase.database();
 
-    window.comprarItemSeguro = function(categoria, id) {
-        if (!window.isServerSynced) return false;
-        if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para você."); return false; }
-        
-        let preco = 0; let arrayDestravados = ''; let itemAtual = '';
-        const activeThemes = (window.DYNAMIC_THEMES && window.DYNAMIC_THEMES.length > 0) ? window.DYNAMIC_THEMES : (window.listTemas || []);
+        let receitasDB = {}; 
+        let temasDB = {};
 
-        if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
-        else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
-        else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
-        else if (categoria === 'effect') { const i = window.EFEITOS_VISUAIS?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
-        else if (categoria === 'pageTheme') { const i = activeThemes.find(x => x.id === id); if(!i) return false; preco = i.price || i.preco || 0; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
-        else if (categoria === 'rouletteTheme') { const i = activeThemes.find(x => x.id === id); if(!i) return false; preco = i.price || i.preco || 0; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
-        else if (categoria === 'recipe') { 
-            const i = window.DYNAMIC_RECIPES.find(x => x.id === id) || (window.RECEITAS || []).find(x => x.id === id); 
-            if(!i) return false; preco = i.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null; 
+        auth.onAuthStateChanged(user => {
+            if (user && user.email === 'wesleystudio@gmail.com') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminInfo').innerHTML = `Logado como: <span style="color:var(--accent);">${user.email}</span>`;
+                carregarUsuarios(); monitorarNuvem();
+                if(document.getElementById('variationsContainer').children.length === 0) adicionarVariacao();
+            } else if (user) { alert("Acesso Negado!"); auth.signOut(); } else { document.getElementById('loginScreen').style.display = 'flex'; }
+        });
+
+        function fazerLogin() { const provider = new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(provider).catch(e => alert("Erro ao fazer login.")); }
+        function sair() { auth.signOut().then(() => window.location.reload()); }
+        function mudarAba(abaId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(abaId).classList.add('active'); event.currentTarget.classList.add('active');
+            const titulos = { 'users': 'Gerenciar Utilizadores', 'content': 'Editor de Receitas', 'themes': 'Estúdio de Temas' };
+            document.getElementById('pageTitle').innerText = titulos[abaId];
         }
 
-        if (_rawState.coins >= preco) { _rawState.coins -= preco; if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id); if (itemAtual) _rawState[itemAtual] = id; window.saveData(); return true; }
-        return false;
-    };
+        // ============================================
+        // MONITORAMENTO NUVEM
+        // ============================================
+        function monitorarNuvem() {
+            database.ref('conteudo').on('value', snap => {
+                const selectRecipe = document.getElementById('selectRecipeEdit');
+                const selectTheme = document.getElementById('selectThemeEdit');
+                selectRecipe.innerHTML = '<option value="">-- Criar Nova Receita Vazia --</option>';
+                selectTheme.innerHTML = '<option value="">-- Criar Novo Tema --</option>';
+                
+                if(snap.exists()) {
+                    const data = snap.val();
+                    if (data.receitas) {
+                        receitasDB = data.receitas;
+                        Object.keys(receitasDB).forEach(key => { selectRecipe.innerHTML += `<option value="${key}">${receitasDB[key].icone || ''} ${receitasDB[key].nome || key}</option>`; });
+                    } else { receitasDB = {}; }
 
-    window.equiparItemSeguro = function(categoria, id) {
-        let arrayDestravados = ''; let itemAtual = '';
-        if (categoria === 'spinSound') { arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
-        else if (categoria === 'endSound') { arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
-        else if (categoria === 'winSound') { arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
-        else if (categoria === 'effect') { arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
-        else if (categoria === 'pageTheme') { arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
-        else if (categoria === 'rouletteTheme') { arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
-
-        if (window.isItemLiberado(arrayDestravados, id)) { _rawState[itemAtual] = id; window.saveData(); return true; }
-        return false;
-    };
-
-    window.gastarMoedaGiro = function() {
-        if (window.isVipAtivo()) return true; 
-        if (!window.isServerSynced) return false;
-        if (_rawState.coins >= 1) { _rawState.coins -= 1; window.saveData(); return true; }
-        return false;
-    };
-
-    // ========================== ADMOB ==========================
-    const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
-    const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
-    const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
-
-    window.isAppNativo = function() { return typeof window.Capacitor !== 'undefined' && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform(); };
-    window.spinCounter = 0; let resolveAdPromise = null;
-
-    if (window.isAppNativo()) {
-        try {
-            const { AdMob } = window.Capacitor.Plugins;
-            AdMob.initialize().then(async () => {
-                try { await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }); } catch(e){}
-                try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e){}
-
-                setTimeout(async () => {
-                    if (!window.isNoAdsAtivo()) { try { await AdMob.showInterstitial(); } catch(e){} }
-                    window.atualizarBannersEAnuncios();
-                }, 2000);
-
-                const handleReward = (reward) => {
-                    try {
-                        let recompensa = 3; if (reward && reward.amount) recompensa = parseInt(reward.amount) || 3;
-                        _rawState.coins += recompensa; window.saveData();
-                        if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-                        if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; }
-                    } catch (err) { if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; } }
-                };
-
-                const handleClose = () => {
-                    try {
-                        if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
-                        setTimeout(() => { AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{}); }, 2000);
-                    } catch (err) {}
-                };
-
-                AdMob.addListener('rewardedVideoAdReward', handleReward);
-                AdMob.addListener('rewardedAdReward', handleReward);
-                AdMob.addListener('rewardedVideoAdDismissed', handleClose);
-                AdMob.addListener('rewardedAdDismissed', handleClose);
-                AdMob.addListener('rewardedVideoAdShowFailed', handleClose);
-            }).catch(console.error);
-        } catch(e) {}
-    }
-
-    window.mostrarAdAposGiro = async function() {
-        if (!window.isAppNativo() || window.isNoAdsAtivo()) return;
-        if (window.spinCounter > 0 && window.spinCounter % 3 === 0) {
-            try { const { AdMob } = window.Capacitor.Plugins; await AdMob.showInterstitial(); AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }).catch(()=>{}); } catch(e) {}
-        }
-    };
-
-    window.ganharMoedasAnuncioWeb = function() {
-        if (!window.isServerSynced) return false;
-        _rawState.coins += 3; window.saveData(); return true;
-    };
-
-    window.mostrarAdMobNativo = async function() {
-        if (!window.isAppNativo()) return false;
-        try {
-            const { AdMob } = window.Capacitor.Plugins;
-            try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
-            return new Promise((resolve) => {
-                resolveAdPromise = resolve;
-                setTimeout(() => { if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; } }, 90000);
-                AdMob.showRewardVideoAd().catch((err) => { if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; } });
-            });
-        } catch (error) { return false; }
-    };
-
-    // ========================== FIREBASE & GOOGLE ==========================
-    if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
-    const auth = window.firebaseConfig ? firebase.auth() : null;
-    const database = window.firebaseConfig ? firebase.database() : null;
-    let currentUserUid = null; let anonymousSignInAttempted = false;
-
-    if (auth) auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn(e));
-
-    function updateUserInterface(user) {
-        const userArea = document.getElementById('userArea'); const userName = document.getElementById('userName');
-        const userAvatar = document.getElementById('userAvatar'); const btnGoogle = document.getElementById('btnGoogleLogin');
-        if (!user) { if (userArea) userArea.style.display = 'none'; return; }
-        let displayName = _rawState.displayName || user.displayName || '';
-        if (!displayName) displayName = user.isAnonymous ? 'Convidado' : 'Usuário';
-
-        if (userArea) {
-            userArea.style.display = 'flex';
-            if (userAvatar) userAvatar.textContent = displayName.charAt(0).toUpperCase();
-            if (userName) { userName.textContent = displayName.split(' ')[0]; if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Segura"></i>'; }
-        }
-        if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
-    }
-
-    window.editarNomeUsuario = function(novoNome) {
-        if (!novoNome || typeof novoNome !== 'string') return false;
-        let nomeLimpo = novoNome.replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
-        if (nomeLimpo.length < 3 || nomeLimpo.length > 16) return false;
-        _rawState.displayName = nomeLimpo; window.saveData();
-        if (auth?.currentUser) updateUserInterface(auth.currentUser);
-        return true;
-    };
-
-    function _mergeData(anonData, googleData) {
-        const mergedCoins = (anonData.coins || 0) + (googleData.coins || 0);
-        const mergeArray = (arr1, arr2) => Array.from(new Set([...(arr1 || []), ...(arr2 || [])]));
-        const arrayFields = ['foods', 'customFoods', 'unlockedPageThemes', 'unlockedRouletteThemes', 'unlockedSpinSounds', 'unlockedEndSounds', 'unlockedWinSounds', 'unlockedEffects', 'unlockedRecipes'];
-        const merged = { ...anonData, coins: mergedCoins };
-        
-        if (googleData.vipUntil && googleData.vipUntil > (merged.vipUntil || 0)) merged.vipUntil = googleData.vipUntil;
-        if (googleData.noAdsUntil && googleData.noAdsUntil > (merged.noAdsUntil || 0)) merged.noAdsUntil = googleData.noAdsUntil;
-        if (googleData.banned !== undefined) merged.banned = googleData.banned;
-        
-        if (googleData.darkMode !== undefined) merged.darkMode = googleData.darkMode;
-        if (googleData.displayName) merged.displayName = googleData.displayName;
-        arrayFields.forEach(field => { merged[field] = mergeArray(anonData[field], googleData[field]); });
-        return merged;
-    }
-
-    window.conectarGoogle = function() {
-        if (!auth) return;
-        if (window.isAppNativo()) { alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador."); return; }
-
-        const provider = new firebase.auth.GoogleAuthProvider();
-        const currentUser = auth.currentUser;
-        if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
-
-        const modal = document.getElementById('mergeAccountModal'); if (!modal) return;
-        function proceedWithChoice(choice) {
-            modal.style.display = 'none'; const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
-            auth.signInWithPopup(provider).then((result) => {
-                const googleUser = result.user;
-                database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
-                    const googleData = snapshot.val() || {}; let finalData;
-                    if (choice === 'keep') finalData = { ...estadoAnonimo }; else if (choice === 'overwrite') finalData = { ...googleData }; else if (choice === 'merge') finalData = _mergeData(estadoAnonimo, googleData);
-                    finalData.displayName = googleUser.displayName || 'Usuário';
-                    database.ref('users/' + googleUser.uid + '/appState').set(finalData).then(() => { alert("✅ Conta vinculada com sucesso!"); window.location.reload(); });
-                });
-            }).catch((error) => { alert("❌ Erro ao conectar com o Google."); });
-        }
-        document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep');
-        document.getElementById('mergeOverwrite').onclick = () => proceedWithChoice('overwrite');
-        document.getElementById('mergeCombine').onclick = () => proceedWithChoice('merge');
-        document.getElementById('btnMergeCancel').onclick = () => modal.style.display = 'none';
-        modal.style.display = 'flex';
-    };
-
-    function garantirArraysNoEstado() {
-        if (!Array.isArray(_rawState.unlockedEffects)) _rawState.unlockedEffects = ["effect-1"];
-        if (!Array.isArray(_rawState.unlockedSpinSounds)) _rawState.unlockedSpinSounds = ["spin-1"];
-        if (!Array.isArray(_rawState.unlockedEndSounds)) _rawState.unlockedEndSounds = ["end-1"];
-        if (!Array.isArray(_rawState.unlockedWinSounds)) _rawState.unlockedWinSounds = ["win-1"];
-        if (!Array.isArray(_rawState.unlockedPageThemes)) _rawState.unlockedPageThemes = ["theme-1"];
-        if (!Array.isArray(_rawState.unlockedRouletteThemes)) _rawState.unlockedRouletteThemes = ["theme-1"];
-        if (!Array.isArray(_rawState.foods) || _rawState.foods.length === 0) _rawState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
-        if (!Array.isArray(_rawState.customFoods)) _rawState.customFoods = [];
-        if (!Array.isArray(_rawState.unlockedRecipes)) _rawState.unlockedRecipes = [];
-        
-        if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
-        if (!window.isItemLiberado('unlockedPageThemes', _rawState.currentPageTheme)) _rawState.currentPageTheme = "theme-1";
-        if (!window.isItemLiberado('unlockedRouletteThemes', _rawState.currentRouletteTheme)) _rawState.currentRouletteTheme = "theme-1";
-    }
-
-    function ativarModoOffline() {
-        if (!window.isServerSynced) {
-            window.isServerSynced = true; 
-            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-            if (typeof window.renderAll === 'function') window.renderAll();
-        }
-    }
-
-    window.loadData = function() {
-        try {
-            const saved = localStorage.getItem('rodaDoSaborState');
-            if (saved) Object.assign(_rawState, JSON.parse(saved));
-            if (_rawState.banned) return aplicarBanimento(); 
-            garantirArraysNoEstado();
-            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
-            if (typeof window.applyThemes === 'function') window.applyThemes();
-            window.atualizarBannersEAnuncios();
-        } catch (e) {}
-
-        setTimeout(ativarModoOffline, 4000);
-
-        if (auth && database) {
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    currentUserUid = user.uid;
-                    updateUserInterface(user);
-                    
-                    // ESCUTA RECEITAS E TEMAS DA NUVEM (FASE 2)
-                    database.ref('conteudo').on('value', (snapshot) => {
-                        window.DYNAMIC_RECIPES = [];
-                        window.DYNAMIC_THEMES = [];
-                        if (snapshot.exists()) {
-                            const data = snapshot.val();
-                            if (data.receitas) {
-                                Object.keys(data.receitas).forEach(key => {
-                                    window.DYNAMIC_RECIPES.push({
-                                        id: key, nome: data.receitas[key].nome || 'Receita', icone: data.receitas[key].icone || '🍽️',
-                                        preco: data.receitas[key].preco !== undefined ? parseInt(data.receitas[key].preco) : 5, link: `receita.html?id=${key}`
-                                    });
-                                });
-                            }
-                            if (data.temas) {
-                                Object.keys(data.temas).forEach(key => {
-                                    window.DYNAMIC_THEMES.push(data.temas[key]);
-                                });
-                            }
-                        }
-                        if (typeof window.renderRecipes === 'function') window.renderRecipes();
-                        if (typeof window.renderThemes === 'function') window.renderThemes();
-                        if (typeof window.applyThemes === 'function') window.applyThemes();
-                    });
-
-                    // ESCUTA USUÁRIO
-                    database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
-                        window.isServerSynced = true;
-                        if (snapshot.exists()) { Object.assign(_rawState, snapshot.val()); } 
-                        else { if (_rawState.coins === 0) _rawState.coins = 20; window.saveData(); }
-                        if (_rawState.banned) { aplicarBanimento(); return; }
-                        garantirArraysNoEstado();
-                        if (typeof window.renderAll === 'function') window.renderAll();
-                        window.atualizarBannersEAnuncios();
-                        updateUserInterface(user);
-                    });
-                } else {
-                    if (!anonymousSignInAttempted) {
-                        anonymousSignInAttempted = true;
-                        auth.signInAnonymously().catch(() => ativarModoOffline());
-                    }
+                    if (data.temas) {
+                        temasDB = data.temas;
+                        Object.keys(temasDB).forEach(key => { selectTheme.innerHTML += `<option value="${key}">🎨 ${temasDB[key].nome || key}</option>`; });
+                    } else { temasDB = {}; }
                 }
             });
-        } else { ativarModoOffline(); }
-    };
+        }
 
-    let saveTimeout = null;
-    window.saveData = function() {
-        if (_rawState.banned) return; 
-        const coinEl = document.getElementById('coin-balance');
-        if (coinEl) coinEl.textContent = _rawState.coins;
-        try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
-        if (saveTimeout) clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(() => {
-            if (currentUserUid && database && window.isServerSynced) {
-                database.ref('users/' + currentUserUid + '/appState').set(_rawState).catch((error) => {
-                    if (error.code === "PERMISSION_DENIED") { localStorage.removeItem('rodaDoSaborState'); window.location.reload(); }
+        // ============================================
+        // USUARIOS E RECEITAS (Ocultos nesta mensagem por tamanho, permanecem exatamente os que enviei antes)
+        // ============================================
+        function carregarUsuarios() { /*...*/ }
+        function darMoedas(uid) { /*...*/ }
+        function limparFormularioReceita() { /*...*/ }
+        function carregarEdicaoReceita() { /*...*/ }
+        function adicionarVariacao(dados = null) { /*...*/ }
+        function salvarReceitaVisual() { /*...*/ }
+        function excluirReceitaSelecionada() { /*...*/ }
+
+        // ============================================
+        // IMPORTAÇÃO DE TEMAS JSON
+        // ============================================
+        function uploadTemasJson() {
+            const file = document.getElementById('jsonThemeUpload').files[0];
+            if (!file) { alert("Selecione o ficheiro temas_iniciais.json primeiro."); return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    database.ref('conteudo/temas').update(json).then(() => {
+                        alert("🎉 Fantástico! Todos os 11 Temas foram importados para o Firebase com sucesso!");
+                        document.getElementById('jsonThemeUpload').value = ""; // limpa o input
+                    });
+                } catch(err) { alert("Erro ao ler JSON: " + err.message); }
+            };
+            reader.readAsText(file);
+        }
+
+        // ============================================
+        // GESTÃO MANUAL DE TEMAS
+        // ============================================
+        function hexToRgba(hex, alpha) {
+            let r = parseInt(hex.slice(1, 3), 16); let g = parseInt(hex.slice(3, 5), 16); let b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function carregarEdicaoTema() {
+            const id = document.getElementById('selectThemeEdit').value;
+            if(!id) {
+                document.getElementById('t_id').value = ''; document.getElementById('t_id').readOnly = false;
+                document.getElementById('t_nome').value = ''; document.getElementById('t_preco').value = '15';
+                return;
+            }
+            const t = temasDB[id]; if(!t) return;
+            document.getElementById('t_id').value = t.id; document.getElementById('t_id').readOnly = true;
+            document.getElementById('t_nome').value = t.nome || ''; document.getElementById('t_preco').value = t.price || 15;
+
+            if (t.light && t.light.raw) {
+                const lr = t.light.raw;
+                document.getElementById('l_bg1').value = lr.bg1 || '#ffffff'; document.getElementById('l_bg2').value = lr.bg2 || '#ffffff';
+                document.getElementById('l_card').value = lr.card || '#ffffff'; document.getElementById('l_card_op').value = lr.cardOp || 0.85;
+                document.getElementById('l_text').value = lr.text || '#000000'; document.getElementById('l_accent').value = lr.accent || '#000000';
+                document.getElementById('l_grad1').value = lr.grad1 || '#000000'; document.getElementById('l_grad2').value = lr.grad2 || '#000000';
+                document.getElementById('l_wb').value = lr.wb || '#000000'; document.getElementById('l_wc').value = lr.wc || '#000000';
+                document.getElementById('l_c1').value = lr.c1 || '#000000'; document.getElementById('l_c2').value = lr.c2 || '#000000';
+                document.getElementById('l_c3').value = lr.c3 || '#000000'; document.getElementById('l_c4').value = lr.c4 || '#000000';
+                document.getElementById('l_c5').value = lr.c5 || '#000000'; document.getElementById('l_c6').value = lr.c6 || '#000000';
+            }
+            if (t.dark && t.dark.raw) {
+                const dr = t.dark.raw;
+                document.getElementById('d_bg1').value = dr.bg1 || '#000000'; document.getElementById('d_bg2').value = dr.bg2 || '#000000';
+                document.getElementById('d_card').value = dr.card || '#000000'; document.getElementById('d_card_op').value = dr.cardOp || 0.85;
+                document.getElementById('d_text').value = dr.text || '#ffffff'; document.getElementById('d_accent').value = dr.accent || '#ffffff';
+                document.getElementById('d_grad1').value = dr.grad1 || '#ffffff'; document.getElementById('d_grad2').value = dr.grad2 || '#ffffff';
+                document.getElementById('d_wb').value = dr.wb || '#ffffff'; document.getElementById('d_wc').value = dr.wc || '#ffffff';
+                document.getElementById('d_c1').value = dr.c1 || '#ffffff'; document.getElementById('d_c2').value = dr.c2 || '#ffffff';
+                document.getElementById('d_c3').value = dr.c3 || '#ffffff'; document.getElementById('d_c4').value = dr.c4 || '#ffffff';
+                document.getElementById('d_c5').value = dr.c5 || '#ffffff'; document.getElementById('d_c6').value = dr.c6 || '#ffffff';
+            }
+        }
+
+        function excluirTemaSelecionado() {
+            const id = document.getElementById('selectThemeEdit').value;
+            if(!id) return;
+            if(confirm(`Tem certeza que deseja APAGAR o tema "${id}"?`)) {
+                database.ref('conteudo/temas/' + id).remove().then(() => {
+                    document.getElementById('t_id').value = ''; document.getElementById('t_id').readOnly = false;
                 });
             }
-        }, 100);
-    };
-
-    window.loadData();
-
-    // ========================== ÁUDIO E SINTETIZADOR ==========================
-    let audioCtx = null;
-    window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
-
-    window.playSynthesizedSound = function(soundType) {
-        try {
-            const ctx = window.getAudioContext(); const now = ctx.currentTime;
-            switch (soundType) {
-                case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
-                case 'end-chord': [392, 493, 587].forEach((f) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
-                case 'win-tada': [523.25, 659.25, 783.99].forEach(f => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); [523.25, 659.25, 783.99, 1046.50].forEach(f => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); break;
-                default: osc(ctx, now, 400, 400, 0.1, 'sine', 0.2); break;
-            }
-        } catch (e) {}
-    };
-
-    function osc(ctx, start, fStart, fEnd, duration, type, gain) {
-        const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = type;
-        o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
-        g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
-        o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
-    }
-
-    // APLICAÇÃO DE TEMAS MESTRE
-    window.applyThemes = function() {
-        const activeThemes = (window.DYNAMIC_THEMES && window.DYNAMIC_THEMES.length > 0) ? window.DYNAMIC_THEMES : (window.listTemas || []);
-        if (activeThemes.length === 0) return;
-        
-        const pageTheme = activeThemes.find(t => t.id === _rawState.currentPageTheme) || activeThemes[0];
-        const rouletteTheme = activeThemes.find(t => t.id === _rawState.currentRouletteTheme) || activeThemes[0];
-        
-        const mode = _rawState.darkMode ? 'dark' : 'light';
-        const pageData = pageTheme[mode];
-        
-        if (pageData && pageData.style) {
-            const root = document.documentElement;
-            root.style.setProperty('--bg-body', pageData.style.bg); 
-            root.style.setProperty('--bg-card', pageData.style.card);
-            root.style.setProperty('--text-primary', pageData.style.text); 
-            root.style.setProperty('--accent', pageData.style.accent);
-            root.style.setProperty('--accent-gradient', pageData.style.accentGradient);
         }
-        
-        const rouletteData = rouletteTheme[mode];
-        if (rouletteData && rouletteData.colors) {
-            const root = document.documentElement;
-            root.style.setProperty('--wheel-border', rouletteData.wheelBorder || rouletteData.colors[0]); 
-            root.style.setProperty('--wheel-center', rouletteData.wheelCenter || rouletteData.colors[1]);
+
+        function salvarTemaFirebase() {
+            const tId = document.getElementById('t_id').value.trim();
+            if (!tId) { alert("ID do Tema obrigatório!"); return; }
+
+            const getVal = (id) => document.getElementById(id).value;
+            const lr = { bg1: getVal('l_bg1'), bg2: getVal('l_bg2'), card: getVal('l_card'), cardOp: getVal('l_card_op'), text: getVal('l_text'), accent: getVal('l_accent'), grad1: getVal('l_grad1'), grad2: getVal('l_grad2'), wb: getVal('l_wb'), wc: getVal('l_wc'), c1: getVal('l_c1'), c2: getVal('l_c2'), c3: getVal('l_c3'), c4: getVal('l_c4'), c5: getVal('l_c5'), c6: getVal('l_c6') };
+            const dr = { bg1: getVal('d_bg1'), bg2: getVal('d_bg2'), card: getVal('d_card'), cardOp: getVal('d_card_op'), text: getVal('d_text'), accent: getVal('d_accent'), grad1: getVal('d_grad1'), grad2: getVal('d_grad2'), wb: getVal('d_wb'), wc: getVal('d_wc'), c1: getVal('d_c1'), c2: getVal('d_c2'), c3: getVal('d_c3'), c4: getVal('d_c4'), c5: getVal('d_c5'), c6: getVal('d_c6') };
+
+            const temaFinal = {
+                id: tId, nome: getVal('t_nome') || tId, price: parseInt(getVal('t_preco')) || 0,
+                light: {
+                    raw: lr,
+                    style: { bg: `linear-gradient(145deg, ${lr.bg1} 0%, ${lr.bg2} 100%)`, card: hexToRgba(lr.card, lr.cardOp), text: lr.text, accent: lr.accent, accentGradient: `linear-gradient(135deg, ${lr.grad1}, ${lr.grad2})` },
+                    colors: [lr.c1, lr.c2, lr.c3, lr.c4, lr.c5, lr.c6], wheelBorder: lr.wb, wheelCenter: lr.wc
+                },
+                dark: {
+                    raw: dr,
+                    style: { bg: `linear-gradient(145deg, ${dr.bg1} 0%, ${dr.bg2} 100%)`, card: hexToRgba(dr.card, dr.cardOp), text: dr.text, accent: dr.accent, accentGradient: `linear-gradient(135deg, ${dr.grad1}, ${dr.grad2})` },
+                    colors: [dr.c1, dr.c2, dr.c3, dr.c4, dr.c5, dr.c6], wheelBorder: dr.wb, wheelCenter: dr.wc
+                }
+            };
+
+            database.ref('conteudo/temas/' + tId).set(temaFinal).then(() => alert(`✅ SUCESSO! O Tema "${tId}" está ao vivo na aplicação!`));
         }
-        if (typeof window.drawRoulette === 'function') window.drawRoulette();
-    };
-})();
+    </script>
+</body>
+</html>
