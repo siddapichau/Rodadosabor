@@ -1,9 +1,10 @@
 'use strict';
-console.log('core.js carregado (v17 - Receitas Dinâmicas da Nuvem)');
+console.log('core.js carregado (v18 - Temas Dinâmicos na Nuvem)');
 
 (function() {
     window.isServerSynced = false;
-    window.DYNAMIC_RECIPES = []; // Armazena as receitas puxadas do Firebase
+    window.DYNAMIC_RECIPES = []; 
+    window.DYNAMIC_THEMES = []; // Armazena os temas puxados do Firebase
 
     const _rawState = {
         coins: 0, vipUntil: 0, noAdsUntil: 0, darkMode: false, displayName: '', banned: false,
@@ -68,18 +69,19 @@ console.log('core.js carregado (v17 - Receitas Dinâmicas da Nuvem)');
     window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) return false;
         if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para você."); return false; }
+        
         let preco = 0; let arrayDestravados = ''; let itemAtual = '';
+        const activeThemes = (window.DYNAMIC_THEMES && window.DYNAMIC_THEMES.length > 0) ? window.DYNAMIC_THEMES : (window.listTemas || []);
+
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
         else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
         else if (categoria === 'effect') { const i = window.EFEITOS_VISUAIS?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
-        else if (categoria === 'pageTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
-        else if (categoria === 'rouletteTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
+        else if (categoria === 'pageTheme') { const i = activeThemes.find(x => x.id === id); if(!i) return false; preco = i.price || i.preco || 0; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
+        else if (categoria === 'rouletteTheme') { const i = activeThemes.find(x => x.id === id); if(!i) return false; preco = i.price || i.preco || 0; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
         else if (categoria === 'recipe') { 
-            // Agora procura na lista dinâmica da Nuvem!
             const i = window.DYNAMIC_RECIPES.find(x => x.id === id) || (window.RECEITAS || []).find(x => x.id === id); 
-            if(!i) return false; 
-            preco = i.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null; 
+            if(!i) return false; preco = i.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null; 
         }
 
         if (_rawState.coins >= preco) { _rawState.coins -= preco; if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id); if (itemAtual) _rawState[itemAtual] = id; window.saveData(); return true; }
@@ -295,22 +297,29 @@ console.log('core.js carregado (v17 - Receitas Dinâmicas da Nuvem)');
                     currentUserUid = user.uid;
                     updateUserInterface(user);
                     
-                    // ESCUTA RECEITAS DA NUVEM (FASE 2)
-                    database.ref('conteudo/receitas').on('value', (snapshot) => {
+                    // ESCUTA RECEITAS E TEMAS DA NUVEM (FASE 2)
+                    database.ref('conteudo').on('value', (snapshot) => {
                         window.DYNAMIC_RECIPES = [];
+                        window.DYNAMIC_THEMES = [];
                         if (snapshot.exists()) {
                             const data = snapshot.val();
-                            Object.keys(data).forEach(key => {
-                                window.DYNAMIC_RECIPES.push({
-                                    id: key,
-                                    nome: data[key].nome || 'Receita',
-                                    icone: data[key].icone || '🍽️',
-                                    preco: data[key].preco !== undefined ? parseInt(data[key].preco) : 5,
-                                    link: `receita.html?id=${key}`
+                            if (data.receitas) {
+                                Object.keys(data.receitas).forEach(key => {
+                                    window.DYNAMIC_RECIPES.push({
+                                        id: key, nome: data.receitas[key].nome || 'Receita', icone: data.receitas[key].icone || '🍽️',
+                                        preco: data.receitas[key].preco !== undefined ? parseInt(data.receitas[key].preco) : 5, link: `receita.html?id=${key}`
+                                    });
                                 });
-                            });
+                            }
+                            if (data.temas) {
+                                Object.keys(data.temas).forEach(key => {
+                                    window.DYNAMIC_THEMES.push(data.temas[key]);
+                                });
+                            }
                         }
                         if (typeof window.renderRecipes === 'function') window.renderRecipes();
+                        if (typeof window.renderThemes === 'function') window.renderThemes();
+                        if (typeof window.applyThemes === 'function') window.applyThemes();
                     });
 
                     // ESCUTA USUÁRIO
@@ -375,12 +384,17 @@ console.log('core.js carregado (v17 - Receitas Dinâmicas da Nuvem)');
         o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
     }
 
+    // APLICAÇÃO DE TEMAS MESTRE
     window.applyThemes = function() {
-        const themes = window.listTemas || []; if (themes.length === 0) return;
-        const pageTheme = themes.find(t => t.id === _rawState.currentPageTheme) || themes[0];
-        const rouletteTheme = themes.find(t => t.id === _rawState.currentRouletteTheme) || themes[0];
+        const activeThemes = (window.DYNAMIC_THEMES && window.DYNAMIC_THEMES.length > 0) ? window.DYNAMIC_THEMES : (window.listTemas || []);
+        if (activeThemes.length === 0) return;
+        
+        const pageTheme = activeThemes.find(t => t.id === _rawState.currentPageTheme) || activeThemes[0];
+        const rouletteTheme = activeThemes.find(t => t.id === _rawState.currentRouletteTheme) || activeThemes[0];
+        
         const mode = _rawState.darkMode ? 'dark' : 'light';
         const pageData = pageTheme[mode];
+        
         if (pageData && pageData.style) {
             const root = document.documentElement;
             root.style.setProperty('--bg-body', pageData.style.bg); 
@@ -389,6 +403,7 @@ console.log('core.js carregado (v17 - Receitas Dinâmicas da Nuvem)');
             root.style.setProperty('--accent', pageData.style.accent);
             root.style.setProperty('--accent-gradient', pageData.style.accentGradient);
         }
+        
         const rouletteData = rouletteTheme[mode];
         if (rouletteData && rouletteData.colors) {
             const root = document.documentElement;
