@@ -3,12 +3,13 @@
    ============================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-/* 🔴 ANIQUILADOR DE OVAIS FANTASMAS 🔴
-   Isto esconde qualquer div antiga de fundo (como .bg-shape ou .circle) que esteja no seu HTML */
-body > div:not(.container):not(.result-overlay):not(#confettiCanvas):not(.iframe-overlay) {
+/* 🔴 EXTERMINADOR DO OVAL 🔴 
+   Esconde div's de formatos arredondados que vêm no HTML padrão */
+.bg-shape, .shape, .blob, .circle-bg, .oval-bg, [class*="bg-shape"] {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
+    z-index: -9999 !important;
 }
 
 html, body { 
@@ -20,16 +21,14 @@ html, body {
     transition: background 0.6s ease, color 0.4s ease; 
     background-attachment: fixed !important; 
     background-repeat: no-repeat !important;
-    background-size: cover !important;
     border-radius: 0 !important; 
 }
 
-/* Mata sombras ovais e pseudo-elementos */
+/* Mata pseudo-elementos de sombra do fundo */
 body::before, body::after, html::before, html::after, .container::before, .container::after { 
     display: none !important; 
     content: none !important;
     background: none !important; 
-    box-shadow: none !important;
 }
 
 .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; background: transparent !important; }
@@ -69,19 +68,12 @@ canvas { display: block; width: 100%; height: 100%; border-radius: 50%; box-shad
 
 .roulette-arrow { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-top: 30px solid #e94b3c; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.25)); z-index: 10; }
 
-.center-spin-button {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 60px; height: 60px; border-radius: 50%; background-color: #f5d742; 
-    border: 5px solid #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.5);
-    cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15;
-    transition: transform 0.15s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-}
+.center-spin-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; border-radius: 50%; background-color: #f5d742; border: 5px solid #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.5); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15; transition: transform 0.15s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
 .center-spin-button:hover { transform: translate(-50%, -50%) scale(1.05); }
 .center-spin-button:active { transform: translate(-50%, -50%) scale(0.95); }
 .center-spin-button span { color: #1e2a3a; font-weight: 800; text-transform: uppercase; line-height: 1.1; transition: color 0.3s ease; }
 .center-spin-button .txt-top { font-size: 0.7rem; font-weight: 900; }
 .center-spin-button .txt-bottom { font-size: 0.45rem; font-weight: 700; margin-top: -2px; }
-
 .center-spin-button.spinning { background-color: #e94b3c !important; border-color: #ffeaea !important; animation: none !important; }
 .center-spin-button.spinning span { color: #ffffff !important; }
 
@@ -174,10 +166,7 @@ canvas { display: block; width: 100%; height: 100%; border-radius: 50%; box-shad
     --wheel-center: #f5d742;
 }
 
-@media (max-width: 600px) {
-    .premium-grid { grid-template-columns: 1fr; }
-}
-
+@media (max-width: 600px) { .premium-grid { grid-template-columns: 1fr; } }
 @media (max-width: 480px) {
     .canvas-container { width: 300px; height: 300px; }
     .header { flex-direction: column; align-items: stretch; gap: 0.5rem; }
