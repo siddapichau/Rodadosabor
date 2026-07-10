@@ -1,22 +1,24 @@
 'use strict';
-console.log('core.js carregado (v25 - Sincronização Perfeita com a Nuvem)');
+console.log('core.js carregado (v26 - Anti-Fantasmas e Anti-Oval Absoluto)');
 
 (function() {
     window.isServerSynced = false;
+
     window.DYNAMIC_RECIPES = []; 
     window.DYNAMIC_PAGE_THEMES = []; 
     window.DYNAMIC_ROULETTE_THEMES = []; 
 
-    // === FALLBACKS DE EMERGÊNCIA (Obrigatórios para o app não crashar offline) ===
+    // === FALLBACKS DE EMERGÊNCIA ===
     window.DEFAULT_PAGE_THEME = {
         id: "theme-1", nome: "Clássico", price: 0,
-        light: { style: { bg: "linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)", card: "rgba(255, 255, 255, 0.85)", text: "#1e2a3a", accent: "#7b9e5a", accentGradient: "linear-gradient(135deg, #f5b342, #e94b3c)" } },
-        dark: { style: { bg: "linear-gradient(145deg, #1a1a2e 0%, #0d0d1a 100%)", card: "rgba(30, 30, 60, 0.85)", text: "#e8e8e8", accent: "#f5b342", accentGradient: "linear-gradient(135deg, #f5d742, #e94b3c)" } }
+        light: { style: { bg: "linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)", card: "rgba(255, 255, 255, 0.85)", text: "#1e293b", accent: "#7b9e5a", accentGradient: "linear-gradient(135deg, #f5b342, #e94b3c)" } },
+        dark: { style: { bg: "linear-gradient(145deg, #1a1a2e 0%, #0f172a 100%)", card: "rgba(30, 41, 59, 0.85)", text: "#f8fafc", accent: "#f5b342", accentGradient: "linear-gradient(135deg, #f5d742, #e94b3c)" } }
     };
 
     window.DEFAULT_ROULETTE_THEME = {
         id: "theme-1", nome: "Clássico", price: 0,
-        light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#1e293b", wheelCenter: "#ffffff" }
+        light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#1e293b", wheelCenter: "#ffffff" },
+        dark: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#f8fafc", wheelCenter: "#0f172a" }
     };
 
     window.getPageThemes = () => window.DYNAMIC_PAGE_THEMES.length > 0 ? window.DYNAMIC_PAGE_THEMES : [window.DEFAULT_PAGE_THEME];
@@ -88,10 +90,12 @@ console.log('core.js carregado (v25 - Sincronização Perfeita com a Nuvem)');
         else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
         else if (categoria === 'effect') { const i = window.EFEITOS_VISUAIS?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
         else if (categoria === 'pageTheme') { 
-            const i = window.getPageThemes().find(x => x.id === id); if(!i) return false; preco = i.price || 0; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; 
+            const themes = window.getPageThemes();
+            const i = themes.find(x => x.id === id); if(!i) return false; preco = i.price || i.preco || 0; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; 
         }
         else if (categoria === 'rouletteTheme') { 
-            const i = window.getRouletteThemes().find(x => x.id === id); if(!i) return false; preco = i.price || 0; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; 
+            const themes = window.getRouletteThemes();
+            const i = themes.find(x => x.id === id); if(!i) return false; preco = i.price || i.preco || 0; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; 
         }
         else if (categoria === 'recipe') { 
             const i = window.DYNAMIC_RECIPES.find(x => x.id === id) || (window.RECEITAS || []).find(x => x.id === id); 
@@ -122,6 +126,7 @@ console.log('core.js carregado (v25 - Sincronização Perfeita com a Nuvem)');
         return false;
     };
 
+    // ========================== ADMOB ==========================
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
@@ -173,6 +178,7 @@ console.log('core.js carregado (v25 - Sincronização Perfeita com a Nuvem)');
         } catch (error) { return false; }
     };
 
+    // ========================== FIREBASE & GOOGLE ==========================
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
@@ -212,23 +218,63 @@ console.log('core.js carregado (v25 - Sincronização Perfeita com a Nuvem)');
         arrayFields.forEach(field => { merged[field] = mergeArray(anonData[field], googleData[field]); }); return merged;
     }
 
+    // 🔴 SOLUÇÃO CONTAS FANTASMAS: Limpa a conta anônima do DB ao migrar 🔴
     window.conectarGoogle = function() {
-        if (!auth) return; if (window.isAppNativo()) { alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador."); return; }
-        const provider = new firebase.auth.GoogleAuthProvider(); const currentUser = auth.currentUser;
+        if (!auth) return; 
+        if (window.isAppNativo()) { alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador."); return; }
+        
+        const provider = new firebase.auth.GoogleAuthProvider(); 
+        const currentUser = auth.currentUser;
         if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
+        
         const modal = document.getElementById('mergeAccountModal'); if (!modal) return;
+        
         function proceedWithChoice(choice) {
-            modal.style.display = 'none'; const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
-            auth.signInWithPopup(provider).then((result) => {
+            modal.style.display = 'none'; 
+            const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
+            const oldAnonUid = currentUser.uid;
+
+            // 1. Tenta vincular a credencial à conta atual (mantém UID)
+            currentUser.linkWithPopup(provider).then((result) => {
                 const googleUser = result.user;
-                database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
-                    const googleData = snapshot.val() || {}; let finalData;
-                    if (choice === 'keep') finalData = { ...estadoAnonimo }; else if (choice === 'overwrite') finalData = { ...googleData }; else if (choice === 'merge') finalData = _mergeData(estadoAnonimo, googleData);
-                    finalData.displayName = googleUser.displayName || 'Usuário'; database.ref('users/' + googleUser.uid + '/appState').set(finalData).then(() => { alert("✅ Conta vinculada com sucesso!"); window.location.reload(); });
-                });
-            }).catch((error) => { alert("❌ Erro ao conectar com o Google."); });
+                _rawState.displayName = googleUser.displayName || 'Usuário'; 
+                window.saveData();
+                alert("✅ Conta protegida com sucesso!"); window.location.reload();
+            }).catch((error) => {
+                // 2. Se o Google já estiver em uso, faz login nele e APAGA A CONTA FANTASMA
+                if (error.code === 'auth/credential-already-in-use') {
+                    const credential = error.credential;
+                    auth.signInWithCredential(credential).then((result) => {
+                        const googleUser = result.user;
+                        const newUid = googleUser.uid;
+
+                        // APAGA A CONTA ANÔNIMA ABANDONADA DO FIREBASE
+                        database.ref('users/' + oldAnonUid).remove();
+
+                        // Sincroniza dados com a conta Google existente
+                        database.ref('users/' + newUid + '/appState').once('value').then((snapshot) => {
+                            const googleData = snapshot.val() || {}; let finalData;
+                            if (choice === 'keep') finalData = { ...estadoAnonimo }; 
+                            else if (choice === 'overwrite') finalData = { ...googleData }; 
+                            else if (choice === 'merge') finalData = _mergeData(estadoAnonimo, googleData);
+                            
+                            finalData.displayName = googleUser.displayName || 'Usuário'; 
+                            database.ref('users/' + newUid + '/appState').set(finalData).then(() => { 
+                                alert("✅ Conta recuperada e lixo limpo!"); window.location.reload(); 
+                            });
+                        });
+                    }).catch(err => alert("Erro crítico: " + err.message));
+                } else {
+                    alert("❌ Erro ao conectar com o Google: " + error.message);
+                }
+            });
         }
-        document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep'); document.getElementById('mergeOverwrite').onclick = () => proceedWithChoice('overwrite'); document.getElementById('mergeCombine').onclick = () => proceedWithChoice('merge'); document.getElementById('btnMergeCancel').onclick = () => modal.style.display = 'none'; modal.style.display = 'flex';
+        
+        document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep'); 
+        document.getElementById('mergeOverwrite').onclick = () => proceedWithChoice('overwrite'); 
+        document.getElementById('mergeCombine').onclick = () => proceedWithChoice('merge'); 
+        document.getElementById('btnMergeCancel').onclick = () => modal.style.display = 'none'; 
+        modal.style.display = 'flex';
     };
 
     function garantirArraysNoEstado() {
@@ -275,7 +321,6 @@ console.log('core.js carregado (v25 - Sincronização Perfeita com a Nuvem)');
                     currentUserUid = user.uid;
                     updateUserInterface(user);
                     
-                    // LÊ OS DADOS DA NUVEM (Fase 2 Pura)
                     database.ref('conteudo').on('value', (snapshot) => {
                         window.DYNAMIC_RECIPES = []; window.DYNAMIC_PAGE_THEMES = []; window.DYNAMIC_ROULETTE_THEMES = [];
                         if (snapshot.exists()) {
@@ -354,13 +399,11 @@ console.log('core.js carregado (v25 - Sincronização Perfeita com a Nuvem)');
         if (pageData && pageData.style) {
             const root = document.documentElement;
             
-            // 🔴 DESTRUIDOR DO OVAL: Intercepta e destrói o radial-gradient vindo da nuvem
-            let bgStyle = pageData.style.bg;
-            if (bgStyle && bgStyle.includes('radial-gradient')) {
-                bgStyle = bgStyle.replace(/radial-gradient\([^)]+\)/g, 'linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)');
-            }
-            if (bgStyle && bgStyle.includes('linear-gradient') && bgStyle.includes('radial-gradient')) {
-                bgStyle = bgStyle.substring(bgStyle.indexOf('linear-gradient'));
+            // 🔴 ANIQUILADOR DO OVAL (Limpa string corrompida do Firebase)
+            let bgStyle = pageData.style.bg || '';
+            // Se encontrar a palavra radial, força o fundo liso sem ovais
+            if (bgStyle.includes('radial-gradient') || bgStyle.includes('url')) {
+                bgStyle = _rawState.darkMode ? 'linear-gradient(145deg, #1a1a2e 0%, #0f172a 100%)' : 'linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)';
             }
 
             root.style.setProperty('--bg-body', bgStyle); 
