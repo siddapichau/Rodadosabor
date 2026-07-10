@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado');
+console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -31,22 +31,29 @@ window.drawRoulette = function() {
     const items = window.appState?.foods || [];
     const numSegments = items.length;
 
+    // Cores Base Padrão
     let colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
-    let wheelBorder = '#e94b3c';
-    let wheelCenter = '#f5d742';
+    let wheelBorder = '#1e293b'; 
+    let wheelCenter = '#ffffff';
 
     try {
-        if (window.listTemas && window.listTemas.length > 0) {
-            const theme = window.listTemas.find(t => t.id === window.appState.currentRouletteTheme) || window.listTemas[0];
-            const mode = window.appState.darkMode ? 'dark' : 'light';
-            const themeData = theme[mode];
+        const activeThemes = (window.DYNAMIC_ROULETTE_THEMES && window.DYNAMIC_ROULETTE_THEMES.length > 0) ? window.DYNAMIC_ROULETTE_THEMES : (window.listTemas || []);
+        if (activeThemes.length > 0) {
+            const theme = activeThemes.find(t => t.id === window.appState.currentRouletteTheme) || activeThemes[0];
+            
+            // 🔴 ROLETA IGNORA MODO ESCURO 🔴
+            // Fica sempre com a cor original para não alterar a borda de repente
+            const themeData = theme.light || theme;
+            
             if (themeData && themeData.colors) {
                 colors = themeData.colors;
-                wheelBorder = themeData.wheelBorder || themeData.colors[0];
-                wheelCenter = themeData.wheelCenter || themeData.colors[1];
+                if (themeData.wheelBorder) wheelBorder = themeData.wheelBorder;
+                if (themeData.wheelCenter) wheelCenter = themeData.wheelCenter;
             }
         }
-    } catch (e) {}
+    } catch (e) {
+        console.warn("Erro ao buscar cores.", e);
+    }
 
     if (numSegments === 0) {
         ctx.beginPath();
@@ -64,9 +71,10 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
+    // BORDA DA ROLETA 
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelBorder;
+    ctx.fillStyle = wheelBorder; // Pinta com a cor escolhida e não com a primeira fatia
     ctx.shadowColor = 'rgba(0,0,0,0.25)';
     ctx.shadowBlur = 12;
     ctx.fill();
@@ -92,6 +100,7 @@ window.drawRoulette = function() {
         ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
         ctx.closePath();
         ctx.fill();
+        
         ctx.strokeStyle = 'rgba(255,255,255,0.2)';
         ctx.lineWidth = 2;
         ctx.stroke();
@@ -125,7 +134,7 @@ window.drawRoulette = function() {
     ctx.beginPath();
     ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
     ctx.fillStyle = wheelCenter;
-    ctx.strokeStyle = '#ffffff';
+    ctx.strokeStyle = wheelBorder;
     ctx.lineWidth = centerRadius * 0.15;
     ctx.fill();
     ctx.stroke();
@@ -140,7 +149,7 @@ window.spinRoulette = function() {
         btn.classList.add('spinning');
     }
 
-    const ctx = getAudioContext();
+    const ctx = window.getAudioContext ? window.getAudioContext() : null;
     if (ctx && ctx.state === 'suspended') ctx.resume();
     isSpinning = true;
     spinTimeCount = 0;
@@ -165,7 +174,7 @@ function animateSpin() {
     const arcSize = (2 * Math.PI) / window.appState.foods.length;
     if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
         const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
-        window.playSynthesizedSound(activeSpinSound.type);
+        if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeSpinSound.type);
         lastSoundAngle = startAngle;
     }
     requestAnimationFrame(animateSpin);
@@ -185,16 +194,14 @@ function finalizeSpin() {
     const winningFood = window.appState.foods[index];
 
     const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
-    window.playSynthesizedSound(activeEndSound.type);
+    if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeEndSound.type);
 
     setTimeout(() => {
         const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
-        window.playSynthesizedSound(activeWinSound.type);
+        if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeWinSound.type);
 
         if (typeof window.launchCurrentEffect === 'function') {
             window.launchCurrentEffect();
-        } else {
-            window.launchConfetti();
         }
 
         const nameEl = document.getElementById('modalFoodName');
@@ -213,12 +220,9 @@ function finalizeSpin() {
             btn.classList.remove('spinning');
         }
 
-        // 👇 MOSTRA O ANÚNCIO (SE NECESSÁRIO) DEPOIS DO RESULTADO APARECER 👇
         setTimeout(() => {
-            if (typeof window.mostrarAdAposGiro === 'function') {
-                window.mostrarAdAposGiro();
-            }
-        }, 1500); // 1.5 Segundos após a modal abrir
+            if (typeof window.mostrarAdAposGiro === 'function') window.mostrarAdAposGiro();
+        }, 1500); 
 
     }, 1000);
 }
