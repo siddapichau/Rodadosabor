@@ -1,13 +1,26 @@
 'use strict';
-console.log('core.js carregado (v24 - Sistema Restaurado e Sem Ovais)');
+console.log('core.js carregado (v25 - Sincronização Perfeita com a Nuvem)');
 
 (function() {
     window.isServerSynced = false;
-
-    // As nossas listas que vão receber dados do Firebase
     window.DYNAMIC_RECIPES = []; 
     window.DYNAMIC_PAGE_THEMES = []; 
     window.DYNAMIC_ROULETTE_THEMES = []; 
+
+    // === FALLBACKS DE EMERGÊNCIA (Obrigatórios para o app não crashar offline) ===
+    window.DEFAULT_PAGE_THEME = {
+        id: "theme-1", nome: "Clássico", price: 0,
+        light: { style: { bg: "linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)", card: "rgba(255, 255, 255, 0.85)", text: "#1e2a3a", accent: "#7b9e5a", accentGradient: "linear-gradient(135deg, #f5b342, #e94b3c)" } },
+        dark: { style: { bg: "linear-gradient(145deg, #1a1a2e 0%, #0d0d1a 100%)", card: "rgba(30, 30, 60, 0.85)", text: "#e8e8e8", accent: "#f5b342", accentGradient: "linear-gradient(135deg, #f5d742, #e94b3c)" } }
+    };
+
+    window.DEFAULT_ROULETTE_THEME = {
+        id: "theme-1", nome: "Clássico", price: 0,
+        light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#1e293b", wheelCenter: "#ffffff" }
+    };
+
+    window.getPageThemes = () => window.DYNAMIC_PAGE_THEMES.length > 0 ? window.DYNAMIC_PAGE_THEMES : [window.DEFAULT_PAGE_THEME];
+    window.getRouletteThemes = () => window.DYNAMIC_ROULETTE_THEMES.length > 0 ? window.DYNAMIC_ROULETTE_THEMES : [window.DEFAULT_ROULETTE_THEME];
 
     const _rawState = {
         coins: 0, vipUntil: 0, noAdsUntil: 0, darkMode: false, displayName: '', banned: false,
@@ -49,8 +62,8 @@ console.log('core.js carregado (v24 - Sistema Restaurado e Sem Ovais)');
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
         const trintaDias = 30 * 24 * 60 * 60 * 1000;
-        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 VIP Ativo!"); } 
-        else if (tipo === 'no_ads') { _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Sem anúncios."); }
+        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 Compra Concluída! VIP Ativo."); } 
+        else if (tipo === 'no_ads') { _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Compra Concluída! Sem anúncios."); }
         window.saveData(); window.atualizarBannersEAnuncios(); window.renderAll();
     };
 
@@ -75,12 +88,10 @@ console.log('core.js carregado (v24 - Sistema Restaurado e Sem Ovais)');
         else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
         else if (categoria === 'effect') { const i = window.EFEITOS_VISUAIS?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
         else if (categoria === 'pageTheme') { 
-            const themes = (window.DYNAMIC_PAGE_THEMES && window.DYNAMIC_PAGE_THEMES.length > 0) ? window.DYNAMIC_PAGE_THEMES : (window.listTemas || []);
-            const i = themes.find(x => x.id === id); if(!i) return false; preco = i.price || i.preco || 0; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; 
+            const i = window.getPageThemes().find(x => x.id === id); if(!i) return false; preco = i.price || 0; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; 
         }
         else if (categoria === 'rouletteTheme') { 
-            const themes = (window.DYNAMIC_ROULETTE_THEMES && window.DYNAMIC_ROULETTE_THEMES.length > 0) ? window.DYNAMIC_ROULETTE_THEMES : (window.listTemas || []);
-            const i = themes.find(x => x.id === id); if(!i) return false; preco = i.price || i.preco || 0; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; 
+            const i = window.getRouletteThemes().find(x => x.id === id); if(!i) return false; preco = i.price || 0; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; 
         }
         else if (categoria === 'recipe') { 
             const i = window.DYNAMIC_RECIPES.find(x => x.id === id) || (window.RECEITAS || []).find(x => x.id === id); 
@@ -264,7 +275,7 @@ console.log('core.js carregado (v24 - Sistema Restaurado e Sem Ovais)');
                     currentUserUid = user.uid;
                     updateUserInterface(user);
                     
-                    // LÊ OS DADOS DA NUVEM PARA A LOJA
+                    // LÊ OS DADOS DA NUVEM (Fase 2 Pura)
                     database.ref('conteudo').on('value', (snapshot) => {
                         window.DYNAMIC_RECIPES = []; window.DYNAMIC_PAGE_THEMES = []; window.DYNAMIC_ROULETTE_THEMES = [];
                         if (snapshot.exists()) {
@@ -331,10 +342,8 @@ console.log('core.js carregado (v24 - Sistema Restaurado e Sem Ovais)');
 
     // ========================== APLICAÇÃO DE TEMAS ==========================
     window.applyThemes = function() {
-        const pageThemes = (window.DYNAMIC_PAGE_THEMES && window.DYNAMIC_PAGE_THEMES.length > 0) ? window.DYNAMIC_PAGE_THEMES : (window.listTemas || []);
-        const rouletteThemes = (window.DYNAMIC_ROULETTE_THEMES && window.DYNAMIC_ROULETTE_THEMES.length > 0) ? window.DYNAMIC_ROULETTE_THEMES : (window.listTemas || []);
-        
-        if (pageThemes.length === 0 || rouletteThemes.length === 0) return;
+        const pageThemes = window.getPageThemes();
+        const rouletteThemes = window.getRouletteThemes();
         
         const pageTheme = pageThemes.find(t => t.id === _rawState.currentPageTheme) || pageThemes[0];
         const rouletteTheme = rouletteThemes.find(t => t.id === _rawState.currentRouletteTheme) || rouletteThemes[0];
@@ -345,12 +354,13 @@ console.log('core.js carregado (v24 - Sistema Restaurado e Sem Ovais)');
         if (pageData && pageData.style) {
             const root = document.documentElement;
             
-            // 🔴 ANIQUILADOR DO OVAL (Limpa string corrompida do Firebase)
+            // 🔴 DESTRUIDOR DO OVAL: Intercepta e destrói o radial-gradient vindo da nuvem
             let bgStyle = pageData.style.bg;
+            if (bgStyle && bgStyle.includes('radial-gradient')) {
+                bgStyle = bgStyle.replace(/radial-gradient\([^)]+\)/g, 'linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)');
+            }
             if (bgStyle && bgStyle.includes('linear-gradient') && bgStyle.includes('radial-gradient')) {
                 bgStyle = bgStyle.substring(bgStyle.indexOf('linear-gradient'));
-            } else if (bgStyle && bgStyle.includes('radial-gradient')) {
-                bgStyle = bgStyle.replace(/radial-gradient\([^)]+\)/g, 'linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)');
             }
 
             root.style.setProperty('--bg-body', bgStyle); 
