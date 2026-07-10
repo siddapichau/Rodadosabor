@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
+console.log('core.js carregado (v23 - Bloqueio de Ovais e Roleta Fixa)');
 
 (function() {
     window.isServerSynced = false;
@@ -7,7 +7,7 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
     window.DYNAMIC_PAGE_THEMES = []; 
     window.DYNAMIC_ROULETTE_THEMES = []; 
 
-    // === FALLBACKS DE EMERGÊNCIA (Impedem a roleta cinzenta) ===
+    // === FALLBACKS DE EMERGÊNCIA ===
     window.DEFAULT_PAGE_THEME = {
         id: "theme-1", nome: "Clássico", price: 0,
         light: { style: { bg: "linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)", card: "rgba(255, 255, 255, 0.85)", text: "#1e293b", accent: "#7b9e5a", accentGradient: "linear-gradient(135deg, #f5b342, #e94b3c)" } },
@@ -16,8 +16,7 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
 
     window.DEFAULT_ROULETTE_THEME = {
         id: "theme-1", nome: "Clássico", price: 0,
-        light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#1e293b", wheelCenter: "#ffffff" },
-        dark: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#f8fafc", wheelCenter: "#0f172a" }
+        light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#1e293b", wheelCenter: "#ffffff" }
     };
 
     window.getPageThemes = () => window.DYNAMIC_PAGE_THEMES.length > 0 ? window.DYNAMIC_PAGE_THEMES : [window.DEFAULT_PAGE_THEME];
@@ -63,7 +62,7 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
         const trintaDias = 30 * 24 * 60 * 60 * 1000;
-        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 VIP Ativo!"); } 
+        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 Compra Concluída! VIP Ativo."); } 
         else if (tipo === 'no_ads') { _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Sem anúncios."); }
         window.saveData(); window.atualizarBannersEAnuncios(); window.renderAll();
     };
@@ -79,7 +78,7 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
 
     window.comprarItemSeguro = function(categoria, id, precoOverride) {
         if (!window.isServerSynced) return false;
-        if (window.isVipAtivo()) { alert("👑 VIP Ativo! Liberado."); return false; }
+        if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para você."); return false; }
         
         let preco = precoOverride !== undefined ? precoOverride : 0;
         let arrayDestravados = ''; let itemAtual = '';
@@ -116,7 +115,6 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
         return false;
     };
 
-    // ========================== ADMOB ==========================
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
@@ -129,9 +127,7 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
             AdMob.initialize().then(async () => {
                 try { await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }); } catch(e){}
                 try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e){}
-
                 setTimeout(async () => { if (!window.isNoAdsAtivo()) { try { await AdMob.showInterstitial(); } catch(e){} } window.atualizarBannersEAnuncios(); }, 2000);
-
                 const handleReward = (reward) => {
                     try {
                         let recompensa = 3; if (reward && reward.amount) recompensa = parseInt(reward.amount) || 3;
@@ -140,14 +136,12 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
                         if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; }
                     } catch (err) { if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; } }
                 };
-
                 const handleClose = () => {
                     try {
                         if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
                         setTimeout(() => { AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{}); }, 2000);
                     } catch (err) {}
                 };
-
                 AdMob.addListener('rewardedVideoAdReward', handleReward); AdMob.addListener('rewardedAdReward', handleReward);
                 AdMob.addListener('rewardedVideoAdDismissed', handleClose); AdMob.addListener('rewardedAdDismissed', handleClose);
                 AdMob.addListener('rewardedVideoAdShowFailed', handleClose);
@@ -172,7 +166,6 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
         } catch (error) { return false; }
     };
 
-    // ========================== FIREBASE & GOOGLE ==========================
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
@@ -320,7 +313,6 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
 
     window.loadData();
 
-    // ========================== ÁUDIO ==========================
     let audioCtx = null; window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
     window.playSynthesizedSound = function(soundType) {
         try {
@@ -353,23 +345,36 @@ console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
         
         if (pageData && pageData.style) {
             const root = document.documentElement;
-            // ANTI-OVAL DEFINITIVO: Garante que os temas antigos em nuvem não usem radial-gradient
+            
+            // 🔴 DESTRUIDOR DE OVAIS FANTASMAS DO FIREBASE 🔴
+            // Se o tema da nuvem tiver as cores separadas (.raw), forçamos um fundo liso para matar o oval antigo.
             let bgStyle = pageData.style.bg;
-            if (bgStyle && bgStyle.includes('radial-gradient')) {
-                bgStyle = bgStyle.replace(/radial-gradient\(.*?,/g, 'linear-gradient(145deg,');
+            if (pageData.raw && pageData.raw.bg1 && pageData.raw.bg2) {
+                bgStyle = `linear-gradient(145deg, ${pageData.raw.bg1} 0%, ${pageData.raw.bg2} 100%)`;
+            } else if (bgStyle && bgStyle.includes('radial-gradient')) {
+                bgStyle = 'linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)'; 
             }
+
             root.style.setProperty('--bg-body', bgStyle); 
+            // Injeção de Segurança Direta no Body:
+            document.body.style.background = bgStyle;
+            document.body.style.backgroundImage = "none";
+            
             root.style.setProperty('--bg-card', pageData.style.card);
             root.style.setProperty('--text-primary', pageData.style.text); 
             root.style.setProperty('--accent', pageData.style.accent);
             root.style.setProperty('--accent-gradient', pageData.style.accentGradient);
         }
         
-        const rouletteData = rouletteTheme[mode];
+        // 🔴 A ROLETA IGNORA O MODO CLARO/ESCURO DA PÁGINA 🔴
+        // Força a roleta a usar sempre a sua paleta "light" (a paleta principal e real)
+        const rouletteData = rouletteTheme.light || rouletteTheme; 
+        
         if (rouletteData && rouletteData.colors) {
             const root = document.documentElement;
-            root.style.setProperty('--wheel-border', rouletteData.wheelBorder || (mode === 'dark' ? '#f8fafc' : '#1e293b')); 
-            root.style.setProperty('--wheel-center', rouletteData.wheelCenter || (mode === 'dark' ? '#0f172a' : '#ffffff'));
+            // Puxa a cor da borda garantindo que NUNCA pega a cor da primeira fatia (Pizza)
+            root.style.setProperty('--wheel-border', rouletteData.wheelBorder || '#1e293b'); 
+            root.style.setProperty('--wheel-center', rouletteData.wheelCenter || '#ffffff');
         }
         
         if (typeof window.drawRoulette === 'function') window.drawRoulette();
