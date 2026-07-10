@@ -1,5 +1,5 @@
 'use strict';
-console.log('app.js carregado (v12 - Receitas via Firebase)');
+console.log('app.js carregado (v13 - Temas e Receitas via Firebase)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
@@ -66,26 +66,34 @@ window.renderModalFoodOptions = function(filterText = '') {
     });
 };
 
+// 👇 AQUI A LÓGICA PASSA A USAR A NUVEM PARA OS TEMAS 👇
 window.renderThemes = function() {
     const pageGrid = document.getElementById('pageThemesGrid');
     const rouletteGrid = document.getElementById('rouletteThemesGrid');
-    const themes = window.listTemas || [];
-    if (themes.length === 0) return;
+    
+    const activeThemes = (window.DYNAMIC_THEMES && window.DYNAMIC_THEMES.length > 0) ? window.DYNAMIC_THEMES : (window.listTemas || []);
+    
+    if (activeThemes.length === 0) {
+        if(pageGrid) pageGrid.innerHTML = '<span style="color:var(--text-muted); font-size: 0.85rem;">Carregando temas da nuvem...</span>';
+        return;
+    }
 
     const renderThemeGrid = (grid, arrayName, currentKey, category) => {
         if (!grid) return;
         grid.innerHTML = '';
-        themes.forEach(theme => {
+        activeThemes.forEach(theme => {
             const isUnlocked = window.isItemLiberado(arrayName, theme.id);
             const isActive = window.appState?.[currentKey] === theme.id;
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
             
+            const precoExibicao = (theme.price !== undefined) ? theme.price : (theme.preco || 0);
+
             let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>`
                         : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('${category}', '${theme.id}')">Usar</button>`
-                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${theme.id}')"><i class="fas fa-coins"></i> ${theme.price || 0}</button>`;
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${theme.id}')"><i class="fas fa-coins"></i> ${precoExibicao}</button>`;
             
-            card.innerHTML = `<div class="item-info"><h4>${theme.nome}</h4><p style="font-size:0.65rem; color:var(--text-muted);">${theme.price === 0 ? 'Grátis' : `${theme.price} moedas`}</p></div>${btnHTML}`;
+            card.innerHTML = `<div class="item-info"><h4>${theme.nome || theme.id}</h4><p style="font-size:0.65rem; color:var(--text-muted);">${precoExibicao === 0 ? 'Grátis' : `${precoExibicao} moedas`}</p></div>${btnHTML}`;
             grid.appendChild(card);
         });
     };
@@ -162,7 +170,6 @@ window.renderEffects = function() {
     });
 };
 
-// 👇 AQUI A LÓGICA PASSA A USAR A NUVEM 👇
 window.renderRecipes = function() {
     const grid = document.getElementById('recipesGrid');
     if (!grid) return;
