@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (Atualizado para Temas Dinâmicos Firebase)');
+console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -31,10 +31,10 @@ window.drawRoulette = function() {
     const items = window.appState?.foods || [];
     const numSegments = items.length;
 
-    // Cores de Fallback de Emergência
+    // Cores de Fallback e Contraste Seguro
     let colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
-    let wheelBorder = '#e94b3c';
-    let wheelCenter = '#f5d742';
+    let wheelBorder = window.appState?.darkMode ? '#f8fafc' : '#1e293b'; 
+    let wheelCenter = window.appState?.darkMode ? '#0f172a' : '#ffffff';
 
     try {
         if (typeof window.getRouletteThemes === 'function') {
@@ -45,12 +45,13 @@ window.drawRoulette = function() {
             
             if (themeData && themeData.colors) {
                 colors = themeData.colors;
-                wheelBorder = themeData.wheelBorder || themeData.colors[0];
-                wheelCenter = themeData.wheelCenter || themeData.colors[1];
+                // AQUI ESTÁ A CORREÇÃO MÁXIMA: Só usa a borda do banco de dados, NUNCA cai na colors[0] (que é a cor da pizza)
+                if (themeData.wheelBorder) wheelBorder = themeData.wheelBorder;
+                if (themeData.wheelCenter) wheelCenter = themeData.wheelCenter;
             }
         }
     } catch (e) {
-        console.warn("Erro ao buscar cores do tema. Usando fallback.", e);
+        console.warn("Erro ao buscar cores da roleta. Usando contraste padrão.", e);
     }
 
     if (numSegments === 0) {
@@ -69,6 +70,7 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
+    // DESENHA A BORDA EXTERNA ISOLADA
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
     ctx.fillStyle = wheelBorder;
@@ -77,6 +79,7 @@ window.drawRoulette = function() {
     ctx.fill();
     ctx.shadowBlur = 0;
 
+    // DESENHA OS PONTOS BRANCOS NA BORDA
     for (let b = 0; b < 20; b++) {
         const bAngle = (b * 2 * Math.PI) / 20;
         const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
@@ -87,6 +90,7 @@ window.drawRoulette = function() {
         ctx.fill();
     }
 
+    // DESENHA AS FATIAS DA ROLETA
     for (let i = 0; i < numSegments; i++) {
         const currentArc = startAngle + i * arcSize;
         const color = colors[i % colors.length];
@@ -97,6 +101,8 @@ window.drawRoulette = function() {
         ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
         ctx.closePath();
         ctx.fill();
+        
+        // Linhas de separação
         ctx.strokeStyle = 'rgba(255,255,255,0.2)';
         ctx.lineWidth = 2;
         ctx.stroke();
@@ -126,11 +132,12 @@ window.drawRoulette = function() {
         ctx.restore();
     }
 
+    // EIXO CENTRAL ISOLADO
     const centerRadius = radius * 0.16;
     ctx.beginPath();
     ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
     ctx.fillStyle = wheelCenter;
-    ctx.strokeStyle = '#ffffff';
+    ctx.strokeStyle = wheelBorder; // Usa a cor da borda para não misturar com as fatias
     ctx.lineWidth = centerRadius * 0.15;
     ctx.fill();
     ctx.stroke();
