@@ -1,5 +1,5 @@
 'use strict';
-console.log('app.js carregado (v13 - Temas e Receitas via Firebase)');
+console.log('app.js carregado (v14 - Temas Separados via Firebase)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
@@ -66,22 +66,22 @@ window.renderModalFoodOptions = function(filterText = '') {
     });
 };
 
-// 👇 AQUI A LÓGICA PASSA A USAR A NUVEM PARA OS TEMAS 👇
+// RENDERIZADOR DE TEMAS SEPARADOS
 window.renderThemes = function() {
     const pageGrid = document.getElementById('pageThemesGrid');
     const rouletteGrid = document.getElementById('rouletteThemesGrid');
     
-    const activeThemes = (window.DYNAMIC_THEMES && window.DYNAMIC_THEMES.length > 0) ? window.DYNAMIC_THEMES : (window.listTemas || []);
+    const activePageThemes = (window.DYNAMIC_PAGE_THEMES && window.DYNAMIC_PAGE_THEMES.length > 0) ? window.DYNAMIC_PAGE_THEMES : (window.listTemas || []);
+    const activeRouletteThemes = (window.DYNAMIC_ROULETTE_THEMES && window.DYNAMIC_ROULETTE_THEMES.length > 0) ? window.DYNAMIC_ROULETTE_THEMES : (window.listTemas || []);
     
-    if (activeThemes.length === 0) {
-        if(pageGrid) pageGrid.innerHTML = '<span style="color:var(--text-muted); font-size: 0.85rem;">Carregando temas da nuvem...</span>';
-        return;
-    }
-
-    const renderThemeGrid = (grid, arrayName, currentKey, category) => {
+    const renderThemeGrid = (grid, themeList, arrayName, currentKey, category) => {
         if (!grid) return;
+        if (themeList.length === 0) {
+            grid.innerHTML = '<span style="color:var(--text-muted); font-size: 0.85rem;">Carregando temas da nuvem...</span>';
+            return;
+        }
         grid.innerHTML = '';
-        activeThemes.forEach(theme => {
+        themeList.forEach(theme => {
             const isUnlocked = window.isItemLiberado(arrayName, theme.id);
             const isActive = window.appState?.[currentKey] === theme.id;
             const card = document.createElement('div');
@@ -98,8 +98,8 @@ window.renderThemes = function() {
         });
     };
 
-    renderThemeGrid(pageGrid, 'unlockedPageThemes', 'currentPageTheme', 'pageTheme');
-    renderThemeGrid(rouletteGrid, 'unlockedRouletteThemes', 'currentRouletteTheme', 'rouletteTheme');
+    renderThemeGrid(pageGrid, activePageThemes, 'unlockedPageThemes', 'currentPageTheme', 'pageTheme');
+    renderThemeGrid(rouletteGrid, activeRouletteThemes, 'unlockedRouletteThemes', 'currentRouletteTheme', 'rouletteTheme');
 };
 
 window.renderSounds = function() {
