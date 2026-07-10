@@ -2,12 +2,33 @@
    ESTILOS GLOBAIS E VARIÁVEIS CSS (Fundo 100% Limpo e Linear)
    ============================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-html, body { background: var(--bg-body) !important; color: var(--text-primary); min-height: 100vh; padding: 1rem; line-height: 1.5; transition: background 0.6s ease, color 0.4s ease; background-attachment: fixed !important; border-radius: 0 !important; }
-body::before, body::after, html::before, html::after { display: none !important; background: none !important; }
-.container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
 
-.card { background: var(--bg-card); border-radius: 1.8rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border-color); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform 0.3s ease, background 0.4s ease, border-color 0.4s ease; }
-.card:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+html, body { 
+    background: var(--bg-body) !important; 
+    background-image: var(--bg-body) !important;
+    color: var(--text-primary); 
+    min-height: 100vh; 
+    padding: 1rem; 
+    line-height: 1.5; 
+    transition: background 0.6s ease, color 0.4s ease; 
+    background-attachment: fixed !important; 
+    background-repeat: no-repeat !important;
+    border-radius: 0 !important; 
+}
+
+/* O ANIQUILADOR DO OVAL: Remove qualquer forma oval, sombra radial ou SVG preso no fundo */
+body::before, body::after, html::before, html::after, .container::before, .container::after { 
+    content: none !important;
+    display: none !important; 
+    background: none !important; 
+    box-shadow: none !important;
+    opacity: 0 !important;
+}
+
+.container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; background: transparent !important; }
+
+.card { background: var(--bg-card); border-radius: 1.8rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.04) !important; border: 1px solid var(--border-color); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform 0.3s ease, background 0.4s ease, border-color 0.4s ease; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(0,0,0,0.12) !important; }
 
 .header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.5rem; }
 .logo-area { display: flex; align-items: center; gap: 0.8rem; }
@@ -64,7 +85,7 @@ canvas { display: block; width: 100%; height: 100%; border-radius: 50%; box-shad
 .btn-gradient-action.dynamic-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
 .btn-gradient-action.dynamic-green { background: linear-gradient(135deg, #10b981, #047857); }
 
-/* 👇 LOJA PREMIUM (Estilos Exclusivos) 👇 */
+/* LOJA PREMIUM */
 .premium-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1rem; }
 .premium-card { background: var(--bg-body); border: 2px solid var(--border-color); border-radius: 20px; padding: 1.5rem; text-align: center; position: relative; transition: transform 0.3s, box-shadow 0.3s; }
 .premium-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
