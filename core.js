@@ -1,236 +1,377 @@
 'use strict';
-console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste)');
+console.log('core.js carregado (v22 - Arquitetura Blindada e Temas Separados)');
 
-let startAngle = 0;
-let isSpinning = false;
-let spinSpeed = 0;
-let spinTimeTotal = 0;
-let spinTimeCount = 0;
-let lastSoundAngle = 0;
+(function() {
+    window.isServerSynced = false;
+    window.DYNAMIC_RECIPES = []; 
+    window.DYNAMIC_PAGE_THEMES = []; 
+    window.DYNAMIC_ROULETTE_THEMES = []; 
 
-window.drawRoulette = function() {
-    const canvas = document.getElementById('rouletteCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    // === FALLBACKS DE EMERGÊNCIA (Impedem a roleta cinzenta) ===
+    window.DEFAULT_PAGE_THEME = {
+        id: "theme-1", nome: "Clássico", price: 0,
+        light: { style: { bg: "linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)", card: "rgba(255, 255, 255, 0.85)", text: "#1e293b", accent: "#7b9e5a", accentGradient: "linear-gradient(135deg, #f5b342, #e94b3c)" } },
+        dark: { style: { bg: "linear-gradient(145deg, #1a1a2e 0%, #0f172a 100%)", card: "rgba(30, 41, 59, 0.85)", text: "#f8fafc", accent: "#f5b342", accentGradient: "linear-gradient(135deg, #f5d742, #e94b3c)" } }
+    };
 
-    const rect = canvas.getBoundingClientRect();
-    if (canvas.width !== rect.width || canvas.height !== rect.height) {
-        canvas.width = rect.width || 600;
-        canvas.height = rect.height || 600;
-    }
+    window.DEFAULT_ROULETTE_THEME = {
+        id: "theme-1", nome: "Clássico", price: 0,
+        light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#1e293b", wheelCenter: "#ffffff" },
+        dark: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#f8fafc", wheelCenter: "#0f172a" }
+    };
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.46;
+    window.getPageThemes = () => window.DYNAMIC_PAGE_THEMES.length > 0 ? window.DYNAMIC_PAGE_THEMES : [window.DEFAULT_PAGE_THEME];
+    window.getRouletteThemes = () => window.DYNAMIC_ROULETTE_THEMES.length > 0 ? window.DYNAMIC_ROULETTE_THEMES : [window.DEFAULT_ROULETTE_THEME];
 
-    ctx.clearRect(0, 0, width, height);
+    const _rawState = {
+        coins: 0, vipUntil: 0, noAdsUntil: 0, darkMode: false, displayName: '', banned: false,
+        foods: ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"],
+        unlockedPageThemes: ["theme-1"], currentPageTheme: "theme-1",
+        unlockedRouletteThemes: ["theme-1"], currentRouletteTheme: "theme-1",
+        unlockedSpinSounds: ["spin-1"], currentSpinSound: "spin-1",
+        unlockedEndSounds: ["end-1"], currentEndSound: "end-1",
+        unlockedWinSounds: ["win-1"], currentWinSound: "win-1",
+        unlockedEffects: ["effect-1"], currentEffect: "effect-1",
+        unlockedRecipes: [], customFoods: []
+    };
 
-    const items = window.appState?.foods || [];
-    const numSegments = items.length;
-
-    // Cores de Fallback e Contraste Seguro
-    let colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
-    let wheelBorder = window.appState?.darkMode ? '#f8fafc' : '#1e293b'; 
-    let wheelCenter = window.appState?.darkMode ? '#0f172a' : '#ffffff';
-
-    try {
-        if (typeof window.getRouletteThemes === 'function') {
-            const themes = window.getRouletteThemes();
-            const theme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
-            const mode = window.appState.darkMode ? 'dark' : 'light';
-            const themeData = theme[mode];
-            
-            if (themeData && themeData.colors) {
-                colors = themeData.colors;
-                // AQUI ESTÁ A CORREÇÃO MÁXIMA: Só usa a borda do banco de dados, NUNCA cai na colors[0] (que é a cor da pizza)
-                if (themeData.wheelBorder) wheelBorder = themeData.wheelBorder;
-                if (themeData.wheelCenter) wheelCenter = themeData.wheelCenter;
-            }
+    const proxyState = new Proxy(_rawState, {
+        set(target, prop, value) { return false; }, 
+        get(target, prop) {
+            const value = target[prop];
+            if (Array.isArray(value)) return Object.freeze([...value]); 
+            return value;
         }
-    } catch (e) {
-        console.warn("Erro ao buscar cores da roleta. Usando contraste padrão.", e);
+    });
+
+    Object.defineProperty(window, 'appState', { value: proxyState, writable: false, configurable: false });
+
+    function aplicarBanimento() {
+        document.body.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#0f172a; color:#f8fafc; text-align:center; padding:2rem;">
+                <i class="fas fa-ban" style="font-size: 5rem; color:#ef4444; margin-bottom:1.5rem;"></i>
+                <h1 style="font-size:2rem; margin-bottom:1rem; color:#ef4444;">Conta Banida</h1>
+            </div>
+        `;
     }
 
-    if (numSegments === 0) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ccc';
-        ctx.fill();
-        ctx.fillStyle = '#333';
-        ctx.font = `bold ${radius * 0.12}px Inter, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Adicione comidas!', centerX, centerY);
-        return;
-    }
+    window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
+    window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
+    window.isNoAdsAtivo = function() { return window.isVipAtivo() || _rawState.noAdsUntil > Date.now(); };
+    window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
 
-    const arcSize = (2 * Math.PI) / numSegments;
-    const borderWidth = radius * 0.045;
+    window.comprarPacoteReal = function(tipo) {
+        if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
+        const trintaDias = 30 * 24 * 60 * 60 * 1000;
+        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 VIP Ativo!"); } 
+        else if (tipo === 'no_ads') { _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Sem anúncios."); }
+        window.saveData(); window.atualizarBannersEAnuncios(); window.renderAll();
+    };
 
-    // DESENHA A BORDA EXTERNA ISOLADA
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelBorder;
-    ctx.shadowColor = 'rgba(0,0,0,0.25)';
-    ctx.shadowBlur = 12;
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    window.atualizarBannersEAnuncios = async function() {
+        if (!window.isAppNativo()) return;
+        try {
+            const { AdMob } = window.Capacitor.Plugins;
+            if (window.isNoAdsAtivo()) { await AdMob.hideBanner().catch(()=>{}); } 
+            else { await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }).catch(()=>{}); }
+        } catch(e){}
+    };
 
-    // DESENHA OS PONTOS BRANCOS NA BORDA
-    for (let b = 0; b < 20; b++) {
-        const bAngle = (b * 2 * Math.PI) / 20;
-        const bx = centerX + (radius + borderWidth * 0.6) * Math.cos(bAngle);
-        const by = centerY + (radius + borderWidth * 0.6) * Math.sin(bAngle);
-        ctx.beginPath();
-        ctx.arc(bx, by, radius * 0.02, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-    }
-
-    // DESENHA AS FATIAS DA ROLETA
-    for (let i = 0; i < numSegments; i++) {
-        const currentArc = startAngle + i * arcSize;
-        const color = colors[i % colors.length];
-
-        ctx.beginPath();
-        ctx.fillStyle = color;
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, currentArc, currentArc + arcSize);
-        ctx.closePath();
-        ctx.fill();
+    window.comprarItemSeguro = function(categoria, id, precoOverride) {
+        if (!window.isServerSynced) return false;
+        if (window.isVipAtivo()) { alert("👑 VIP Ativo! Liberado."); return false; }
         
-        // Linhas de separação
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        let preco = precoOverride !== undefined ? precoOverride : 0;
+        let arrayDestravados = ''; let itemAtual = '';
+        
+        if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
+        else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
+        else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
+        else if (categoria === 'effect') { const i = window.EFEITOS_VISUAIS?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
+        else if (categoria === 'pageTheme') { const i = window.getPageThemes().find(x => x.id === id); if(!i) return false; preco = i.price || 0; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
+        else if (categoria === 'rouletteTheme') { const i = window.getRouletteThemes().find(x => x.id === id); if(!i) return false; preco = i.price || 0; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
+        else if (categoria === 'recipe') { const i = window.DYNAMIC_RECIPES.find(x => x.id === id) || (window.RECEITAS || []).find(x => x.id === id); if(!i) return false; preco = i.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null; }
 
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(currentArc + arcSize / 2);
+        if (_rawState.coins >= preco) { _rawState.coins -= preco; if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id); if (itemAtual) _rawState[itemAtual] = id; window.saveData(); return true; }
+        return false;
+    };
 
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        const textRadius = radius * 0.82; 
-        const maxTextWidth = (2 * Math.PI * textRadius) / numSegments * 0.75;
-        let fontSize = Math.min(radius * 0.13, 26);
-        ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
+    window.equiparItemSeguro = function(categoria, id) {
+        let arrayDestravados = ''; let itemAtual = '';
+        if (categoria === 'spinSound') { arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
+        else if (categoria === 'endSound') { arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
+        else if (categoria === 'winSound') { arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
+        else if (categoria === 'effect') { arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
+        else if (categoria === 'pageTheme') { arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
+        else if (categoria === 'rouletteTheme') { arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
 
-        let textWidth = ctx.measureText(items[i]).width;
-        if (textWidth > maxTextWidth && fontSize > 6) {
-            fontSize = Math.max(6, fontSize * (maxTextWidth / textWidth));
-            ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
-        }
+        if (window.isItemLiberado(arrayDestravados, id)) { _rawState[itemAtual] = id; window.saveData(); return true; }
+        return false;
+    };
 
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.6)';
-        ctx.shadowBlur = 8;
-        ctx.fillText(items[i], textRadius, 0);
-        ctx.shadowBlur = 0;
-        ctx.restore();
+    window.gastarMoedaGiro = function() {
+        if (window.isVipAtivo()) return true; 
+        if (!window.isServerSynced) return false;
+        if (_rawState.coins >= 1) { _rawState.coins -= 1; window.saveData(); return true; }
+        return false;
+    };
+
+    // ========================== ADMOB ==========================
+    const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
+    const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
+    const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
+    window.isAppNativo = function() { return typeof window.Capacitor !== 'undefined' && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform(); };
+    window.spinCounter = 0; let resolveAdPromise = null;
+
+    if (window.isAppNativo()) {
+        try {
+            const { AdMob } = window.Capacitor.Plugins;
+            AdMob.initialize().then(async () => {
+                try { await AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }); } catch(e){}
+                try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e){}
+
+                setTimeout(async () => { if (!window.isNoAdsAtivo()) { try { await AdMob.showInterstitial(); } catch(e){} } window.atualizarBannersEAnuncios(); }, 2000);
+
+                const handleReward = (reward) => {
+                    try {
+                        let recompensa = 3; if (reward && reward.amount) recompensa = parseInt(reward.amount) || 3;
+                        _rawState.coins += recompensa; window.saveData();
+                        if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+                        if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; }
+                    } catch (err) { if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; } }
+                };
+
+                const handleClose = () => {
+                    try {
+                        if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
+                        setTimeout(() => { AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }).catch(()=>{}); }, 2000);
+                    } catch (err) {}
+                };
+
+                AdMob.addListener('rewardedVideoAdReward', handleReward); AdMob.addListener('rewardedAdReward', handleReward);
+                AdMob.addListener('rewardedVideoAdDismissed', handleClose); AdMob.addListener('rewardedAdDismissed', handleClose);
+                AdMob.addListener('rewardedVideoAdShowFailed', handleClose);
+            }).catch(console.error);
+        } catch(e) {}
     }
 
-    // EIXO CENTRAL ISOLADO
-    const centerRadius = radius * 0.16;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelCenter;
-    ctx.strokeStyle = wheelBorder; // Usa a cor da borda para não misturar com as fatias
-    ctx.lineWidth = centerRadius * 0.15;
-    ctx.fill();
-    ctx.stroke();
-};
+    window.mostrarAdAposGiro = async function() {
+        if (!window.isAppNativo() || window.isNoAdsAtivo()) return;
+        if (window.spinCounter > 0 && window.spinCounter % 3 === 0) { try { const { AdMob } = window.Capacitor.Plugins; await AdMob.showInterstitial(); AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }).catch(()=>{}); } catch(e) {} }
+    };
+    window.ganharMoedasAnuncioWeb = function() { if (!window.isServerSynced) return false; _rawState.coins += 3; window.saveData(); return true; };
+    window.mostrarAdMobNativo = async function() {
+        if (!window.isAppNativo()) return false;
+        try {
+            const { AdMob } = window.Capacitor.Plugins;
+            try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
+            return new Promise((resolve) => {
+                resolveAdPromise = resolve; setTimeout(() => { if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; } }, 90000);
+                AdMob.showRewardVideoAd().catch((err) => { if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; } });
+            });
+        } catch (error) { return false; }
+    };
 
-window.spinRoulette = function() {
-    if (isSpinning || window.appState.foods.length === 0) return;
+    // ========================== FIREBASE & GOOGLE ==========================
+    if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
+    const auth = window.firebaseConfig ? firebase.auth() : null;
+    const database = window.firebaseConfig ? firebase.database() : null;
+    let currentUserUid = null; let anonymousSignInAttempted = false;
 
-    const btn = document.getElementById('btnSpin');
-    if (btn) {
-        btn.disabled = true;
-        btn.classList.add('spinning');
+    if (auth) auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn(e));
+
+    function updateUserInterface(user) {
+        const userArea = document.getElementById('userArea'); const userName = document.getElementById('userName');
+        const userAvatar = document.getElementById('userAvatar'); const btnGoogle = document.getElementById('btnGoogleLogin');
+        if (!user) { if (userArea) userArea.style.display = 'none'; return; }
+        let displayName = _rawState.displayName || user.displayName || '';
+        if (!displayName) displayName = user.isAnonymous ? 'Convidado' : 'Usuário';
+
+        if (userArea) {
+            userArea.style.display = 'flex';
+            if (userAvatar) userAvatar.textContent = displayName.charAt(0).toUpperCase();
+            if (userName) { userName.textContent = displayName.split(' ')[0]; if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Segura"></i>'; }
+        }
+        if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
     }
 
-    const ctx = window.getAudioContext ? window.getAudioContext() : null;
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-    isSpinning = true;
-    spinTimeCount = 0;
-    spinTimeTotal = Math.random() * 1000 + 4000;
-    spinSpeed = Math.random() * 0.3 + 0.4;
-    lastSoundAngle = startAngle;
-    animateSpin();
-};
+    window.editarNomeUsuario = function(novoNome) {
+        if (!novoNome || typeof novoNome !== 'string') return false; let nomeLimpo = novoNome.replace(/[^a-zA-Z\s]/g, '').trim().replace(/\s+/g, ' ');
+        if (nomeLimpo.length < 3 || nomeLimpo.length > 16) return false; _rawState.displayName = nomeLimpo; window.saveData(); if (auth?.currentUser) updateUserInterface(auth.currentUser); return true;
+    };
 
-function animateSpin() {
-    spinTimeCount += 20;
-    if (spinTimeCount >= spinTimeTotal) {
-        isSpinning = false;
-        finalizeSpin();
-        return;
+    function _mergeData(anonData, googleData) {
+        const mergedCoins = (anonData.coins || 0) + (googleData.coins || 0); const mergeArray = (arr1, arr2) => Array.from(new Set([...(arr1 || []), ...(arr2 || [])]));
+        const arrayFields = ['foods', 'customFoods', 'unlockedPageThemes', 'unlockedRouletteThemes', 'unlockedSpinSounds', 'unlockedEndSounds', 'unlockedWinSounds', 'unlockedEffects', 'unlockedRecipes'];
+        const merged = { ...anonData, coins: mergedCoins };
+        if (googleData.vipUntil && googleData.vipUntil > (merged.vipUntil || 0)) merged.vipUntil = googleData.vipUntil;
+        if (googleData.noAdsUntil && googleData.noAdsUntil > (merged.noAdsUntil || 0)) merged.noAdsUntil = googleData.noAdsUntil;
+        if (googleData.banned !== undefined) merged.banned = googleData.banned;
+        if (googleData.darkMode !== undefined) merged.darkMode = googleData.darkMode;
+        if (googleData.displayName) merged.displayName = googleData.displayName;
+        arrayFields.forEach(field => { merged[field] = mergeArray(anonData[field], googleData[field]); }); return merged;
     }
-    const progress = spinTimeCount / spinTimeTotal;
-    const currentVelocity = spinSpeed * Math.pow(1 - progress, 2);
-    startAngle += currentVelocity;
-    window.drawRoulette();
 
-    const arcSize = (2 * Math.PI) / window.appState.foods.length;
-    if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
-        if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeSpinSound.type);
-        lastSoundAngle = startAngle;
+    window.conectarGoogle = function() {
+        if (!auth) return; if (window.isAppNativo()) { alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador."); return; }
+        const provider = new firebase.auth.GoogleAuthProvider(); const currentUser = auth.currentUser;
+        if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
+        const modal = document.getElementById('mergeAccountModal'); if (!modal) return;
+        function proceedWithChoice(choice) {
+            modal.style.display = 'none'; const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
+            auth.signInWithPopup(provider).then((result) => {
+                const googleUser = result.user;
+                database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
+                    const googleData = snapshot.val() || {}; let finalData;
+                    if (choice === 'keep') finalData = { ...estadoAnonimo }; else if (choice === 'overwrite') finalData = { ...googleData }; else if (choice === 'merge') finalData = _mergeData(estadoAnonimo, googleData);
+                    finalData.displayName = googleUser.displayName || 'Usuário'; database.ref('users/' + googleUser.uid + '/appState').set(finalData).then(() => { alert("✅ Conta vinculada com sucesso!"); window.location.reload(); });
+                });
+            }).catch((error) => { alert("❌ Erro ao conectar com o Google."); });
+        }
+        document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep'); document.getElementById('mergeOverwrite').onclick = () => proceedWithChoice('overwrite'); document.getElementById('mergeCombine').onclick = () => proceedWithChoice('merge'); document.getElementById('btnMergeCancel').onclick = () => modal.style.display = 'none'; modal.style.display = 'flex';
+    };
+
+    function garantirArraysNoEstado() {
+        if (!Array.isArray(_rawState.unlockedEffects)) _rawState.unlockedEffects = ["effect-1"];
+        if (!Array.isArray(_rawState.unlockedSpinSounds)) _rawState.unlockedSpinSounds = ["spin-1"];
+        if (!Array.isArray(_rawState.unlockedEndSounds)) _rawState.unlockedEndSounds = ["end-1"];
+        if (!Array.isArray(_rawState.unlockedWinSounds)) _rawState.unlockedWinSounds = ["win-1"];
+        if (!Array.isArray(_rawState.unlockedPageThemes)) _rawState.unlockedPageThemes = ["theme-1"];
+        if (!Array.isArray(_rawState.unlockedRouletteThemes)) _rawState.unlockedRouletteThemes = ["theme-1"];
+        if (!Array.isArray(_rawState.foods) || _rawState.foods.length === 0) _rawState.foods = ["Pizza 🍕", "Hambúrguer 🍔", "Sushi 🍣", "Salada 🥗"];
+        if (!Array.isArray(_rawState.customFoods)) _rawState.customFoods = [];
+        if (!Array.isArray(_rawState.unlockedRecipes)) _rawState.unlockedRecipes = [];
+        if (!window.isItemLiberado('unlockedEffects', _rawState.currentEffect)) _rawState.currentEffect = "effect-1";
+        if (!window.isItemLiberado('unlockedPageThemes', _rawState.currentPageTheme)) _rawState.currentPageTheme = "theme-1";
+        if (!window.isItemLiberado('unlockedRouletteThemes', _rawState.currentRouletteTheme)) _rawState.currentRouletteTheme = "theme-1";
     }
-    requestAnimationFrame(animateSpin);
-}
 
-function finalizeSpin() {
-    const numSegments = window.appState.foods.length;
-    if (numSegments === 0) return;
-    const arcSize = (2 * Math.PI) / numSegments;
-
-    let angleFromStart = (-Math.PI / 2 - startAngle) % (2 * Math.PI);
-    if (angleFromStart < 0) angleFromStart += 2 * Math.PI;
-    let index = Math.floor(angleFromStart / arcSize);
-    if (index >= numSegments) index = 0;
-    if (index < 0) index = numSegments - 1;
-
-    const winningFood = window.appState.foods[index];
-
-    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
-    if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeEndSound.type);
-
-    setTimeout(() => {
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
-        if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeWinSound.type);
-
-        if (typeof window.launchCurrentEffect === 'function') {
-            window.launchCurrentEffect();
+    function ativarModoOffline() {
+        if (!window.isServerSynced) {
+            window.isServerSynced = true; 
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            if (typeof window.applyThemes === 'function') window.applyThemes();
+            if (typeof window.renderAll === 'function') window.renderAll();
         }
+    }
 
-        const nameEl = document.getElementById('modalFoodName');
-        const emojiEl = document.getElementById('modalEmoji');
-        const overlay = document.getElementById('resultOverlay');
-        if (nameEl && emojiEl && overlay) {
-            nameEl.textContent = winningFood;
-            const emojiMatch = winningFood.match(/\p{Emoji}/u);
-            emojiEl.textContent = emojiMatch ? emojiMatch[0] : '🍽️';
-            overlay.style.display = 'flex';
+    window.loadData = function() {
+        try {
+            const saved = localStorage.getItem('rodaDoSaborState');
+            if (saved) Object.assign(_rawState, JSON.parse(saved));
+            if (_rawState.banned) return aplicarBanimento(); 
+            garantirArraysNoEstado();
+            
+            if (typeof window.applyThemes === 'function') window.applyThemes();
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            window.atualizarBannersEAnuncios();
+        } catch (e) {}
+
+        setTimeout(ativarModoOffline, 4000);
+
+        if (auth && database) {
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUserUid = user.uid;
+                    updateUserInterface(user);
+                    
+                    database.ref('conteudo').on('value', (snapshot) => {
+                        window.DYNAMIC_RECIPES = []; window.DYNAMIC_PAGE_THEMES = []; window.DYNAMIC_ROULETTE_THEMES = [];
+                        if (snapshot.exists()) {
+                            const data = snapshot.val();
+                            if (data.receitas) { Object.keys(data.receitas).forEach(key => { window.DYNAMIC_RECIPES.push({ id: key, nome: data.receitas[key].nome || 'Receita', icone: data.receitas[key].icone || '🍽️', preco: data.receitas[key].preco !== undefined ? parseInt(data.receitas[key].preco) : 5, link: `receita.html?id=${key}` }); }); }
+                            if (data.temas_pagina) { Object.keys(data.temas_pagina).forEach(key => { window.DYNAMIC_PAGE_THEMES.push(data.temas_pagina[key]); }); }
+                            if (data.temas_roleta) { Object.keys(data.temas_roleta).forEach(key => { window.DYNAMIC_ROULETTE_THEMES.push(data.temas_roleta[key]); }); }
+                        }
+                        if (typeof window.renderRecipes === 'function') window.renderRecipes();
+                        if (typeof window.renderThemes === 'function') window.renderThemes();
+                        if (typeof window.applyThemes === 'function') window.applyThemes();
+                    });
+
+                    database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
+                        window.isServerSynced = true;
+                        if (snapshot.exists()) { Object.assign(_rawState, snapshot.val()); } 
+                        else { if (_rawState.coins === 0) _rawState.coins = 20; window.saveData(); }
+                        if (_rawState.banned) { aplicarBanimento(); return; }
+                        garantirArraysNoEstado();
+                        if (typeof window.renderAll === 'function') window.renderAll();
+                        window.atualizarBannersEAnuncios();
+                        updateUserInterface(user);
+                    });
+                } else {
+                    if (!anonymousSignInAttempted) { anonymousSignInAttempted = true; auth.signInAnonymously().catch(() => ativarModoOffline()); }
+                }
+            });
+        } else { ativarModoOffline(); }
+    };
+
+    let saveTimeout = null;
+    window.saveData = function() {
+        if (_rawState.banned) return; 
+        const coinEl = document.getElementById('coin-balance'); if (coinEl) coinEl.textContent = _rawState.coins;
+        try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            if (currentUserUid && database && window.isServerSynced) {
+                database.ref('users/' + currentUserUid + '/appState').set(_rawState).catch((error) => { if (error.code === "PERMISSION_DENIED") { localStorage.removeItem('rodaDoSaborState'); window.location.reload(); } });
+            }
+        }, 100);
+    };
+
+    window.loadData();
+
+    // ========================== ÁUDIO ==========================
+    let audioCtx = null; window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
+    window.playSynthesizedSound = function(soundType) {
+        try {
+            const ctx = window.getAudioContext(); const now = ctx.currentTime;
+            switch (soundType) {
+                case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
+                case 'end-chord': [392, 493, 587].forEach((f) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
+                case 'win-tada': [523.25, 659.25, 783.99].forEach(f => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); [523.25, 659.25, 783.99, 1046.50].forEach(f => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); break;
+                default: osc(ctx, now, 400, 400, 0.1, 'sine', 0.2); break;
+            }
+        } catch (e) {}
+    };
+    function osc(ctx, start, fStart, fEnd, duration, type, gain) {
+        const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = type;
+        o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
+        g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
+        o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
+    }
+
+    // ========================== APLICAÇÃO DE TEMAS ==========================
+    window.applyThemes = function() {
+        const pageThemes = window.getPageThemes();
+        const rouletteThemes = window.getRouletteThemes();
+        
+        const pageTheme = pageThemes.find(t => t.id === _rawState.currentPageTheme) || pageThemes[0];
+        const rouletteTheme = rouletteThemes.find(t => t.id === _rawState.currentRouletteTheme) || rouletteThemes[0];
+        
+        const mode = _rawState.darkMode ? 'dark' : 'light';
+        const pageData = pageTheme[mode];
+        
+        if (pageData && pageData.style) {
+            const root = document.documentElement;
+            // ANTI-OVAL DEFINITIVO: Garante que os temas antigos em nuvem não usem radial-gradient
+            let bgStyle = pageData.style.bg;
+            if (bgStyle && bgStyle.includes('radial-gradient')) {
+                bgStyle = bgStyle.replace(/radial-gradient\(.*?,/g, 'linear-gradient(145deg,');
+            }
+            root.style.setProperty('--bg-body', bgStyle); 
+            root.style.setProperty('--bg-card', pageData.style.card);
+            root.style.setProperty('--text-primary', pageData.style.text); 
+            root.style.setProperty('--accent', pageData.style.accent);
+            root.style.setProperty('--accent-gradient', pageData.style.accentGradient);
         }
-
-        const btn = document.getElementById('btnSpin');
-        if (btn) {
-            btn.disabled = false;
-            btn.classList.remove('spinning');
+        
+        const rouletteData = rouletteTheme[mode];
+        if (rouletteData && rouletteData.colors) {
+            const root = document.documentElement;
+            root.style.setProperty('--wheel-border', rouletteData.wheelBorder || (mode === 'dark' ? '#f8fafc' : '#1e293b')); 
+            root.style.setProperty('--wheel-center', rouletteData.wheelCenter || (mode === 'dark' ? '#0f172a' : '#ffffff'));
         }
-
-        setTimeout(() => {
-            if (typeof window.mostrarAdAposGiro === 'function') window.mostrarAdAposGiro();
-        }, 1500); 
-
-    }, 1000);
-}
-
-window.addEventListener('load', function() {
-    setTimeout(window.drawRoulette, 100);
-});
-window.addEventListener('resize', window.drawRoulette);
+        
+        if (typeof window.drawRoulette === 'function') window.drawRoulette();
+    };
+})();
