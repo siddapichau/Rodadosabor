@@ -70,9 +70,9 @@ window.renderThemes = function() {
     const pageGrid = document.getElementById('pageThemesGrid');
     const rouletteGrid = document.getElementById('rouletteThemesGrid');
     
-    // Lista segura com a da nuvem. Se vazio, pega a lista do local temas.js
-    const activePageThemes = (window.DYNAMIC_PAGE_THEMES && window.DYNAMIC_PAGE_THEMES.length > 0) ? window.DYNAMIC_PAGE_THEMES : (window.listTemas || []);
-    const activeRouletteThemes = (window.DYNAMIC_ROULETTE_THEMES && window.DYNAMIC_ROULETTE_THEMES.length > 0) ? window.DYNAMIC_ROULETTE_THEMES : (window.listTemas || []);
+    // Lista segura ligada à Nuvem
+    const activePageThemes = typeof window.getPageThemes === 'function' ? window.getPageThemes() : (window.listTemas || []);
+    const activeRouletteThemes = typeof window.getRouletteThemes === 'function' ? window.getRouletteThemes() : (window.listTemas || []);
     
     const renderThemeGrid = (grid, themeList, arrayName, currentKey, category) => {
         if (!grid) return;
