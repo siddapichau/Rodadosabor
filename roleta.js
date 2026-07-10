@@ -41,8 +41,8 @@ window.drawRoulette = function() {
             const themes = window.getRouletteThemes();
             const theme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
             
-            // 🔴 ROLETA IGNORA MODO ESCURO 🔴
-            // Fica sempre estática usando os dados principais
+            // 🔴 ROLETA IGNORA MODO ESCURO DA PÁGINA 🔴
+            // Pega sempre a base (light), a borda NUNCA troca de cor com a página.
             const themeData = theme.light || theme;
             
             if (themeData && themeData.colors) {
@@ -71,10 +71,10 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
-    // BORDA DA ROLETA: A cor de alto contraste isolada
+    // 🔴 BORDA DA ROLETA USANDO A COR PROTEGIDA 🔴
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelBorder;
+    ctx.fillStyle = wheelBorder; // Agora a borda usa a cor fixa de contraste
     ctx.shadowColor = 'rgba(0,0,0,0.25)';
     ctx.shadowBlur = 12;
     ctx.fill();
