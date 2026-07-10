@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste)');
+console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste - v24)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -31,18 +31,18 @@ window.drawRoulette = function() {
     const items = window.appState?.foods || [];
     const numSegments = items.length;
 
-    // Cores Base Padrão
+    // Cores de Emergência
     let colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
     let wheelBorder = '#1e293b'; 
     let wheelCenter = '#ffffff';
 
     try {
-        const activeThemes = (window.DYNAMIC_ROULETTE_THEMES && window.DYNAMIC_ROULETTE_THEMES.length > 0) ? window.DYNAMIC_ROULETTE_THEMES : (window.listTemas || []);
-        if (activeThemes.length > 0) {
-            const theme = activeThemes.find(t => t.id === window.appState.currentRouletteTheme) || activeThemes[0];
+        if (typeof window.getRouletteThemes === 'function') {
+            const themes = window.getRouletteThemes();
+            const theme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
             
-            // 🔴 ROLETA IGNORA MODO ESCURO 🔴
-            // Fica sempre com a cor original para não alterar a borda de repente
+            // 🔴 ROLETA IGNORA MODO ESCURO DA PÁGINA 🔴
+            // Pega sempre a base (light), a borda NUNCA troca de cor com a página.
             const themeData = theme.light || theme;
             
             if (themeData && themeData.colors) {
@@ -52,7 +52,7 @@ window.drawRoulette = function() {
             }
         }
     } catch (e) {
-        console.warn("Erro ao buscar cores.", e);
+        console.warn("Erro ao buscar cores. Usando fallback.", e);
     }
 
     if (numSegments === 0) {
@@ -71,10 +71,10 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
-    // BORDA DA ROLETA 
+    // 🔴 BORDA DA ROLETA USANDO A COR PROTEGIDA 🔴
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelBorder; // Pinta com a cor escolhida e não com a primeira fatia
+    ctx.fillStyle = wheelBorder; // Agora a borda usa a cor fixa em vez de colors[0]
     ctx.shadowColor = 'rgba(0,0,0,0.25)';
     ctx.shadowBlur = 12;
     ctx.fill();
