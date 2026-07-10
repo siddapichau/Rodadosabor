@@ -3,13 +3,13 @@
    ============================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-/* 🔴 EXTERMINADOR DO OVAL 🔴 
-   Esconde div's e pseudo-elementos fantasmas que criavam o círculo de fundo */
-body::before, body::after, html::before, html::after, .container::before, .container::after { 
-    display: none !important; content: none !important; background: none !important; box-shadow: none !important; opacity: 0 !important; 
-}
-.bg-shape, .shape, .blob, .circle-bg, [class*="shape"], div[style*="radial-gradient"] { 
-    display: none !important; opacity: 0 !important; visibility: hidden !important; z-index: -9999 !important; 
+/* 🔴 ANIQUILADOR DE OVAIS FANTASMAS 🔴
+   Isso esconde qualquer classe que crie a maldita sombra no fundo do app! */
+.bg-shape, .shape, .blob, .circle-bg, .oval-bg, [class*="bg-shape"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    z-index: -9999 !important;
 }
 
 html, body { 
@@ -23,6 +23,13 @@ html, body {
     background-repeat: no-repeat !important;
     background-size: cover !important;
     border-radius: 0 !important; 
+}
+
+/* Mata pseudo-elementos e CSS Injetado */
+body::before, body::after, html::before, html::after, .container::before, .container::after { 
+    display: none !important; 
+    content: none !important;
+    background: none !important; 
 }
 
 .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; background: transparent !important; }
@@ -44,7 +51,6 @@ html, body {
 .btn-toggle-mode { background: var(--bg-card); border: 1px solid var(--border-color); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.2s; }
 .btn-toggle-mode:hover { transform: scale(1.05); border-color: var(--accent); }
 
-/* TAG VIP */
 .vip-tag { background: linear-gradient(135deg, #f5b342, #e94b3c); color: white; padding: 0.3rem 0.8rem; border-radius: 30px; font-size: 0.75rem; font-weight: 800; box-shadow: 0 4px 12px rgba(245, 179, 66, 0.4); animation: pulse-glow 2s infinite; }
 
 .user-area { display: none; align-items: center; gap: 0.4rem; background: var(--bg-card); padding: 0.2rem 0.6rem 0.2rem 0.2rem; border-radius: 50px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.04); flex-shrink: 0; }
