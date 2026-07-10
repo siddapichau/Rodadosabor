@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste - v24)');
+console.log('roleta.js carregado (v25 - Roleta Independente e Blindada)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -31,7 +31,7 @@ window.drawRoulette = function() {
     const items = window.appState?.foods || [];
     const numSegments = items.length;
 
-    // Cores de Emergência
+    // Cores Base Padrão de Emergência
     let colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
     let wheelBorder = '#1e293b'; 
     let wheelCenter = '#ffffff';
@@ -41,8 +41,8 @@ window.drawRoulette = function() {
             const themes = window.getRouletteThemes();
             const theme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
             
-            // 🔴 ROLETA IGNORA MODO ESCURO DA PÁGINA 🔴
-            // Pega sempre a base (light), a borda NUNCA troca de cor com a página.
+            // 🔴 ROLETA IGNORA MODO ESCURO 🔴
+            // Fica sempre estática usando os dados principais
             const themeData = theme.light || theme;
             
             if (themeData && themeData.colors) {
@@ -71,10 +71,10 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
-    // 🔴 BORDA DA ROLETA USANDO A COR PROTEGIDA 🔴
+    // BORDA DA ROLETA: A cor de alto contraste isolada
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelBorder; // Agora a borda usa a cor fixa em vez de colors[0]
+    ctx.fillStyle = wheelBorder;
     ctx.shadowColor = 'rgba(0,0,0,0.25)';
     ctx.shadowBlur = 12;
     ctx.fill();
