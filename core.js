@@ -1,8 +1,28 @@
 'use strict';
-console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
+console.log('core.js carregado (v20 - Arquitetura Blindada com Fallback Padrão)');
 
 (function() {
     window.isServerSynced = false;
+    window.DYNAMIC_RECIPES = []; 
+    window.DYNAMIC_PAGE_THEMES = []; 
+    window.DYNAMIC_ROULETTE_THEMES = []; 
+
+    // === FALLBACKS DE EMERGÊNCIA (Obrigatórios para o app não crashar offline) ===
+    window.DEFAULT_PAGE_THEME = {
+        id: "theme-1", nome: "Clássico", price: 0,
+        light: { style: { bg: "linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)", card: "rgba(255, 255, 255, 0.85)", text: "#1e2a3a", accent: "#7b9e5a", accentGradient: "linear-gradient(135deg, #f5b342, #e94b3c)" } },
+        dark: { style: { bg: "linear-gradient(145deg, #1a1a2e 0%, #0d0d1a 100%)", card: "rgba(30, 30, 60, 0.85)", text: "#e8e8e8", accent: "#f5b342", accentGradient: "linear-gradient(135deg, #f5d742, #e94b3c)" } }
+    };
+
+    window.DEFAULT_ROULETTE_THEME = {
+        id: "theme-1", nome: "Clássico", price: 0,
+        light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#e94b3c", wheelCenter: "#f5d742" },
+        dark: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#9b59b6", wheelCenter: "#f5d742" }
+    };
+
+    // Obter listas combinadas (Sempre garante que o tema 1 existe)
+    window.getPageThemes = () => window.DYNAMIC_PAGE_THEMES.length > 0 ? window.DYNAMIC_PAGE_THEMES : [window.DEFAULT_PAGE_THEME];
+    window.getRouletteThemes = () => window.DYNAMIC_ROULETTE_THEMES.length > 0 ? window.DYNAMIC_ROULETTE_THEMES : [window.DEFAULT_ROULETTE_THEME];
 
     const _rawState = {
         coins: 0, vipUntil: 0, noAdsUntil: 0, darkMode: false, displayName: '', banned: false,
@@ -27,13 +47,12 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
 
     Object.defineProperty(window, 'appState', { value: proxyState, writable: false, configurable: false });
 
-    // Função de bloqueio fatal
     function aplicarBanimento() {
         document.body.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#0f172a; color:#f8fafc; text-align:center; padding:2rem;">
                 <i class="fas fa-ban" style="font-size: 5rem; color:#ef4444; margin-bottom:1.5rem;"></i>
                 <h1 style="font-size:2rem; margin-bottom:1rem; color:#ef4444;">Conta Banida</h1>
-                <p style="color:#94a3b8; font-size:1.1rem; max-width:400px; line-height:1.5;">O seu acesso foi revogado por violação dos nossos Termos de Serviço ou uso de sistemas não autorizados.</p>
+                <p style="color:#94a3b8; font-size:1.1rem; max-width:400px; line-height:1.5;">O seu acesso foi revogado por violação dos nossos Termos de Serviço.</p>
             </div>
         `;
     }
@@ -41,74 +60,46 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
     window.toggleDarkModeSeguro = function() { _rawState.darkMode = !_rawState.darkMode; window.saveData(); window.applyThemes(); };
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
     window.isNoAdsAtivo = function() { return window.isVipAtivo() || _rawState.noAdsUntil > Date.now(); };
-    window.isItemLiberado = function(nomeDoArray, idDoItem) { 
-        if (window.isVipAtivo()) return true; 
-        return _rawState[nomeDoArray].includes(idDoItem);
-    };
+    window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
 
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
-        
         const trintaDias = 30 * 24 * 60 * 60 * 1000;
-
         if (tipo === 'vip') {
-            _rawState.vipUntil = Date.now() + trintaDias;
-            alert("👑 Compra Concluída!\nVocê agora é VIP por 30 dias. Loja liberada e sem anúncios forçados!");
+            _rawState.vipUntil = Date.now() + trintaDias; alert("👑 Compra Concluída! VIP Ativo.");
         } else if (tipo === 'no_ads') {
-            _rawState.noAdsUntil = Date.now() + trintaDias;
-            alert("🚫 Compra Concluída!\nOs anúncios forçados foram removidos por 30 dias.");
+            _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Compra Concluída! Sem anúncios.");
         }
-        
-        window.saveData();
-        window.atualizarBannersEAnuncios();
-        window.renderAll();
+        window.saveData(); window.atualizarBannersEAnuncios(); window.renderAll();
     };
 
     window.atualizarBannersEAnuncios = async function() {
         if (!window.isAppNativo()) return;
         try {
             const { AdMob } = window.Capacitor.Plugins;
-            if (window.isNoAdsAtivo()) {
-                await AdMob.hideBanner().catch(()=>{});
-            } else {
-                await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }).catch(()=>{});
-            }
+            if (window.isNoAdsAtivo()) { await AdMob.hideBanner().catch(()=>{}); } 
+            else { await AdMob.showBanner({ adId: ADMOB_BANNER, adPosition: 'BOTTOM_CENTER', isTesting: true, margin: 0 }).catch(()=>{}); }
         } catch(e){}
     };
 
-    // MODIFICADO: suporta preço passado como argumento (para receitas do Firebase)
-    window.comprarItemSeguro = function(categoria, id, precoOverride) {
+    window.comprarItemSeguro = function(categoria, id) {
         if (!window.isServerSynced) return false;
         if (window.isVipAtivo()) { alert("👑 VIP Ativo! Todos os itens estão liberados para você."); return false; }
         
-        let preco = precoOverride !== undefined ? precoOverride : 0;
-        let arrayDestravados = '';
-        let itemAtual = '';
-
+        let preco = 0; let arrayDestravados = ''; let itemAtual = '';
+        
         if (categoria === 'spinSound') { const i = window.SONS_GIRO?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedSpinSounds'; itemAtual = 'currentSpinSound'; }
         else if (categoria === 'endSound') { const i = window.SONS_FIM?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEndSounds'; itemAtual = 'currentEndSound'; }
         else if (categoria === 'winSound') { const i = window.SONS_VITORIA?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedWinSounds'; itemAtual = 'currentWinSound'; }
         else if (categoria === 'effect') { const i = window.EFEITOS_VISUAIS?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedEffects'; itemAtual = 'currentEffect'; }
-        else if (categoria === 'pageTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
-        else if (categoria === 'rouletteTheme') { const i = window.listTemas?.find(x => x.id === id); if(!i) return false; preco = i.price; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
-        else if (categoria === 'recipe') {
-            // Se não foi passado precoOverride, busca do window.RECEITAS (fallback)
-            if (precoOverride === undefined) {
-                const rec = window.RECEITAS?.find(x => x.id === id);
-                if (!rec) return false;
-                preco = rec.preco || 0;
-            }
-            arrayDestravados = 'unlockedRecipes';
-            itemAtual = null;
+        else if (categoria === 'pageTheme') { const i = window.getPageThemes().find(x => x.id === id); if(!i) return false; preco = i.price || 0; arrayDestravados = 'unlockedPageThemes'; itemAtual = 'currentPageTheme'; }
+        else if (categoria === 'rouletteTheme') { const i = window.getRouletteThemes().find(x => x.id === id); if(!i) return false; preco = i.price || 0; arrayDestravados = 'unlockedRouletteThemes'; itemAtual = 'currentRouletteTheme'; }
+        else if (categoria === 'recipe') { 
+            const i = window.DYNAMIC_RECIPES.find(x => x.id === id) || (window.RECEITAS || []).find(x => x.id === id); 
+            if(!i) return false; preco = i.preco; arrayDestravados = 'unlockedRecipes'; itemAtual = null; 
         }
 
-        if (_rawState.coins >= preco) {
-            _rawState.coins -= preco;
-            if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id);
-            if (itemAtual) _rawState[itemAtual] = id;
-            window.saveData();
-            return true;
-        }
+        if (_rawState.coins >= preco) { _rawState.coins -= preco; if (!_rawState[arrayDestravados].includes(id)) _rawState[arrayDestravados].push(id); if (itemAtual) _rawState[itemAtual] = id; window.saveData(); return true; }
         return false;
     };
 
@@ -137,14 +128,8 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
 
-    window.isAppNativo = function() {
-        return typeof window.Capacitor !== 'undefined' && 
-               typeof window.Capacitor.isNativePlatform === 'function' && 
-               window.Capacitor.isNativePlatform();
-    };
-
-    window.spinCounter = 0; 
-    let resolveAdPromise = null;
+    window.isAppNativo = function() { return typeof window.Capacitor !== 'undefined' && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform(); };
+    window.spinCounter = 0; let resolveAdPromise = null;
 
     if (window.isAppNativo()) {
         try {
@@ -160,8 +145,7 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
 
                 const handleReward = (reward) => {
                     try {
-                        let recompensa = 3;
-                        if (reward && reward.amount) recompensa = parseInt(reward.amount) || 3;
+                        let recompensa = 3; if (reward && reward.amount) recompensa = parseInt(reward.amount) || 3;
                         _rawState.coins += recompensa; window.saveData();
                         if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
                         if (resolveAdPromise) { resolveAdPromise(true); resolveAdPromise = null; }
@@ -187,11 +171,7 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
     window.mostrarAdAposGiro = async function() {
         if (!window.isAppNativo() || window.isNoAdsAtivo()) return;
         if (window.spinCounter > 0 && window.spinCounter % 3 === 0) {
-            try {
-                const { AdMob } = window.Capacitor.Plugins;
-                await AdMob.showInterstitial();
-                AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }).catch(()=>{});
-            } catch(e) {}
+            try { const { AdMob } = window.Capacitor.Plugins; await AdMob.showInterstitial(); AdMob.prepareInterstitial({ adId: ADMOB_INTERSTITIAL, isTesting: true }).catch(()=>{}); } catch(e) {}
         }
     };
 
@@ -207,12 +187,8 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
             try { await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARDED, isTesting: true }); } catch(e) {}
             return new Promise((resolve) => {
                 resolveAdPromise = resolve;
-                setTimeout(() => {
-                    if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
-                }, 90000);
-                AdMob.showRewardVideoAd().catch((err) => {
-                    if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; }
-                });
+                setTimeout(() => { if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; } }, 90000);
+                AdMob.showRewardVideoAd().catch((err) => { if (resolveAdPromise) { resolveAdPromise(false); resolveAdPromise = null; } });
             });
         } catch (error) { return false; }
     };
@@ -226,11 +202,8 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
     if (auth) auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn(e));
 
     function updateUserInterface(user) {
-        const userArea = document.getElementById('userArea');
-        const userName = document.getElementById('userName');
-        const userAvatar = document.getElementById('userAvatar');
-        const btnGoogle = document.getElementById('btnGoogleLogin');
-
+        const userArea = document.getElementById('userArea'); const userName = document.getElementById('userName');
+        const userAvatar = document.getElementById('userAvatar'); const btnGoogle = document.getElementById('btnGoogleLogin');
         if (!user) { if (userArea) userArea.style.display = 'none'; return; }
         let displayName = _rawState.displayName || user.displayName || '';
         if (!displayName) displayName = user.isAnonymous ? 'Convidado' : 'Usuário';
@@ -238,10 +211,7 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
         if (userArea) {
             userArea.style.display = 'flex';
             if (userAvatar) userAvatar.textContent = displayName.charAt(0).toUpperCase();
-            if (userName) {
-                userName.textContent = displayName.split(' ')[0];
-                if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Segura"></i>';
-            }
+            if (userName) { userName.textContent = displayName.split(' ')[0]; if (!user.isAnonymous) userName.innerHTML += ' <i class="fas fa-check-circle" style="color:#27ae60;" title="Conta Segura"></i>'; }
         }
         if (btnGoogle) btnGoogle.style.display = user.isAnonymous ? 'flex' : 'none';
     }
@@ -273,40 +243,25 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
 
     window.conectarGoogle = function() {
         if (!auth) return;
-        if (window.isAppNativo()) {
-            alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador.\n\nSeus dados vão sincronizar com o aplicativo automaticamente!");
-            return;
-        }
+        if (window.isAppNativo()) { alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador."); return; }
 
         const provider = new firebase.auth.GoogleAuthProvider();
         const currentUser = auth.currentUser;
         if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
 
-        const modal = document.getElementById('mergeAccountModal');
-        if (!modal) return;
-        
+        const modal = document.getElementById('mergeAccountModal'); if (!modal) return;
         function proceedWithChoice(choice) {
-            modal.style.display = 'none';
-            const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
-            
+            modal.style.display = 'none'; const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
             auth.signInWithPopup(provider).then((result) => {
                 const googleUser = result.user;
                 database.ref('users/' + googleUser.uid + '/appState').once('value').then((snapshot) => {
-                    const googleData = snapshot.val() || {};
-                    let finalData;
-                    if (choice === 'keep') finalData = { ...estadoAnonimo };
-                    else if (choice === 'overwrite') finalData = { ...googleData };
-                    else if (choice === 'merge') finalData = _mergeData(estadoAnonimo, googleData);
-                    
+                    const googleData = snapshot.val() || {}; let finalData;
+                    if (choice === 'keep') finalData = { ...estadoAnonimo }; else if (choice === 'overwrite') finalData = { ...googleData }; else if (choice === 'merge') finalData = _mergeData(estadoAnonimo, googleData);
                     finalData.displayName = googleUser.displayName || 'Usuário';
-                    database.ref('users/' + googleUser.uid + '/appState').set(finalData).then(() => {
-                        alert("✅ Conta vinculada e dados sincronizados com sucesso!");
-                        window.location.reload(); 
-                    });
+                    database.ref('users/' + googleUser.uid + '/appState').set(finalData).then(() => { alert("✅ Conta vinculada com sucesso!"); window.location.reload(); });
                 });
             }).catch((error) => { alert("❌ Erro ao conectar com o Google."); });
         }
-
         document.getElementById('mergeKeepAnon').onclick = () => proceedWithChoice('keep');
         document.getElementById('mergeOverwrite').onclick = () => proceedWithChoice('overwrite');
         document.getElementById('mergeCombine').onclick = () => proceedWithChoice('merge');
@@ -334,6 +289,7 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
         if (!window.isServerSynced) {
             window.isServerSynced = true; 
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            if (typeof window.applyThemes === 'function') window.applyThemes();
             if (typeof window.renderAll === 'function') window.renderAll();
         }
     }
@@ -342,10 +298,12 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
         try {
             const saved = localStorage.getItem('rodaDoSaborState');
             if (saved) Object.assign(_rawState, JSON.parse(saved));
-            if (_rawState.banned) return aplicarBanimento(); // Trava Imediata Local
+            if (_rawState.banned) return aplicarBanimento(); 
             garantirArraysNoEstado();
-            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
+            
+            // Applica temas imediatamente usando Fallback se estiver offline
             if (typeof window.applyThemes === 'function') window.applyThemes();
+            if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             window.atualizarBannersEAnuncios();
         } catch (e) {}
 
@@ -356,21 +314,42 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
                 if (user) {
                     currentUserUid = user.uid;
                     updateUserInterface(user);
-                    database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
-                        window.isServerSynced = true;
+                    
+                    // ESCUTA CONTEÚDO NUVEM
+                    database.ref('conteudo').on('value', (snapshot) => {
+                        window.DYNAMIC_RECIPES = [];
+                        window.DYNAMIC_PAGE_THEMES = [];
+                        window.DYNAMIC_ROULETTE_THEMES = [];
+                        
                         if (snapshot.exists()) {
-                            Object.assign(_rawState, snapshot.val());
-                        } else {
-                            if (_rawState.coins === 0) _rawState.coins = 20;
-                            window.saveData();
+                            const data = snapshot.val();
+                            if (data.receitas) {
+                                Object.keys(data.receitas).forEach(key => {
+                                    window.DYNAMIC_RECIPES.push({
+                                        id: key, nome: data.receitas[key].nome || 'Receita', icone: data.receitas[key].icone || '🍽️',
+                                        preco: data.receitas[key].preco !== undefined ? parseInt(data.receitas[key].preco) : 5, link: `receita.html?id=${key}`
+                                    });
+                                });
+                            }
+                            if (data.temas_pagina) {
+                                Object.keys(data.temas_pagina).forEach(key => { window.DYNAMIC_PAGE_THEMES.push(data.temas_pagina[key]); });
+                            }
+                            if (data.temas_roleta) {
+                                Object.keys(data.temas_roleta).forEach(key => { window.DYNAMIC_ROULETTE_THEMES.push(data.temas_roleta[key]); });
+                            }
                         }
                         
-                        // Trava em Tempo Real! Se o admin clicar em "Banir", a tela limpa na hora.
-                        if (_rawState.banned) {
-                            aplicarBanimento();
-                            return;
-                        }
+                        if (typeof window.renderRecipes === 'function') window.renderRecipes();
+                        if (typeof window.renderThemes === 'function') window.renderThemes();
+                        if (typeof window.applyThemes === 'function') window.applyThemes();
+                    });
 
+                    // ESCUTA USUÁRIO
+                    database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
+                        window.isServerSynced = true;
+                        if (snapshot.exists()) { Object.assign(_rawState, snapshot.val()); } 
+                        else { if (_rawState.coins === 0) _rawState.coins = 20; window.saveData(); }
+                        if (_rawState.banned) { aplicarBanimento(); return; }
                         garantirArraysNoEstado();
                         if (typeof window.renderAll === 'function') window.renderAll();
                         window.atualizarBannersEAnuncios();
@@ -388,11 +367,10 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
 
     let saveTimeout = null;
     window.saveData = function() {
-        if (_rawState.banned) return; // Se está banido, não salva mais nada
+        if (_rawState.banned) return; 
         const coinEl = document.getElementById('coin-balance');
         if (coinEl) coinEl.textContent = _rawState.coins;
         try { localStorage.setItem('rodaDoSaborState', JSON.stringify(_rawState)); } catch (e) {}
-        
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
             if (currentUserUid && database && window.isServerSynced) {
@@ -405,35 +383,17 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
 
     window.loadData();
 
-    // ========================== ÁUDIO E SINTETIZADOR ==========================
-    let audioCtx = null;
-    window.getAudioContext = function() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; };
-
-    window.playSynthesizedSound = function(soundType) {
-        try {
-            const ctx = window.getAudioContext(); const now = ctx.currentTime;
-            switch (soundType) {
-                case 'click': osc(ctx, now, 400, 80, 0.04, 'sine', 0.3); break;
-                case 'end-chord': [392, 493, 587].forEach((f) => osc(ctx, now, f, f, 0.3, 'sine', 0.2)); break;
-                case 'win-tada': [523.25, 659.25, 783.99].forEach(f => osc(ctx, now, f, f, 0.1, 'sine', 0.2)); [523.25, 659.25, 783.99, 1046.50].forEach(f => osc(ctx, now + 0.15, f, f, 0.8, 'sine', 0.2)); break;
-                default: osc(ctx, now, 400, 400, 0.1, 'sine', 0.2); break;
-            }
-        } catch (e) {}
-    };
-
-    function osc(ctx, start, fStart, fEnd, duration, type, gain) {
-        const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = type;
-        o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
-        g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
-        o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
-    }
-
+    // ========================== APLICAÇÃO DE TEMAS ==========================
     window.applyThemes = function() {
-        const themes = window.listTemas || []; if (themes.length === 0) return;
-        const pageTheme = themes.find(t => t.id === _rawState.currentPageTheme) || themes[0];
-        const rouletteTheme = themes.find(t => t.id === _rawState.currentRouletteTheme) || themes[0];
+        const pageThemes = window.getPageThemes();
+        const rouletteThemes = window.getRouletteThemes();
+        
+        const pageTheme = pageThemes.find(t => t.id === _rawState.currentPageTheme) || pageThemes[0];
+        const rouletteTheme = rouletteThemes.find(t => t.id === _rawState.currentRouletteTheme) || rouletteThemes[0];
+        
         const mode = _rawState.darkMode ? 'dark' : 'light';
         const pageData = pageTheme[mode];
+        
         if (pageData && pageData.style) {
             const root = document.documentElement;
             root.style.setProperty('--bg-body', pageData.style.bg); 
@@ -442,12 +402,14 @@ console.log('core.js carregado (v17 - Receitas com preço do Firebase)');
             root.style.setProperty('--accent', pageData.style.accent);
             root.style.setProperty('--accent-gradient', pageData.style.accentGradient);
         }
+        
         const rouletteData = rouletteTheme[mode];
         if (rouletteData && rouletteData.colors) {
             const root = document.documentElement;
             root.style.setProperty('--wheel-border', rouletteData.wheelBorder || rouletteData.colors[0]); 
             root.style.setProperty('--wheel-center', rouletteData.wheelCenter || rouletteData.colors[1]);
         }
+        
         if (typeof window.drawRoulette === 'function') window.drawRoulette();
     };
 })();
