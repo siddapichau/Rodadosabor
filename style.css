@@ -3,17 +3,9 @@
    ============================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-/* 🔴 EXTERMINADOR DO OVAL 🔴 
-   Esconde div's de formatos arredondados que vêm no HTML padrão */
-.bg-shape, .shape, .blob, .circle-bg, .oval-bg, [class*="bg-shape"] {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    z-index: -9999 !important;
-}
-
 html, body { 
     background: var(--bg-body) !important; 
+    background-image: var(--bg-body) !important;
     color: var(--text-primary); 
     min-height: 100vh; 
     padding: 1rem; 
@@ -24,11 +16,13 @@ html, body {
     border-radius: 0 !important; 
 }
 
-/* Mata pseudo-elementos de sombra do fundo */
+/* O ANIQUILADOR DO OVAL: Remove qualquer forma oval, sombra radial ou SVG preso no fundo */
 body::before, body::after, html::before, html::after, .container::before, .container::after { 
-    display: none !important; 
     content: none !important;
+    display: none !important; 
     background: none !important; 
+    box-shadow: none !important;
+    opacity: 0 !important;
 }
 
 .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; background: transparent !important; }
@@ -50,6 +44,7 @@ body::before, body::after, html::before, html::after, .container::before, .conta
 .btn-toggle-mode { background: var(--bg-card); border: 1px solid var(--border-color); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.2s; }
 .btn-toggle-mode:hover { transform: scale(1.05); border-color: var(--accent); }
 
+/* TAG VIP */
 .vip-tag { background: linear-gradient(135deg, #f5b342, #e94b3c); color: white; padding: 0.3rem 0.8rem; border-radius: 30px; font-size: 0.75rem; font-weight: 800; box-shadow: 0 4px 12px rgba(245, 179, 66, 0.4); animation: pulse-glow 2s infinite; }
 
 .user-area { display: none; align-items: center; gap: 0.4rem; background: var(--bg-card); padding: 0.2rem 0.6rem 0.2rem 0.2rem; border-radius: 50px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.04); flex-shrink: 0; }
@@ -68,12 +63,19 @@ canvas { display: block; width: 100%; height: 100%; border-radius: 50%; box-shad
 
 .roulette-arrow { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-top: 30px solid #e94b3c; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.25)); z-index: 10; }
 
-.center-spin-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; border-radius: 50%; background-color: #f5d742; border: 5px solid #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.5); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15; transition: transform 0.15s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; }
+.center-spin-button {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 60px; height: 60px; border-radius: 50%; background-color: #f5d742; 
+    border: 5px solid #ffffff; box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.5);
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15;
+    transition: transform 0.15s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
 .center-spin-button:hover { transform: translate(-50%, -50%) scale(1.05); }
 .center-spin-button:active { transform: translate(-50%, -50%) scale(0.95); }
 .center-spin-button span { color: #1e2a3a; font-weight: 800; text-transform: uppercase; line-height: 1.1; transition: color 0.3s ease; }
 .center-spin-button .txt-top { font-size: 0.7rem; font-weight: 900; }
 .center-spin-button .txt-bottom { font-size: 0.45rem; font-weight: 700; margin-top: -2px; }
+
 .center-spin-button.spinning { background-color: #e94b3c !important; border-color: #ffeaea !important; animation: none !important; }
 .center-spin-button.spinning span { color: #ffffff !important; }
 
@@ -83,6 +85,7 @@ canvas { display: block; width: 100%; height: 100%; border-radius: 50%; box-shad
 .btn-gradient-action.dynamic-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
 .btn-gradient-action.dynamic-green { background: linear-gradient(135deg, #10b981, #047857); }
 
+/* LOJA PREMIUM */
 .premium-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1rem; }
 .premium-card { background: var(--bg-body); border: 2px solid var(--border-color); border-radius: 20px; padding: 1.5rem; text-align: center; position: relative; transition: transform 0.3s, box-shadow 0.3s; }
 .premium-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
@@ -166,7 +169,10 @@ canvas { display: block; width: 100%; height: 100%; border-radius: 50%; box-shad
     --wheel-center: #f5d742;
 }
 
-@media (max-width: 600px) { .premium-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+    .premium-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 480px) {
     .canvas-container { width: 300px; height: 300px; }
     .header { flex-direction: column; align-items: stretch; gap: 0.5rem; }
