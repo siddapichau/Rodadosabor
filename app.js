@@ -1,5 +1,5 @@
 'use strict';
-console.log('app.js carregado (v12 - Receitas Dinâmicas do Firebase)');
+console.log('app.js carregado (v15 - Renderização Segura de Fallbacks)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
@@ -66,32 +66,37 @@ window.renderModalFoodOptions = function(filterText = '') {
     });
 };
 
+// RENDERIZADOR DE TEMAS (Garante Fallbacks)
 window.renderThemes = function() {
     const pageGrid = document.getElementById('pageThemesGrid');
     const rouletteGrid = document.getElementById('rouletteThemesGrid');
-    const themes = window.listTemas || [];
-    if (themes.length === 0) return;
-
-    const renderThemeGrid = (grid, arrayName, currentKey, category) => {
+    
+    // Obtém as listas seguras do Core (Onde o Tema 1 está sempre garantido)
+    const activePageThemes = typeof window.getPageThemes === 'function' ? window.getPageThemes() : [];
+    const activeRouletteThemes = typeof window.getRouletteThemes === 'function' ? window.getRouletteThemes() : [];
+    
+    const renderThemeGrid = (grid, themeList, arrayName, currentKey, category) => {
         if (!grid) return;
         grid.innerHTML = '';
-        themes.forEach(theme => {
-            const isUnlocked = window.isItemLiberado(arrayName, theme.id);
+        themeList.forEach(theme => {
+            const isUnlocked = window.isItemLiberado(arrayName, theme.id) || theme.price === 0;
             const isActive = window.appState?.[currentKey] === theme.id;
             const card = document.createElement('div');
             card.className = `item-card ${isActive ? 'active' : ''}`;
             
+            const precoExibicao = (theme.price !== undefined) ? theme.price : (theme.preco || 0);
+
             let btnHTML = isActive ? `<button class="btn-action btn-active">Ativo</button>`
                         : isUnlocked ? `<button class="btn-action btn-use" onclick="window.equiparEAtualizar('${category}', '${theme.id}')">Usar</button>`
-                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${theme.id}')"><i class="fas fa-coins"></i> ${theme.price || 0}</button>`;
+                        : `<button class="btn-action btn-buy" onclick="window.comprarEAtualizar('${category}', '${theme.id}')"><i class="fas fa-coins"></i> ${precoExibicao}</button>`;
             
-            card.innerHTML = `<div class="item-info"><h4>${theme.nome}</h4><p style="font-size:0.65rem; color:var(--text-muted);">${theme.price === 0 ? 'Grátis' : `${theme.price} moedas`}</p></div>${btnHTML}`;
+            card.innerHTML = `<div class="item-info"><h4>${theme.nome || theme.id}</h4><p style="font-size:0.65rem; color:var(--text-muted);">${precoExibicao === 0 ? 'Grátis' : `${precoExibicao} moedas`}</p></div>${btnHTML}`;
             grid.appendChild(card);
         });
     };
 
-    renderThemeGrid(pageGrid, 'unlockedPageThemes', 'currentPageTheme', 'pageTheme');
-    renderThemeGrid(rouletteGrid, 'unlockedRouletteThemes', 'currentRouletteTheme', 'rouletteTheme');
+    renderThemeGrid(pageGrid, activePageThemes, 'unlockedPageThemes', 'currentPageTheme', 'pageTheme');
+    renderThemeGrid(rouletteGrid, activeRouletteThemes, 'unlockedRouletteThemes', 'currentRouletteTheme', 'rouletteTheme');
 };
 
 window.renderSounds = function() {
@@ -105,7 +110,7 @@ window.renderSounds = function() {
         if (!soundList || soundList.length === 0) return;
         const sorted = [...soundList].sort((a, b) => (a.price || 0) - (b.price || 0));
         sorted.forEach(sound => {
-            const isUnlocked = window.isItemLiberado(arrayName, sound.id);
+            const isUnlocked = window.isItemLiberado(arrayName, sound.id) || sound.price === 0;
             const isActive = window.appState?.[currentKey] === sound.id;
             
             const card = document.createElement('div');
@@ -141,7 +146,7 @@ window.renderEffects = function() {
     
     const sorted = [...effects].sort((a, b) => (a.price || 0) - (b.price || 0));
     sorted.forEach(effect => {
-        const isUnlocked = window.isItemLiberado('unlockedEffects', effect.id);
+        const isUnlocked = window.isItemLiberado('unlockedEffects', effect.id) || effect.price === 0;
         const isActive = window.appState?.currentEffect === effect.id;
         
         const card = document.createElement('div');
@@ -162,98 +167,36 @@ window.renderEffects = function() {
     });
 };
 
-// ========================== RECEITAS DINÂMICAS (FIREBASE) ==========================
 window.renderRecipes = function() {
     const grid = document.getElementById('recipesGrid');
     if (!grid) return;
-    grid.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:2rem;"><i class="fas fa-spinner fa-spin"></i> Carregando receitas...</p>';
-
-    if (typeof database !== 'undefined' && database) {
-        database.ref('conteudo/receitas').once('value').then(snapshot => {
-            const data = snapshot.val();
-            grid.innerHTML = '';
-            if (!data) {
-                grid.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nenhuma receita disponível no momento.</p>';
-                return;
-            }
-
-            const receitasArray = Object.keys(data).map(id => {
-                const rec = data[id];
-                return {
-                    id: id,
-                    nome: rec.nome || id,
-                    icone: rec.icone || '🍽️',
-                    preco: rec.preco !== undefined ? rec.preco : 0,
-                    link: id + '.html',
-                    ...rec
-                };
-            });
-
-            receitasArray.sort((a, b) => (a.preco || 0) - (b.preco || 0));
-
-            receitasArray.forEach(rec => {
-                // Se preço for 0, considera desbloqueado automaticamente
-                const isFree = rec.preco === 0;
-                const isUnlocked = isFree || window.isItemLiberado('unlockedRecipes', rec.id);
-                
-                const card = document.createElement('div');
-                card.className = 'recipe-card';
-                card.innerHTML = `
-                    <div class="recipe-info">
-                        <span class="recipe-icon">${rec.icone}</span>
-                        <span class="recipe-name">${rec.nome}</span>
-                    </div>
-                `;
-                let btn = document.createElement('button');
-                if (isUnlocked) {
-                    btn.className = 'btn-action btn-recipe-open';
-                    btn.textContent = 'Ver';
-                    btn.onclick = () => window.location.href = rec.link;
-                } else {
-                    btn.className = 'btn-action btn-buy';
-                    btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco}`;
-                    btn.onclick = () => window.comprarEAtualizar('recipe', rec.id, rec.preco);
-                }
-                card.appendChild(btn);
-                grid.appendChild(card);
-            });
-        }).catch(err => {
-            console.warn('Erro ao carregar receitas do Firebase, usando fallback:', err);
-            renderRecipesFallback(grid);
-        });
-    } else {
-        renderRecipesFallback(grid);
-    }
-};
-
-// Fallback usando window.RECEITAS (comidas.js)
-function renderRecipesFallback(grid) {
     grid.innerHTML = '';
-    const recipes = window.RECEITAS || [];
+    
+    const recipes = (window.DYNAMIC_RECIPES && window.DYNAMIC_RECIPES.length > 0) ? window.DYNAMIC_RECIPES : (window.RECEITAS || []);
     if (recipes.length === 0) {
-        grid.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:2rem;">Nenhuma receita disponível.</p>';
+        grid.innerHTML = '<span style="color:var(--text-muted); font-size: 0.85rem;">Carregando receitas exclusivas da nuvem...</span>';
         return;
     }
+    
     const sorted = [...recipes].sort((a, b) => (a.preco || 0) - (b.preco || 0));
     sorted.forEach(rec => {
-        const isUnlocked = window.isItemLiberado('unlockedRecipes', rec.id);
+        const isUnlocked = window.isItemLiberado('unlockedRecipes', rec.id) || rec.preco === 0;
         const card = document.createElement('div');
         card.className = 'recipe-card';
         card.innerHTML = `<div class="recipe-info"><span class="recipe-icon">${rec.icone}</span><span class="recipe-name">${rec.nome}</span></div>`;
         let btn = document.createElement('button');
+        
         if (isUnlocked) {
-            btn.className = 'btn-action btn-recipe-open';
-            btn.textContent = 'Ver';
+            btn.className = 'btn-action btn-recipe-open'; btn.textContent = 'Ver';
             btn.onclick = () => window.location.href = rec.link;
         } else {
-            btn.className = 'btn-action btn-buy';
-            btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco}`;
-            btn.onclick = () => window.comprarEAtualizar('recipe', rec.id, rec.preco);
+            btn.className = 'btn-action btn-buy'; btn.innerHTML = `<i class="fas fa-coins"></i> ${rec.preco || 0}`;
+            btn.onclick = () => window.comprarEAtualizar('recipe', rec.id);
         }
         card.appendChild(btn);
         grid.appendChild(card);
     });
-}
+};
 
 window.launchCurrentEffect = function() {
     const effectId = window.appState.currentEffect || 'effect-1';
@@ -269,9 +212,8 @@ window.launchCurrentEffect = function() {
     }
 };
 
-// MODIFICADO: aceita preço como terceiro argumento
-window.comprarEAtualizar = function(categoria, id, preco) {
-    if (window.comprarItemSeguro(categoria, id, preco)) window.renderAll();
+window.comprarEAtualizar = function(categoria, id) {
+    if (window.comprarItemSeguro(categoria, id)) window.renderAll();
     else if(!window.isVipAtivo()) alert("Não foi possível realizar a compra. Moedas insuficientes.");
 };
 
@@ -305,7 +247,6 @@ window.renderAll = function() {
     try { if (typeof window.applyThemes === 'function') window.applyThemes(); } catch(e) {}
 };
 
-// ========================== EVENTOS PRINCIPAIS ==========================
 document.addEventListener('DOMContentLoaded', function() {
     window.renderAll();
 
@@ -326,9 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         window.updateCoinsDisplay();
-        
         if (typeof window.spinCounter !== 'undefined') window.spinCounter++;
-        
         window.spinRoulette();
     });
     
