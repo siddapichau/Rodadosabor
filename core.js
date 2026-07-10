@@ -1,12 +1,14 @@
 'use strict';
-console.log('core.js carregado (v26 - Anti-Fantasmas e Anti-Oval Absoluto)');
+console.log('core.js carregado (v27 - Escuta Completa: Temas, Receitas e Comidas)');
 
 (function() {
     window.isServerSynced = false;
 
+    // Listas dinâmicas da Nuvem
     window.DYNAMIC_RECIPES = []; 
     window.DYNAMIC_PAGE_THEMES = []; 
     window.DYNAMIC_ROULETTE_THEMES = []; 
+    window.BANCO_DE_COMIDAS = []; // AQUI! Esta lista é preenchida pelo Firebase!
 
     // === FALLBACKS DE EMERGÊNCIA ===
     window.DEFAULT_PAGE_THEME = {
@@ -126,7 +128,6 @@ console.log('core.js carregado (v26 - Anti-Fantasmas e Anti-Oval Absoluto)');
         return false;
     };
 
-    // ========================== ADMOB ==========================
     const ADMOB_BANNER = 'ca-app-pub-3940256099942544/6300978111';
     const ADMOB_INTERSTITIAL = 'ca-app-pub-3940256099942544/1033173712';
     const ADMOB_REWARDED = 'ca-app-pub-3940256099942544/5224354917';
@@ -178,7 +179,6 @@ console.log('core.js carregado (v26 - Anti-Fantasmas e Anti-Oval Absoluto)');
         } catch (error) { return false; }
     };
 
-    // ========================== FIREBASE & GOOGLE ==========================
     if (window.firebaseConfig && !firebase.apps.length) firebase.initializeApp(window.firebaseConfig);
     const auth = window.firebaseConfig ? firebase.auth() : null;
     const database = window.firebaseConfig ? firebase.database() : null;
@@ -218,40 +218,31 @@ console.log('core.js carregado (v26 - Anti-Fantasmas e Anti-Oval Absoluto)');
         arrayFields.forEach(field => { merged[field] = mergeArray(anonData[field], googleData[field]); }); return merged;
     }
 
-    // 🔴 SOLUÇÃO CONTAS FANTASMAS: Limpa a conta anônima do DB ao migrar 🔴
+    // 🔴 SOLUÇÃO CONTAS FANTASMAS
     window.conectarGoogle = function() {
-        if (!auth) return; 
-        if (window.isAppNativo()) { alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador."); return; }
-        
-        const provider = new firebase.auth.GoogleAuthProvider(); 
-        const currentUser = auth.currentUser;
+        if (!auth) return; if (window.isAppNativo()) { alert("⚠️ Segurança Android:\n\nPara vincular a sua conta, acesse nosso site pelo navegador."); return; }
+        const provider = new firebase.auth.GoogleAuthProvider(); const currentUser = auth.currentUser;
         if (!currentUser || !currentUser.isAnonymous) { alert("Sua conta já está protegida!"); return; }
         
         const modal = document.getElementById('mergeAccountModal'); if (!modal) return;
-        
         function proceedWithChoice(choice) {
             modal.style.display = 'none'; 
             const estadoAnonimo = JSON.parse(JSON.stringify(_rawState));
             const oldAnonUid = currentUser.uid;
 
-            // 1. Tenta vincular a credencial à conta atual (mantém UID)
             currentUser.linkWithPopup(provider).then((result) => {
                 const googleUser = result.user;
                 _rawState.displayName = googleUser.displayName || 'Usuário'; 
                 window.saveData();
                 alert("✅ Conta protegida com sucesso!"); window.location.reload();
             }).catch((error) => {
-                // 2. Se o Google já estiver em uso, faz login nele e APAGA A CONTA FANTASMA
                 if (error.code === 'auth/credential-already-in-use') {
                     const credential = error.credential;
                     auth.signInWithCredential(credential).then((result) => {
                         const googleUser = result.user;
                         const newUid = googleUser.uid;
+                        if (newUid !== oldAnonUid) { database.ref('users/' + oldAnonUid).remove().catch(()=>{}); }
 
-                        // APAGA A CONTA ANÔNIMA ABANDONADA DO FIREBASE
-                        database.ref('users/' + oldAnonUid).remove();
-
-                        // Sincroniza dados com a conta Google existente
                         database.ref('users/' + newUid + '/appState').once('value').then((snapshot) => {
                             const googleData = snapshot.val() || {}; let finalData;
                             if (choice === 'keep') finalData = { ...estadoAnonimo }; 
@@ -321,14 +312,24 @@ console.log('core.js carregado (v26 - Anti-Fantasmas e Anti-Oval Absoluto)');
                     currentUserUid = user.uid;
                     updateUserInterface(user);
                     
+                    // 🔴 LÊ E ATUALIZA AS LISTAS DA NUVEM 🔴
                     database.ref('conteudo').on('value', (snapshot) => {
-                        window.DYNAMIC_RECIPES = []; window.DYNAMIC_PAGE_THEMES = []; window.DYNAMIC_ROULETTE_THEMES = [];
+                        window.DYNAMIC_RECIPES = []; 
+                        window.DYNAMIC_PAGE_THEMES = []; 
+                        window.DYNAMIC_ROULETTE_THEMES = []; 
+                        window.BANCO_DE_COMIDAS = [];
+
                         if (snapshot.exists()) {
                             const data = snapshot.val();
                             if (data.receitas) { Object.keys(data.receitas).forEach(key => { window.DYNAMIC_RECIPES.push({ id: key, nome: data.receitas[key].nome || 'Receita', icone: data.receitas[key].icone || '🍽️', preco: data.receitas[key].preco !== undefined ? parseInt(data.receitas[key].preco) : 5, link: `receita.html?id=${key}` }); }); }
                             if (data.temas_pagina) { Object.keys(data.temas_pagina).forEach(key => { window.DYNAMIC_PAGE_THEMES.push(data.temas_pagina[key]); }); }
                             if (data.temas_roleta) { Object.keys(data.temas_roleta).forEach(key => { window.DYNAMIC_ROULETTE_THEMES.push(data.temas_roleta[key]); }); }
+                            
+                            // PREENCHE A LISTA DE COMIDAS DA MODAL
+                            if (data.banco_comidas) { Object.keys(data.banco_comidas).forEach(key => { window.BANCO_DE_COMIDAS.push(data.banco_comidas[key]); }); }
                         }
+                        
+                        // Força renderização para mostrar as listas
                         if (typeof window.renderRecipes === 'function') window.renderRecipes();
                         if (typeof window.renderThemes === 'function') window.renderThemes();
                         if (typeof window.applyThemes === 'function') window.applyThemes();
@@ -359,7 +360,7 @@ console.log('core.js carregado (v26 - Anti-Fantasmas e Anti-Oval Absoluto)');
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
             if (currentUserUid && database && window.isServerSynced) {
-                database.ref('users/' + currentUserUid + '/appState').set(_rawState).catch((error) => { if (error.code === "PERMISSION_DENIED") { localStorage.removeItem('rodaDoSaborState'); window.location.reload(); } });
+                database.ref('users/' + currentUserUid + '/appState').set(_rawState).catch((error) => {});
             }
         }, 100);
     };
@@ -394,23 +395,34 @@ console.log('core.js carregado (v26 - Anti-Fantasmas e Anti-Oval Absoluto)');
         const rouletteTheme = rouletteThemes.find(t => t.id === _rawState.currentRouletteTheme) || rouletteThemes[0];
         
         const mode = _rawState.darkMode ? 'dark' : 'light';
-        const pageData = pageTheme[mode];
+        const pageData = pageTheme[mode] || pageTheme.light;
         
         if (pageData && pageData.style) {
             const root = document.documentElement;
             
-            // 🔴 ANIQUILADOR DO OVAL (Limpa string corrompida do Firebase)
+            // 🔴 ANIQUILADOR DO OVAL (Limpa strings corrompidas do Firebase que causam o oval gigante)
             let bgStyle = pageData.style.bg || '';
-            // Se encontrar a palavra radial, força o fundo liso sem ovais
             if (bgStyle.includes('radial-gradient') || bgStyle.includes('url')) {
                 bgStyle = _rawState.darkMode ? 'linear-gradient(145deg, #1a1a2e 0%, #0f172a 100%)' : 'linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)';
             }
 
             root.style.setProperty('--bg-body', bgStyle); 
+            // Injeção Inline para bloquear qualquer sombra radial antiga:
+            document.body.style.background = bgStyle + " !important";
+            document.body.style.backgroundImage = "none !important";
+
             root.style.setProperty('--bg-card', pageData.style.card);
             root.style.setProperty('--text-primary', pageData.style.text); 
             root.style.setProperty('--accent', pageData.style.accent);
             root.style.setProperty('--accent-gradient', pageData.style.accentGradient);
+        }
+        
+        // A Roleta Ignora a página e usa as cores dela
+        const rouletteData = rouletteTheme.light || rouletteTheme;
+        if (rouletteData && rouletteData.colors) {
+            const root = document.documentElement;
+            root.style.setProperty('--wheel-border', rouletteData.wheelBorder || '#1e293b'); 
+            root.style.setProperty('--wheel-center', rouletteData.wheelCenter || '#ffffff');
         }
         
         if (typeof window.drawRoulette === 'function') window.drawRoulette();
