@@ -131,11 +131,7 @@
             <div class="search-box-modal">
                 <input type="text" id="searchFoodInput" placeholder="🔍 Buscar comida...">
             </div>
-            <div class="add-food-section">
-                <input type="text" id="newFoodName" placeholder="Nova comida">
-                <input type="text" id="newFoodEmoji" placeholder="Emoji" maxlength="2" style="flex:0.5; min-width:60px; text-align:center;">
-                <button id="btnAddCustomFood" class="btn-gradient-action dynamic-blue" style="flex:0.8; padding:0.6rem 1rem; font-size:0.9rem;">+ Adicionar</button>
-            </div>
+            <!-- REMOVI A BARRA DE ADICIONAR COMIDAS DA MODAL (AGORA É FEITO NO ADMIN) -->
             <div class="grid-food-options" id="modalFoodOptionsGrid"></div>
             <div id="foodSelectionCount" style="text-align:center; margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">0 / 6 selecionadas</div>
             <div style="text-align: center; margin-top: 0.5rem;">
@@ -193,7 +189,7 @@
 
     <script src="firebase.js"></script>
     <script src="sons.js"></script>
-    <script src="comidas.js"></script>
+    <!-- REMOVIDO: <script src="comidas.js"></script> -->
     <script src="efeitos-lista.js"></script>
     <script src="efeitos.js"></script>
     <script src="roleta.js"></script>
