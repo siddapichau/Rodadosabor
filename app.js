@@ -1,5 +1,5 @@
 'use strict';
-console.log('app.js carregado (v29 - Renderização Cloud Completa)');
+console.log('app.js carregado (v31 - UX Instantâneo e Sem Recarregamento)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
@@ -27,8 +27,15 @@ window.removeFood = function(idx) {
     if (window.appState && window.appState.foods) {
         const novasComidas = [...window.appState.foods];
         novasComidas.splice(idx, 1);
-        window._comidasSelecionadasTemporarias = novasComidas;
-        document.getElementById('btnSaveFoodSelection')?.click();
+        if (novasComidas.length < 2) {
+            alert("A roleta precisa ter pelo menos 2 comidas!");
+            return;
+        }
+        // Atualização instantânea na nuvem
+        if (typeof window.atualizarComidasSeguro === 'function') {
+            window.atualizarComidasSeguro(novasComidas);
+            window.renderAll();
+        }
     }
 };
 
@@ -37,6 +44,7 @@ window.renderModalFoodOptions = function(filterText = '') {
     if (!modalGrid) return;
     modalGrid.innerHTML = '';
     
+    // Fallback de Emergência
     const fallbackFoods = [{ nome: "Pizza", icone: "🍕" }, { nome: "Hambúrguer", icone: "🍔" }, { nome: "Sushi", icone: "🍣" }, { nome: "Salada", icone: "🥗" }];
     let allItems = (window.BANCO_DE_COMIDAS && window.BANCO_DE_COMIDAS.length > 0) ? [...window.BANCO_DE_COMIDAS] : fallbackFoods;
     
@@ -339,16 +347,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btnCloseFoodModal')?.addEventListener('click', () => foodModal.style.display = 'none');
     document.getElementById('searchFoodInput')?.addEventListener('input', e => window.renderModalFoodOptions(e.target.value));
     
+    // 🔴 AGORA GRAVA NA HORA SEM RECARREGAR A PÁGINA 🔴
     document.getElementById('btnSaveFoodSelection')?.addEventListener('click', () => {
         if (!window._comidasSelecionadasTemporarias) return;
         const count = window._comidasSelecionadasTemporarias.length;
         if (count < 2) { alert("Selecione pelo menos 2 comidas!"); return; }
         if (count > 6) { alert("Máximo permitido é 6 comidas na roleta!"); return; }
         
-        const data = JSON.parse(localStorage.getItem('rodaDoSaborState'));
-        data.foods = [...window._comidasSelecionadasTemporarias];
-        localStorage.setItem('rodaDoSaborState', JSON.stringify(data));
-        window.location.reload(); 
+        if (typeof window.atualizarComidasSeguro === 'function') {
+            // Atualiza a memória e a Firebase na hora!
+            window.atualizarComidasSeguro([...window._comidasSelecionadasTemporarias]);
+            const modal = document.getElementById('foodSelectionModal');
+            if (modal) modal.style.display = 'none';
+            window.renderAll();
+        }
     });
 
     const resultOverlay = document.getElementById('resultOverlay');
