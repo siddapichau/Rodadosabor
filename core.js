@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v29 - Arquitetura de Mídia Independente)');
+console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
 
 (function() {
     window.isServerSynced = false;
@@ -14,7 +14,7 @@ console.log('core.js carregado (v29 - Arquitetura de Mídia Independente)');
     window.DYNAMIC_END_SOUNDS = [];
     window.DYNAMIC_WIN_SOUNDS = [];
 
-    // === FALLBACKS DE EMERGÊNCIA ===
+    // === FALLBACKS DE EMERGÊNCIA (Caso o telemóvel seja novo e não tenha net) ===
     window.DEFAULT_PAGE_THEME = { id: "theme-1", nome: "Clássico", price: 0, light: { style: { bg: "linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)", card: "rgba(255, 255, 255, 0.85)", text: "#1e293b", accent: "#7b9e5a", accentGradient: "linear-gradient(135deg, #f5b342, #e94b3c)" } }, dark: { style: { bg: "linear-gradient(145deg, #1a1a2e 0%, #0f172a 100%)", card: "rgba(30, 41, 59, 0.85)", text: "#f8fafc", accent: "#f5b342", accentGradient: "linear-gradient(135deg, #f5d742, #e94b3c)" } } };
     window.DEFAULT_ROULETTE_THEME = { id: "theme-1", nome: "Clássico", price: 0, light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#1e293b", wheelCenter: "#ffffff" }, dark: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#f8fafc", wheelCenter: "#0f172a" } };
     window.DEFAULT_EFFECT = { id: "effect-1", name: "🎊 Confetes Coloridos", price: 0, type: "confetti" };
@@ -22,7 +22,7 @@ console.log('core.js carregado (v29 - Arquitetura de Mídia Independente)');
     window.DEFAULT_END_SOUND = { id: "end-1", name: "Acorde Simples", price: 0, type: "end-chord" };
     window.DEFAULT_WIN_SOUND = { id: "win-1", name: "Grande Tada!", price: 0, type: "win-tada" };
 
-    // Getters Seguros
+    // Getters Seguros (Procuram na lista da nuvem, se vazio usam fallback)
     window.getPageThemes = () => window.DYNAMIC_PAGE_THEMES.length > 0 ? window.DYNAMIC_PAGE_THEMES : [window.DEFAULT_PAGE_THEME];
     window.getRouletteThemes = () => window.DYNAMIC_ROULETTE_THEMES.length > 0 ? window.DYNAMIC_ROULETTE_THEMES : [window.DEFAULT_ROULETTE_THEME];
     window.getEffects = () => window.DYNAMIC_EFFECTS.length > 0 ? window.DYNAMIC_EFFECTS : [window.DEFAULT_EFFECT];
@@ -63,8 +63,8 @@ console.log('core.js carregado (v29 - Arquitetura de Mídia Independente)');
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
         const trintaDias = 30 * 24 * 60 * 60 * 1000;
-        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 VIP Ativo!"); } 
-        else if (tipo === 'no_ads') { _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Sem anúncios."); }
+        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 Compra Concluída! VIP Ativo."); } 
+        else if (tipo === 'no_ads') { _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Compra Concluída! Sem anúncios."); }
         window.saveData(); window.atualizarBannersEAnuncios(); window.renderAll();
     };
 
@@ -203,16 +203,38 @@ console.log('core.js carregado (v29 - Arquitetura de Mídia Independente)');
         if (!window.isItemLiberado('unlockedWinSounds', _rawState.currentWinSound)) _rawState.currentWinSound = "win-1";
     }
 
+    // 🔴 SISTEMA DE PREENCHIMENTO DE LISTAS 🔴
+    function popularListasDinamicas(data) {
+        window.DYNAMIC_RECIPES = []; window.DYNAMIC_PAGE_THEMES = []; window.DYNAMIC_ROULETTE_THEMES = []; window.BANCO_DE_COMIDAS = [];
+        window.DYNAMIC_EFFECTS = []; window.DYNAMIC_SPIN_SOUNDS = []; window.DYNAMIC_END_SOUNDS = []; window.DYNAMIC_WIN_SOUNDS = [];
+
+        if (data.receitas) { Object.keys(data.receitas).forEach(k => window.DYNAMIC_RECIPES.push({ id: k, nome: data.receitas[k].nome || 'Receita', icone: data.receitas[k].icone || '🍽️', preco: data.receitas[k].preco !== undefined ? parseInt(data.receitas[k].preco) : 5, link: `receita.html?id=${k}` })); }
+        if (data.temas_pagina) { Object.keys(data.temas_pagina).forEach(k => window.DYNAMIC_PAGE_THEMES.push(data.temas_pagina[k])); }
+        if (data.temas_roleta) { Object.keys(data.temas_roleta).forEach(k => window.DYNAMIC_ROULETTE_THEMES.push(data.temas_roleta[k])); }
+        if (data.banco_comidas) { Object.keys(data.banco_comidas).forEach(k => window.BANCO_DE_COMIDAS.push(data.banco_comidas[k])); }
+        if (data.efeitos) { Object.keys(data.efeitos).forEach(k => window.DYNAMIC_EFFECTS.push(data.efeitos[k])); }
+        if (data.sons_giro) { Object.keys(data.sons_giro).forEach(k => window.DYNAMIC_SPIN_SOUNDS.push(data.sons_giro[k])); }
+        if (data.sons_fim) { Object.keys(data.sons_fim).forEach(k => window.DYNAMIC_END_SOUNDS.push(data.sons_fim[k])); }
+        if (data.sons_vitoria) { Object.keys(data.sons_vitoria).forEach(k => window.DYNAMIC_WIN_SOUNDS.push(data.sons_vitoria[k])); }
+    }
+
     function ativarModoOffline() {
         if (!window.isServerSynced) { window.isServerSynced = true; if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay(); if (typeof window.applyThemes === 'function') window.applyThemes(); if (typeof window.renderAll === 'function') window.renderAll(); }
     }
 
     window.loadData = function() {
+        // 🔴 CACHE-FIRST: LER DA MEMÓRIA DO TELEMÓVEL PRIMEIRO 🔴
         try {
-            const saved = localStorage.getItem('rodaDoSaborState');
-            if (saved) Object.assign(_rawState, JSON.parse(saved));
+            const savedState = localStorage.getItem('rodaDoSaborState');
+            if (savedState) Object.assign(_rawState, JSON.parse(savedState));
             if (_rawState.banned) return aplicarBanimento(); 
             garantirArraysNoEstado();
+
+            const cachedContent = localStorage.getItem('rodaDoSaborContentCache');
+            if (cachedContent) {
+                popularListasDinamicas(JSON.parse(cachedContent));
+            }
+            
             if (typeof window.applyThemes === 'function') window.applyThemes();
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
             window.atualizarBannersEAnuncios();
@@ -225,21 +247,14 @@ console.log('core.js carregado (v29 - Arquitetura de Mídia Independente)');
                 if (user) {
                     currentUserUid = user.uid; updateUserInterface(user);
                     
+                    // 🔴 BACKGROUND SYNC: LER DA NUVEM 🔴
                     database.ref('conteudo').on('value', (snapshot) => {
-                        window.DYNAMIC_RECIPES = []; window.DYNAMIC_PAGE_THEMES = []; window.DYNAMIC_ROULETTE_THEMES = []; window.BANCO_DE_COMIDAS = [];
-                        window.DYNAMIC_EFFECTS = []; window.DYNAMIC_SPIN_SOUNDS = []; window.DYNAMIC_END_SOUNDS = []; window.DYNAMIC_WIN_SOUNDS = [];
-
                         if (snapshot.exists()) {
                             const data = snapshot.val();
-                            if (data.receitas) { Object.keys(data.receitas).forEach(k => window.DYNAMIC_RECIPES.push({ id: k, nome: data.receitas[k].nome || 'Receita', icone: data.receitas[k].icone || '🍽️', preco: data.receitas[k].preco !== undefined ? parseInt(data.receitas[k].preco) : 5, link: `receita.html?id=${k}` })); }
-                            if (data.temas_pagina) { Object.keys(data.temas_pagina).forEach(k => window.DYNAMIC_PAGE_THEMES.push(data.temas_pagina[k])); }
-                            if (data.temas_roleta) { Object.keys(data.temas_roleta).forEach(k => window.DYNAMIC_ROULETTE_THEMES.push(data.temas_roleta[k])); }
-                            if (data.banco_comidas) { Object.keys(data.banco_comidas).forEach(k => window.BANCO_DE_COMIDAS.push(data.banco_comidas[k])); }
-                            if (data.efeitos) { Object.keys(data.efeitos).forEach(k => window.DYNAMIC_EFFECTS.push(data.efeitos[k])); }
-                            if (data.sons_giro) { Object.keys(data.sons_giro).forEach(k => window.DYNAMIC_SPIN_SOUNDS.push(data.sons_giro[k])); }
-                            if (data.sons_fim) { Object.keys(data.sons_fim).forEach(k => window.DYNAMIC_END_SOUNDS.push(data.sons_fim[k])); }
-                            if (data.sons_vitoria) { Object.keys(data.sons_vitoria).forEach(k => window.DYNAMIC_WIN_SOUNDS.push(data.sons_vitoria[k])); }
+                            localStorage.setItem('rodaDoSaborContentCache', JSON.stringify(data)); // Guarda na memória do telemóvel para a próxima abertura!
+                            popularListasDinamicas(data);
                         }
+                        
                         if (typeof window.renderRecipes === 'function') window.renderRecipes();
                         if (typeof window.renderThemes === 'function') window.renderThemes();
                         if (typeof window.renderSounds === 'function') window.renderSounds();
@@ -317,7 +332,6 @@ console.log('core.js carregado (v29 - Arquitetura de Mídia Independente)');
         if (pageData && pageData.style) {
             const root = document.documentElement;
             
-            // 🔴 EXTERMINADOR DO OVAL 🔴 
             let bgStyle = pageData.style.bg || '';
             if (bgStyle.includes('radial-gradient') || bgStyle.includes('url')) {
                 bgStyle = _rawState.darkMode ? 'linear-gradient(145deg, #1a1a2e 0%, #0f172a 100%)' : 'linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)';
