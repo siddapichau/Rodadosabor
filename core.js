@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v28 - Nuvem Total: Efeitos e Sons)');
+console.log('core.js carregado (v29 - Arquitetura de Mídia Independente)');
 
 (function() {
     window.isServerSynced = false;
@@ -63,8 +63,8 @@ console.log('core.js carregado (v28 - Nuvem Total: Efeitos e Sons)');
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
         const trintaDias = 30 * 24 * 60 * 60 * 1000;
-        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 Compra Concluída! VIP Ativo."); } 
-        else if (tipo === 'no_ads') { _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Compra Concluída! Sem anúncios."); }
+        if (tipo === 'vip') { _rawState.vipUntil = Date.now() + trintaDias; alert("👑 VIP Ativo!"); } 
+        else if (tipo === 'no_ads') { _rawState.noAdsUntil = Date.now() + trintaDias; alert("🚫 Sem anúncios."); }
         window.saveData(); window.atualizarBannersEAnuncios(); window.renderAll();
     };
 
@@ -224,13 +224,14 @@ console.log('core.js carregado (v28 - Nuvem Total: Efeitos e Sons)');
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     currentUserUid = user.uid; updateUserInterface(user);
+                    
                     database.ref('conteudo').on('value', (snapshot) => {
                         window.DYNAMIC_RECIPES = []; window.DYNAMIC_PAGE_THEMES = []; window.DYNAMIC_ROULETTE_THEMES = []; window.BANCO_DE_COMIDAS = [];
                         window.DYNAMIC_EFFECTS = []; window.DYNAMIC_SPIN_SOUNDS = []; window.DYNAMIC_END_SOUNDS = []; window.DYNAMIC_WIN_SOUNDS = [];
 
                         if (snapshot.exists()) {
                             const data = snapshot.val();
-                            if (data.receitas) { Object.keys(data.receitas).forEach(k => window.DYNAMIC_RECIPES.push({ id: k, nome: data.receitas[k].nome || 'Receita', icone: data.receitas[k].icone || '🍽️', preco: data.receitas[k].preco !== undefined ? parseInt(data.receitas[key].preco) : 5, link: `receita.html?id=${k}` })); }
+                            if (data.receitas) { Object.keys(data.receitas).forEach(k => window.DYNAMIC_RECIPES.push({ id: k, nome: data.receitas[k].nome || 'Receita', icone: data.receitas[k].icone || '🍽️', preco: data.receitas[k].preco !== undefined ? parseInt(data.receitas[k].preco) : 5, link: `receita.html?id=${k}` })); }
                             if (data.temas_pagina) { Object.keys(data.temas_pagina).forEach(k => window.DYNAMIC_PAGE_THEMES.push(data.temas_pagina[k])); }
                             if (data.temas_roleta) { Object.keys(data.temas_roleta).forEach(k => window.DYNAMIC_ROULETTE_THEMES.push(data.temas_roleta[k])); }
                             if (data.banco_comidas) { Object.keys(data.banco_comidas).forEach(k => window.BANCO_DE_COMIDAS.push(data.banco_comidas[k])); }
@@ -295,7 +296,7 @@ console.log('core.js carregado (v28 - Nuvem Total: Efeitos e Sons)');
         } catch (e) {}
     };
     function osc(ctx, start, fStart, fEnd, duration, type, gain) {
-        if(type === 'noise') return; // simplified
+        if(type === 'noise') return; 
         const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = type;
         o.frequency.setValueAtTime(fStart, start); o.frequency.exponentialRampToValueAtTime(fEnd, start + duration);
         g.gain.setValueAtTime(gain, start); g.gain.exponentialRampToValueAtTime(0.001, start + duration);
