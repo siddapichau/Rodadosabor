@@ -1,12 +1,11 @@
 'use strict';
-console.log('app.js carregado (v25 - Fallback de Comidas da Nuvem)');
+console.log('app.js carregado (v28 - Renderização de Media da Nuvem)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
     if (coinBalance) coinBalance.textContent = window.appState.coins;
 };
 
-// ========================== RENDERIZADORES ==========================
 window.renderFoodList = function() {
     const container = document.getElementById('foodListContainer');
     if (!container) return;
@@ -37,15 +36,12 @@ window.renderModalFoodOptions = function(filterText = '') {
     if (!modalGrid) return;
     modalGrid.innerHTML = '';
     
-    // Fallback de Emergência se a Firebase falhar
+    // Fallback de Emergência
     const fallbackFoods = [
         { nome: "Pizza", icone: "🍕" }, { nome: "Hambúrguer", icone: "🍔" },
-        { nome: "Sushi", icone: "🍣" }, { nome: "Salada", icone: "🥗" },
-        { nome: "Churrasco", icone: "🥩" }, { nome: "Cachorro Quente", icone: "🌭" },
-        { nome: "Macarrão", icone: "🍝" }, { nome: "Batata Frita", icone: "🍟" }
+        { nome: "Sushi", icone: "🍣" }, { nome: "Salada", icone: "🥗" }
     ];
 
-    // Usa a nuvem ou o Fallback[cite: 22]
     let allItems = (window.BANCO_DE_COMIDAS && window.BANCO_DE_COMIDAS.length > 0) ? [...window.BANCO_DE_COMIDAS] : fallbackFoods;
     
     if (window.appState?.customFoods) {
@@ -58,6 +54,10 @@ window.renderModalFoodOptions = function(filterText = '') {
     const filtradas = allItems.filter(item => item.nome.toLowerCase().includes(filterText.toLowerCase()));
     const selecionadas = window._comidasSelecionadasTemporarias || [];
     
+    if(filtradas.length === 0 && allItems.length === 0) {
+        modalGrid.innerHTML = '<span style="color:var(--text-muted); font-size:0.8rem; text-align:center; width: 100%;">Carregando opções da nuvem...</span>';
+    }
+
     filtradas.forEach(item => {
         const itemString = `${item.nome} ${item.icone}`;
         const card = document.createElement('div'); card.className = 'food-option-card';
@@ -142,16 +142,16 @@ window.renderSounds = function() {
         });
     };
 
-    renderSoundCards(spinGrid, window.SONS_GIRO, 'unlockedSpinSounds', 'currentSpinSound', 'spinSound');
-    renderSoundCards(endGrid, window.SONS_FIM, 'unlockedEndSounds', 'currentEndSound', 'endSound');
-    renderSoundCards(winGrid, window.SONS_VITORIA, 'unlockedWinSounds', 'currentWinSound', 'winSound');
+    renderSoundCards(spinGrid, typeof window.getSpinSounds === 'function' ? window.getSpinSounds() : [], 'unlockedSpinSounds', 'currentSpinSound', 'spinSound');
+    renderSoundCards(endGrid, typeof window.getEndSounds === 'function' ? window.getEndSounds() : [], 'unlockedEndSounds', 'currentEndSound', 'endSound');
+    renderSoundCards(winGrid, typeof window.getWinSounds === 'function' ? window.getWinSounds() : [], 'unlockedWinSounds', 'currentWinSound', 'winSound');
 };
 
 window.renderEffects = function() {
     const grid = document.getElementById('effectsGrid');
     if (!grid) return;
     grid.innerHTML = '';
-    const effects = window.EFEITOS_VISUAIS || [];
+    const effects = typeof window.getEffects === 'function' ? window.getEffects() : [];
     if (effects.length === 0) return;
     
     const sorted = [...effects].sort((a, b) => (a.price || 0) - (b.price || 0));
@@ -210,16 +210,19 @@ window.renderRecipes = function() {
 
 window.launchCurrentEffect = function() {
     const effectId = window.appState.currentEffect || 'effect-1';
-    switch (effectId) {
-        case 'effect-1': window.launchConfetti(); break;
-        case 'effect-2': window.launchFireworks(); break;
-        case 'effect-3': window.launchStars(); break;
-        case 'effect-4': window.launchNeonLights(); break;
-        case 'effect-5': window.launchLaser(); break;
-        case 'effect-6': window.launchGlitter(); break;
-        case 'effect-7': window.launchRainbow(); break;
-        default: window.launchConfetti();
+    // Mapeia o ID do Firebase para a função de efeito correspondente
+    const effectList = typeof window.getEffects === 'function' ? window.getEffects() : [];
+    const effectObj = effectList.find(e => e.id === effectId) || { type: 'confetti' };
+    
+    if (typeof getEffectsManager === 'function') {
+        const manager = getEffectsManager();
+        if(manager && typeof manager.launch === 'function') {
+            manager.launch(effectObj.type);
+            return;
+        }
     }
+    // Fallback se o manager não existir
+    console.log("Animando: ", effectObj.type);
 };
 
 window.comprarEAtualizar = function(categoria, id, precoOverride) {
