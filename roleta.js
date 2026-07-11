@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste - v25)');
+console.log('roleta.js carregado (v28 - Bordas Isoladas)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -47,7 +47,9 @@ window.drawRoulette = function() {
                 if (themeData.wheelCenter) wheelCenter = themeData.wheelCenter;
             }
         }
-    } catch (e) { console.warn("Erro ao buscar cores. Usando fallback.", e); }
+    } catch (e) {
+        console.warn("Erro ao buscar cores. Usando fallback.", e);
+    }
 
     if (numSegments === 0) {
         ctx.beginPath();
