@@ -1,11 +1,12 @@
 'use strict';
-console.log('app.js carregado (v28 - Renderização de Media da Nuvem)');
+console.log('app.js carregado (v29 - Renderização Cloud Completa)');
 
 window.updateCoinsDisplay = function() {
     const coinBalance = document.getElementById('coin-balance');
     if (coinBalance) coinBalance.textContent = window.appState.coins;
 };
 
+// ========================== RENDERIZADORES ==========================
 window.renderFoodList = function() {
     const container = document.getElementById('foodListContainer');
     if (!container) return;
@@ -36,12 +37,7 @@ window.renderModalFoodOptions = function(filterText = '') {
     if (!modalGrid) return;
     modalGrid.innerHTML = '';
     
-    // Fallback de Emergência
-    const fallbackFoods = [
-        { nome: "Pizza", icone: "🍕" }, { nome: "Hambúrguer", icone: "🍔" },
-        { nome: "Sushi", icone: "🍣" }, { nome: "Salada", icone: "🥗" }
-    ];
-
+    const fallbackFoods = [{ nome: "Pizza", icone: "🍕" }, { nome: "Hambúrguer", icone: "🍔" }, { nome: "Sushi", icone: "🍣" }, { nome: "Salada", icone: "🥗" }];
     let allItems = (window.BANCO_DE_COMIDAS && window.BANCO_DE_COMIDAS.length > 0) ? [...window.BANCO_DE_COMIDAS] : fallbackFoods;
     
     if (window.appState?.customFoods) {
@@ -210,7 +206,6 @@ window.renderRecipes = function() {
 
 window.launchCurrentEffect = function() {
     const effectId = window.appState.currentEffect || 'effect-1';
-    // Mapeia o ID do Firebase para a função de efeito correspondente
     const effectList = typeof window.getEffects === 'function' ? window.getEffects() : [];
     const effectObj = effectList.find(e => e.id === effectId) || { type: 'confetti' };
     
@@ -221,7 +216,6 @@ window.launchCurrentEffect = function() {
             return;
         }
     }
-    // Fallback se o manager não existir
     console.log("Animando: ", effectObj.type);
 };
 
