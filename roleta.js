@@ -1,5 +1,5 @@
 'use strict';
-console.log('roleta.js carregado (v25 - Roleta Independente e Blindada)');
+console.log('roleta.js carregado (Bordas Isoladas com Alto Contraste - v25)');
 
 let startAngle = 0;
 let isSpinning = false;
@@ -31,7 +31,6 @@ window.drawRoulette = function() {
     const items = window.appState?.foods || [];
     const numSegments = items.length;
 
-    // Cores Base Padrão de Emergência
     let colors = ['#f5b342', '#7b9e5a', '#e94b3c', '#4a90d9', '#9b59b6', '#f39c12'];
     let wheelBorder = '#1e293b'; 
     let wheelCenter = '#ffffff';
@@ -40,9 +39,6 @@ window.drawRoulette = function() {
         if (typeof window.getRouletteThemes === 'function') {
             const themes = window.getRouletteThemes();
             const theme = themes.find(t => t.id === window.appState.currentRouletteTheme) || themes[0];
-            
-            // 🔴 ROLETA IGNORA MODO ESCURO DA PÁGINA 🔴
-            // Pega sempre a base (light), a borda NUNCA troca de cor com a página.
             const themeData = theme.light || theme;
             
             if (themeData && themeData.colors) {
@@ -51,9 +47,7 @@ window.drawRoulette = function() {
                 if (themeData.wheelCenter) wheelCenter = themeData.wheelCenter;
             }
         }
-    } catch (e) {
-        console.warn("Erro ao buscar cores. Usando fallback.", e);
-    }
+    } catch (e) { console.warn("Erro ao buscar cores. Usando fallback.", e); }
 
     if (numSegments === 0) {
         ctx.beginPath();
@@ -71,10 +65,9 @@ window.drawRoulette = function() {
     const arcSize = (2 * Math.PI) / numSegments;
     const borderWidth = radius * 0.045;
 
-    // 🔴 BORDA DA ROLETA USANDO A COR PROTEGIDA 🔴
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius + borderWidth, 0, 2 * Math.PI);
-    ctx.fillStyle = wheelBorder; // Agora a borda usa a cor fixa de contraste
+    ctx.fillStyle = wheelBorder;
     ctx.shadowColor = 'rgba(0,0,0,0.25)';
     ctx.shadowBlur = 12;
     ctx.fill();
@@ -173,7 +166,8 @@ function animateSpin() {
 
     const arcSize = (2 * Math.PI) / window.appState.foods.length;
     if (Math.abs(startAngle - lastSoundAngle) >= arcSize) {
-        const activeSpinSound = (window.SONS_GIRO && window.SONS_GIRO.find(s => s.id === window.appState.currentSpinSound)) || { type: 'click' };
+        const spinSounds = typeof window.getSpinSounds === 'function' ? window.getSpinSounds() : [];
+        const activeSpinSound = spinSounds.find(s => s.id === window.appState.currentSpinSound) || { type: 'click' };
         if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeSpinSound.type);
         lastSoundAngle = startAngle;
     }
@@ -193,11 +187,13 @@ function finalizeSpin() {
 
     const winningFood = window.appState.foods[index];
 
-    const activeEndSound = (window.SONS_FIM && window.SONS_FIM.find(s => s.id === window.appState.currentEndSound)) || { type: 'end-chord' };
+    const endSounds = typeof window.getEndSounds === 'function' ? window.getEndSounds() : [];
+    const activeEndSound = endSounds.find(s => s.id === window.appState.currentEndSound) || { type: 'end-chord' };
     if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeEndSound.type);
 
     setTimeout(() => {
-        const activeWinSound = (window.SONS_VITORIA && window.SONS_VITORIA.find(s => s.id === window.appState.currentWinSound)) || { type: 'win-tada' };
+        const winSounds = typeof window.getWinSounds === 'function' ? window.getWinSounds() : [];
+        const activeWinSound = winSounds.find(s => s.id === window.appState.currentWinSound) || { type: 'win-tada' };
         if(typeof window.playSynthesizedSound === 'function') window.playSynthesizedSound(activeWinSound.type);
 
         if (typeof window.launchCurrentEffect === 'function') {
