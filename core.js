@@ -1,5 +1,5 @@
 'use strict';
-console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
+console.log('core.js carregado (v31 - Sincronização de Comidas em Tempo Real)');
 
 (function() {
     window.isServerSynced = false;
@@ -14,7 +14,7 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
     window.DYNAMIC_END_SOUNDS = [];
     window.DYNAMIC_WIN_SOUNDS = [];
 
-    // === FALLBACKS DE EMERGÊNCIA (Caso o telemóvel seja novo e não tenha net) ===
+    // === FALLBACKS DE EMERGÊNCIA ===
     window.DEFAULT_PAGE_THEME = { id: "theme-1", nome: "Clássico", price: 0, light: { style: { bg: "linear-gradient(145deg, #fdf6f0 0%, #e6d8cb 100%)", card: "rgba(255, 255, 255, 0.85)", text: "#1e293b", accent: "#7b9e5a", accentGradient: "linear-gradient(135deg, #f5b342, #e94b3c)" } }, dark: { style: { bg: "linear-gradient(145deg, #1a1a2e 0%, #0f172a 100%)", card: "rgba(30, 41, 59, 0.85)", text: "#f8fafc", accent: "#f5b342", accentGradient: "linear-gradient(135deg, #f5d742, #e94b3c)" } } };
     window.DEFAULT_ROULETTE_THEME = { id: "theme-1", nome: "Clássico", price: 0, light: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#1e293b", wheelCenter: "#ffffff" }, dark: { colors: ["#f5b342", "#7b9e5a", "#e94b3c", "#4a90d9", "#9b59b6", "#f39c12"], wheelBorder: "#f8fafc", wheelCenter: "#0f172a" } };
     window.DEFAULT_EFFECT = { id: "effect-1", name: "🎊 Confetes Coloridos", price: 0, type: "confetti" };
@@ -22,7 +22,6 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
     window.DEFAULT_END_SOUND = { id: "end-1", name: "Acorde Simples", price: 0, type: "end-chord" };
     window.DEFAULT_WIN_SOUND = { id: "win-1", name: "Grande Tada!", price: 0, type: "win-tada" };
 
-    // Getters Seguros (Procuram na lista da nuvem, se vazio usam fallback)
     window.getPageThemes = () => window.DYNAMIC_PAGE_THEMES.length > 0 ? window.DYNAMIC_PAGE_THEMES : [window.DEFAULT_PAGE_THEME];
     window.getRouletteThemes = () => window.DYNAMIC_ROULETTE_THEMES.length > 0 ? window.DYNAMIC_ROULETTE_THEMES : [window.DEFAULT_ROULETTE_THEME];
     window.getEffects = () => window.DYNAMIC_EFFECTS.length > 0 ? window.DYNAMIC_EFFECTS : [window.DEFAULT_EFFECT];
@@ -59,6 +58,16 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
     window.isVipAtivo = function() { return _rawState.vipUntil > Date.now(); };
     window.isNoAdsAtivo = function() { return window.isVipAtivo() || _rawState.noAdsUntil > Date.now(); };
     window.isItemLiberado = function(nomeDoArray, idDoItem) { if (window.isVipAtivo()) return true; return _rawState[nomeDoArray].includes(idDoItem); };
+
+    // 🔴 FUNÇÃO NOVA: GRAVA COMIDAS NO FIREBASE SEM RECARREGAR A PÁGINA 🔴
+    window.atualizarComidasSeguro = function(novasComidas) {
+        if (Array.isArray(novasComidas) && novasComidas.length >= 2 && novasComidas.length <= 6) {
+            _rawState.foods = novasComidas;
+            window.saveData();
+            return true;
+        }
+        return false;
+    };
 
     window.comprarPacoteReal = function(tipo) {
         if (!window.isServerSynced) { alert("Aguarde a sincronização com o servidor."); return; }
@@ -203,7 +212,6 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
         if (!window.isItemLiberado('unlockedWinSounds', _rawState.currentWinSound)) _rawState.currentWinSound = "win-1";
     }
 
-    // 🔴 SISTEMA DE PREENCHIMENTO DE LISTAS 🔴
     function popularListasDinamicas(data) {
         window.DYNAMIC_RECIPES = []; window.DYNAMIC_PAGE_THEMES = []; window.DYNAMIC_ROULETTE_THEMES = []; window.BANCO_DE_COMIDAS = [];
         window.DYNAMIC_EFFECTS = []; window.DYNAMIC_SPIN_SOUNDS = []; window.DYNAMIC_END_SOUNDS = []; window.DYNAMIC_WIN_SOUNDS = [];
@@ -223,7 +231,6 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
     }
 
     window.loadData = function() {
-        // 🔴 CACHE-FIRST: LER DA MEMÓRIA DO TELEMÓVEL PRIMEIRO 🔴
         try {
             const savedState = localStorage.getItem('rodaDoSaborState');
             if (savedState) Object.assign(_rawState, JSON.parse(savedState));
@@ -231,9 +238,7 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
             garantirArraysNoEstado();
 
             const cachedContent = localStorage.getItem('rodaDoSaborContentCache');
-            if (cachedContent) {
-                popularListasDinamicas(JSON.parse(cachedContent));
-            }
+            if (cachedContent) { popularListasDinamicas(JSON.parse(cachedContent)); }
             
             if (typeof window.applyThemes === 'function') window.applyThemes();
             if (typeof window.updateCoinsDisplay === 'function') window.updateCoinsDisplay();
@@ -247,11 +252,10 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
                 if (user) {
                     currentUserUid = user.uid; updateUserInterface(user);
                     
-                    // 🔴 BACKGROUND SYNC: LER DA NUVEM 🔴
                     database.ref('conteudo').on('value', (snapshot) => {
                         if (snapshot.exists()) {
                             const data = snapshot.val();
-                            localStorage.setItem('rodaDoSaborContentCache', JSON.stringify(data)); // Guarda na memória do telemóvel para a próxima abertura!
+                            localStorage.setItem('rodaDoSaborContentCache', JSON.stringify(data)); 
                             popularListasDinamicas(data);
                         }
                         
@@ -260,6 +264,7 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
                         if (typeof window.renderSounds === 'function') window.renderSounds();
                         if (typeof window.renderEffects === 'function') window.renderEffects();
                         if (typeof window.applyThemes === 'function') window.applyThemes();
+                        if (typeof window.renderFoodList === 'function') window.renderFoodList();
                     });
 
                     database.ref('users/' + currentUserUid + '/appState').on('value', (snapshot) => {
@@ -318,7 +323,6 @@ console.log('core.js carregado (v30 - Cache-First & Offline Ready)');
         o.connect(g); g.connect(ctx.destination); o.start(start); o.stop(start + duration);
     }
 
-    // ========================== APLICAÇÃO DE TEMAS ==========================
     window.applyThemes = function() {
         const pageThemes = window.getPageThemes();
         const rouletteThemes = window.getRouletteThemes();
